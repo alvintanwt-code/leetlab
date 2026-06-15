@@ -88,7 +88,7 @@ export function FundInspector({
       <div className="fixed inset-0 z-40 bg-[rgba(13,37,61,0.20)]" onClick={onClose} aria-hidden />
       {/* drawer */}
       <aside
-        className="fixed right-0 top-0 z-50 flex h-screen w-[460px] max-w-[95vw] flex-col border-l border-[var(--color-hairline)] bg-[var(--color-canvas)] shadow-[-8px_0_24px_rgba(13,37,61,0.08)]"
+        className="fixed right-0 top-0 z-50 flex h-screen w-[20vw] min-w-[380px] max-w-[95vw] flex-col border-l border-[var(--color-hairline)] bg-[var(--color-canvas)] shadow-[-8px_0_24px_rgba(13,37,61,0.08)]"
         role="dialog"
         aria-label={`Fund inspector — ${fund.name}`}
       >

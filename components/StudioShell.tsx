@@ -342,48 +342,50 @@ export function StudioShell({
   }
 
   return (
-    <div className="grid h-[calc(100vh-48px)] grid-cols-12 gap-0">
-      {/* LEFT — fund picker */}
-      <section className="col-span-4 flex flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
-        {/* Provider tab row */}
-        <nav
-          aria-label="Provider"
-          className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-hairline)] px-3 py-2"
-        >
-          {providerTabs.map((t) => {
-            const active = t.slug === providerSlug;
-            const base =
-              "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 t-caption transition-colors";
-            if (t.disabled) {
-              return (
-                <span
-                  key={t.slug}
-                  aria-disabled="true"
-                  className={`${base} text-[var(--color-ink-mute)] opacity-55`}
-                  title={`${t.short} · not yet scraped`}
-                >
-                  {t.short}
-                  <span className="num text-[10px]">—</span>
-                </span>
-              );
-            }
+    <div className="flex h-[calc(100vh-48px)] flex-col">
+      {/* Provider tab row — full width above the studio body */}
+      <nav
+        aria-label="Provider"
+        className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-5 py-2"
+      >
+        {providerTabs.map((t) => {
+          const active = t.slug === providerSlug;
+          const base =
+            "flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 t-caption transition-colors";
+          if (t.disabled) {
             return (
-              <Link
+              <span
                 key={t.slug}
-                href={`/construction/${t.slug}`}
-                className={`${base} ${
-                  active
-                    ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
-                    : "text-[var(--color-ink-2)] hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]"
-                }`}
+                aria-disabled="true"
+                className={`${base} text-[var(--color-ink-mute)] opacity-55`}
+                title={`${t.short} · not yet scraped`}
               >
                 {t.short}
-                <span className="num text-[10px] text-[var(--color-ink-mute)]">{t.count}</span>
-              </Link>
+                <span className="num text-[10px]">—</span>
+              </span>
             );
-          })}
-        </nav>
+          }
+          return (
+            <Link
+              key={t.slug}
+              href={`/construction/${t.slug}`}
+              className={`${base} ${
+                active
+                  ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
+                  : "text-[var(--color-ink-2)] hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]"
+              }`}
+            >
+              {t.short}
+              <span className="num text-[10px] text-[var(--color-ink-mute)]">{t.count}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
+      {/* Studio body — fund picker + builder */}
+      <div className="flex flex-1 min-h-0">
+      {/* LEFT — fund picker */}
+      <section className="flex w-[20vw] min-w-[240px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
         <div className="border-b border-[var(--color-hairline)] px-4 py-3">
           <p className="t-micro-cap mb-2">Available on {providerName} · click name to inspect, + to add</p>
           <div className="flex items-center gap-2 rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-1.5">
@@ -439,7 +441,7 @@ export function StudioShell({
       </section>
 
       {/* RIGHT — basket + x-ray */}
-      <section className="col-span-8 flex flex-col overflow-hidden bg-[var(--color-canvas-soft)]">
+      <section className="flex flex-1 min-w-0 flex-col overflow-hidden bg-[var(--color-canvas-soft)]">
         <div className="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-6 py-3">
           <div>
             <p className="t-micro-cap">Model portfolio</p>
@@ -661,6 +663,7 @@ export function StudioShell({
           )}
         </div>
       </section>
+      </div>
 
       {/* Inspector drawer */}
       {inspected && (

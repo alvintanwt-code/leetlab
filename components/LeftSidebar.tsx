@@ -45,7 +45,7 @@ export function LeftSidebar({
     : (user.email?.[0] ?? "?").toUpperCase();
 
   return (
-    <aside className="flex h-full w-[220px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+    <aside className="flex h-full w-[15vw] min-w-[180px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
       <nav className="flex-1 overflow-y-auto px-2.5 py-4">
         <ul className="flex flex-col gap-0.5">
           <NavItem href="/write" label="Research and Write" active={isResearchWrite} locked />
