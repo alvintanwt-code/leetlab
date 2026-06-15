@@ -7,14 +7,28 @@ import { useState } from "react";
 export type SidebarProvider = { slug: string; short: string; count: number; disabled: boolean };
 export type SidebarUser = { name: string | null; email: string | null; image: string | null };
 
+function LockIcon() {
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden
+      className="shrink-0 text-[var(--color-ink-mute)]"
+    >
+      <rect x="2.5" y="5.5" width="7" height="5" rx="0.6" stroke="currentColor" strokeWidth="0.9" />
+      <path d="M4 5.5V4a2 2 0 1 1 4 0v1.5" stroke="currentColor" strokeWidth="0.9" />
+    </svg>
+  );
+}
+
 export function LeftSidebar({
-  providers,
-  confirmedCount,
+  defaultBuilderHref,
   user,
   signOutAction,
 }: {
-  providers: SidebarProvider[];
-  confirmedCount: number;
+  defaultBuilderHref: string;
   user: SidebarUser;
   signOutAction: () => Promise<void>;
 }) {
@@ -22,11 +36,8 @@ export function LeftSidebar({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isResearchWrite = pathname.startsWith("/write");
-  const isConstruction = pathname.startsWith("/construction") || pathname === "/portfolios";
+  const isBuilder = pathname.startsWith("/construction") || pathname === "/portfolios";
   const isSwitch = pathname.startsWith("/switch");
-  const activeProvider = pathname.startsWith("/construction/")
-    ? pathname.split("/")[2] ?? ""
-    : "";
 
   const initials = user.name
     ? user.name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("")
@@ -35,94 +46,10 @@ export function LeftSidebar({
   return (
     <aside className="flex h-full w-[220px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
       <nav className="flex-1 overflow-y-auto px-2.5 py-4">
-        {/* LEET RESEARCH section */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between px-2.5 pb-1.5">
-            <p className="t-micro-cap">Leet Research</p>
-            <span
-              className="t-micro-cap text-[10px] text-[var(--color-ink-mute)]"
-              title="Internal: research team only"
-            >
-              · locked
-            </span>
-          </div>
-          <ul className="flex flex-col gap-0.5">
-            <NavItem href="/write" label="Research and Write" active={isResearchWrite} muted />
-            <li>
-              <div
-                className={`flex items-center justify-between rounded-md px-2.5 py-1.5 t-caption ${
-                  isConstruction ? "text-[var(--color-ink)]" : "text-[var(--color-ink-2)]"
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  {isConstruction && (
-                    <span
-                      className="h-3 w-[2px] rounded-full bg-[var(--color-primary)]"
-                      aria-hidden
-                    />
-                  )}
-                  Portfolio Construction
-                </span>
-              </div>
-              <ul className="ml-3 mt-1 flex flex-col gap-0.5 border-l border-[var(--color-hairline-2)] pl-2">
-                {providers.map((p) => {
-                  const active = activeProvider === p.slug;
-                  if (p.disabled) {
-                    return (
-                      <li key={p.slug}>
-                        <span
-                          aria-disabled="true"
-                          className="flex items-center justify-between rounded-md px-2.5 py-1 t-caption text-[var(--color-ink-mute)] opacity-55"
-                        >
-                          {p.short}
-                          <span className="num text-[10px]">—</span>
-                        </span>
-                      </li>
-                    );
-                  }
-                  return (
-                    <li key={p.slug}>
-                      <Link
-                        href={`/construction/${p.slug}`}
-                        className={[
-                          "flex items-center justify-between rounded-md px-2.5 py-1 t-caption transition-colors",
-                          active
-                            ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
-                            : "text-[var(--color-ink-2)] hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]",
-                        ].join(" ")}
-                      >
-                        {p.short}
-                        <span className="num text-[10px] text-[var(--color-ink-mute)]">{p.count}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-                <li className="my-1 border-t border-[var(--color-hairline-2)]" />
-                <li>
-                  <Link
-                    href="/portfolios"
-                    className={[
-                      "flex items-center justify-between rounded-md px-2.5 py-1 t-caption transition-colors",
-                      pathname === "/portfolios"
-                        ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
-                        : "text-[var(--color-ink-2)] hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]",
-                    ].join(" ")}
-                  >
-                    Saved portfolios
-                    <span className="num text-[10px] text-[var(--color-ink-mute)]">{confirmedCount}</span>
-                  </Link>
-                </li>
-              </ul>
-            </li>
-          </ul>
-        </div>
-
-        {/* divider */}
-        <div className="hairline my-3 mx-2.5 h-px" />
-
-        {/* Switch analysis standalone */}
         <ul className="flex flex-col gap-0.5">
-          <NavItem href="/switch" label="Fund Switch Analysis" active={isSwitch} muted />
+          <NavItem href="/write" label="Research and Write" active={isResearchWrite} locked />
+          <NavItem href={defaultBuilderHref} label="Portfolio Builder" active={isBuilder} locked />
+          <NavItem href="/switch" label="Fund Switch Analysis" active={isSwitch} />
         </ul>
       </nav>
 
@@ -166,7 +93,17 @@ export function LeftSidebar({
   );
 }
 
-function NavItem({ href, label, active, muted }: { href: string; label: string; active: boolean; muted?: boolean }) {
+function NavItem({
+  href,
+  label,
+  active,
+  locked,
+}: {
+  href: string;
+  label: string;
+  active: boolean;
+  locked?: boolean;
+}) {
   return (
     <li>
       <Link
@@ -175,15 +112,14 @@ function NavItem({ href, label, active, muted }: { href: string; label: string; 
           "flex items-center gap-2 rounded-md px-2.5 py-1.5 t-caption transition-colors",
           active
             ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
-            : muted
-            ? "text-[var(--color-ink-2)] hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]"
             : "text-[var(--color-ink-2)] hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]",
         ].join(" ")}
       >
         {active && (
           <span className="h-3 w-[2px] rounded-full bg-[var(--color-primary)]" aria-hidden />
         )}
-        {label}
+        <span className="flex-1">{label}</span>
+        {locked && <LockIcon />}
       </Link>
     </li>
   );

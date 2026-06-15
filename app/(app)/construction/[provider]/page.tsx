@@ -41,10 +41,24 @@ export default async function StudioPage({ params }: { params: Promise<{ provide
     );
   }
 
+  const SHORT_NAMES: Record<string, string> = {
+    hsbc: "HSBC Life",
+    tmls: "Tokio Marine",
+    fwd: "FWD",
+    gwm: "GWM",
+  };
+  const providerTabs = allProviders.map((p) => ({
+    slug: p.slug,
+    short: SHORT_NAMES[p.slug] ?? p.name,
+    count: p.fund_count,
+    disabled: p.fund_count === 0,
+  }));
+
   return (
     <StudioShell
       providerSlug={provider}
       providerName={meta.name}
+      providerTabs={providerTabs}
       funds={funds}
       allocations={allocsFlat}
       documents={documents}

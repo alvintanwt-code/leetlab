@@ -1,33 +1,20 @@
-import { LeftSidebar, type SidebarProvider } from "@/components/LeftSidebar";
+import { LeftSidebar } from "@/components/LeftSidebar";
 import { TopBar } from "@/components/TopBar";
-import { listProvidersWithCounts, countAllConfirmedPortfolios } from "@/lib/db/queries";
+import { listProvidersWithCounts } from "@/lib/db/queries";
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-const SHORT_NAMES: Record<string, string> = {
-  hsbc: "HSBC Life",
-  tmls: "Tokio Marine",
-  fwd: "FWD",
-  gwm: "GWM",
-};
-
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [rawProviders, confirmedCount] = await Promise.all([
-    listProvidersWithCounts(),
-    countAllConfirmedPortfolios(),
-  ]);
-
-  const providers: SidebarProvider[] = rawProviders.map((p) => ({
-    slug: p.slug,
-    short: SHORT_NAMES[p.slug] ?? p.name,
-    count: p.fund_count,
-    disabled: p.fund_count === 0,
-  }));
+  // Portfolio Builder needs a default destination — pick the first provider
+  // that actually has funds. Falls back to /portfolios if no provider is ready.
+  const rawProviders = await listProvidersWithCounts();
+  const firstReady = rawProviders.find((p) => p.fund_count > 0);
+  const defaultBuilderHref = firstReady ? `/construction/${firstReady.slug}` : "/portfolios";
 
   async function signOutAction() {
     "use server";
@@ -39,8 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <TopBar />
       <div className="flex flex-1 min-h-0">
         <LeftSidebar
-          providers={providers}
-          confirmedCount={confirmedCount}
+          defaultBuilderHref={defaultBuilderHref}
           user={{
             name: session.user.name ?? null,
             email: session.user.email ?? null,

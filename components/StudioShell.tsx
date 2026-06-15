@@ -1,10 +1,73 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FundInspector } from "./FundInspector";
 import { TrailingChart } from "./TrailingChart";
 import type { FundInspectorData, AllocationDetail } from "@/lib/db/queries";
+
+// Synonyms that expand a user query token to plausible variants present in
+// fund metadata. Lets "equities US" find Equity / USD / USA funds, etc.
+const SEARCH_SYNONYMS: Record<string, string[]> = {
+  equities: ["equity"],
+  equity: ["equities"],
+  stocks: ["stock", "equity"],
+  bonds: ["bond", "fixed income"],
+  bond: ["bonds", "fixed income"],
+  "fixed-income": ["bond", "fixed income"],
+  us: ["united states", "usd", "american", "u.s."],
+  usa: ["us", "united states", "usd"],
+  america: ["american", "us", "usd"],
+  global: ["world", "international"],
+  world: ["global", "international"],
+  asia: ["asian"],
+  asian: ["asia"],
+  europe: ["european", "euro", "eur"],
+  european: ["europe", "euro", "eur"],
+  china: ["chinese", "mainland"],
+  japan: ["japanese", "jpy"],
+  india: ["indian"],
+  emerging: ["em"],
+  income: ["dividend", "yield", "distributing", "dist"],
+  dividend: ["income", "yield", "distributing", "dist"],
+  growth: ["accumulating", "acc"],
+  tech: ["technology"],
+  technology: ["tech"],
+  healthcare: ["health"],
+};
+
+function expandToken(t: string): string[] {
+  const lower = t.toLowerCase();
+  const set = new Set<string>([lower]);
+  // Light stemming for plural → singular ("equities" → "equity", "bonds" → "bond")
+  if (lower.length > 4 && lower.endsWith("ies")) set.add(lower.slice(0, -3) + "y");
+  else if (lower.length > 3 && lower.endsWith("s")) set.add(lower.slice(0, -1));
+  const explicit = SEARCH_SYNONYMS[lower];
+  if (explicit) explicit.forEach((s) => set.add(s));
+  return Array.from(set);
+}
+
+function fundHaystack(f: FundInspectorData): string {
+  return [
+    f.name,
+    f.fund_house,
+    f.external_id,
+    f.isin,
+    f.asset_class,
+    f.currency,
+    f.benchmark,
+    f.investment_objective,
+    f.distribution_type === "Acc"
+      ? "accumulating"
+      : f.distribution_type === "Dist"
+      ? "distributing"
+      : f.distribution_type ?? "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
 
 type ChartData = {
   funds: { isin: string; name: string; weight: number; points: { d: string; v: number }[]; terminal: number }[];
@@ -55,15 +118,19 @@ function fmtPct(v: number | null, places = 2): { text: string; cls: string } {
   return { text: `${sign}${Math.abs(v).toFixed(places)}%`, cls };
 }
 
+export type ProviderTab = { slug: string; short: string; count: number; disabled: boolean };
+
 export function StudioShell({
   providerSlug,
   providerName,
+  providerTabs,
   funds,
   allocations,
   documents,
 }: {
   providerSlug: string;
   providerName: string;
+  providerTabs: ProviderTab[];
   funds: FundInspectorData[];
   allocations: AllocationDetail[];
   documents: DocByFund;
@@ -107,15 +174,14 @@ export function StudioShell({
   }, [allocations]);
 
   const filteredFunds = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = search.trim();
     if (!q) return funds;
-    return funds.filter(
-      (f) =>
-        f.name.toLowerCase().includes(q) ||
-        (f.fund_house ?? "").toLowerCase().includes(q) ||
-        f.external_id.toLowerCase().includes(q) ||
-        (f.isin ?? "").toLowerCase().includes(q),
-    );
+    const tokens = q.split(/\s+/).filter(Boolean);
+    return funds.filter((f) => {
+      const h = fundHaystack(f);
+      // Each token (with its synonyms/stems) must match somewhere in the haystack.
+      return tokens.every((t) => expandToken(t).some((v) => h.includes(v)));
+    });
   }, [funds, search]);
 
   const totalBps = basket.reduce((s, h) => s + h.weightBps, 0);
@@ -279,6 +345,45 @@ export function StudioShell({
     <div className="grid h-[calc(100vh-48px)] grid-cols-12 gap-0">
       {/* LEFT — fund picker */}
       <section className="col-span-4 flex flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+        {/* Provider tab row */}
+        <nav
+          aria-label="Provider"
+          className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-hairline)] px-3 py-2"
+        >
+          {providerTabs.map((t) => {
+            const active = t.slug === providerSlug;
+            const base =
+              "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 t-caption transition-colors";
+            if (t.disabled) {
+              return (
+                <span
+                  key={t.slug}
+                  aria-disabled="true"
+                  className={`${base} text-[var(--color-ink-mute)] opacity-55`}
+                  title={`${t.short} · not yet scraped`}
+                >
+                  {t.short}
+                  <span className="num text-[10px]">—</span>
+                </span>
+              );
+            }
+            return (
+              <Link
+                key={t.slug}
+                href={`/construction/${t.slug}`}
+                className={`${base} ${
+                  active
+                    ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
+                    : "text-[var(--color-ink-2)] hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]"
+                }`}
+              >
+                {t.short}
+                <span className="num text-[10px] text-[var(--color-ink-mute)]">{t.count}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
         <div className="border-b border-[var(--color-hairline)] px-4 py-3">
           <p className="t-micro-cap mb-2">Available on {providerName} · click name to inspect, + to add</p>
           <div className="flex items-center gap-2 rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-1.5">
@@ -287,7 +392,7 @@ export function StudioShell({
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Filter instruments…  ( / )"
+              placeholder="Try: equities, US, global, income…  ( / )"
               className="t-body-md w-full bg-transparent outline-none placeholder:text-[var(--color-ink-mute)]"
             />
           </div>
