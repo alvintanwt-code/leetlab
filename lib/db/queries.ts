@@ -205,6 +205,105 @@ export async function countConfirmedPortfolios(providerSlug: string): Promise<nu
   return rows[0]?.n ?? 0;
 }
 
+export type ProviderRow = {
+  slug: string;
+  name: string;
+  fund_count: number;
+  confirmed_count: number;
+};
+
+export async function listProvidersWithCounts(): Promise<ProviderRow[]> {
+  return q<ProviderRow>(sql`
+    SELECT
+      p.slug,
+      p.name,
+      (SELECT COUNT(*)::int FROM funds WHERE provider_id = p.id) AS fund_count,
+      (SELECT COUNT(*)::int FROM model_portfolios mp WHERE mp.provider_id = p.id AND mp.status = 'confirmed') AS confirmed_count
+    FROM providers p
+    ORDER BY p.id
+  `);
+}
+
+export type FundInspectorData = {
+  id: number;
+  external_id: string;
+  name: string;
+  isin: string | null;
+  fund_house: string | null;
+  currency: string | null;
+  asset_class: string | null;
+  distribution_type: string | null;
+  risk_rating: number | null;
+  risk_label: string | null;
+  share_class_inception: string | null;
+  fund_size: number | null;
+  fund_size_currency: string | null;
+  dealing_frequency: string | null;
+  benchmark: string | null;
+  sfdr_classification: string | null;
+  expense_ratio: number | null;
+  management_fee: number | null;
+  morningstar_rating: number | null;
+  investment_objective: string | null;
+  nav: number | null;
+  nav_as_of: string | null;
+  change_pct: number | null;
+  ann_1y: number | null;
+  ann_3y: number | null;
+  ann_5y: number | null;
+  ann_10y: number | null;
+};
+
+export async function fundsInspectorForProvider(providerSlug: string): Promise<FundInspectorData[]> {
+  return q<FundInspectorData>(sql`
+    SELECT
+      f.id, f.external_id, f.name, f.isin, f.fund_house, f.currency, f.asset_class,
+      f.distribution_type, f.risk_rating, f.risk_label, f.share_class_inception,
+      f.fund_size, f.fund_size_currency, f.dealing_frequency, f.benchmark,
+      f.sfdr_classification, f.expense_ratio, f.management_fee,
+      f.morningstar_rating, f.investment_objective,
+      s.nav, s.as_of AS nav_as_of, s.change_pct,
+      s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
+    FROM funds f
+    JOIN providers p ON p.id = f.provider_id
+    LEFT JOIN LATERAL (
+      SELECT nav, as_of, change_pct, ann_1y, ann_3y, ann_5y, ann_10y
+      FROM fund_snapshots WHERE fund_id = f.id ORDER BY as_of DESC LIMIT 1
+    ) s ON true
+    WHERE p.slug = ${providerSlug}
+    ORDER BY f.name
+  `);
+}
+
+export type AllocationDetail = {
+  fund_id: number;
+  kind: "asset" | "geography" | "sector" | "holding";
+  label: string;
+  weight_pct: number;
+};
+
+export async function detailedAllocationsForProvider(providerSlug: string): Promise<AllocationDetail[]> {
+  return q<AllocationDetail>(sql`
+    SELECT a.fund_id, a.kind, a.label, a.weight_pct
+    FROM fund_allocations a
+    JOIN funds f ON f.id = a.fund_id
+    JOIN providers p ON p.id = f.provider_id
+    WHERE p.slug = ${providerSlug}
+    ORDER BY a.fund_id, a.kind, a.weight_pct DESC
+  `);
+}
+
+export async function documentsForProvider(providerSlug: string): Promise<{ fund_id: number; type: string; label: string }[]> {
+  return q<{ fund_id: number; type: string; label: string }>(sql`
+    SELECT d.fund_id, d.type, d.label
+    FROM fund_documents d
+    JOIN funds f ON f.id = d.fund_id
+    JOIN providers p ON p.id = f.provider_id
+    WHERE p.slug = ${providerSlug}
+    ORDER BY d.fund_id, d.id
+  `);
+}
+
 export async function countAllConfirmedPortfolios(): Promise<number> {
   const rows = await q<{ n: number }>(sql`
     SELECT COUNT(*)::int AS n FROM model_portfolios WHERE status = 'confirmed'
