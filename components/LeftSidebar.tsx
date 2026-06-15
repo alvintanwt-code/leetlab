@@ -33,19 +33,19 @@ export function LeftSidebar({
     : (user.email?.[0] ?? "?").toUpperCase();
 
   return (
-    <aside className="sticky top-0 flex h-screen w-[272px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
-      <div className="flex items-center gap-2 px-5 py-5">
-        <span className="block h-2 w-2 rounded-full bg-[var(--color-primary)]" aria-hidden />
-        <span className="t-h-md text-[var(--color-ink)]">leetlab</span>
+    <aside className="sticky top-0 flex h-screen w-[220px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+      <div className="flex items-center gap-1.5 px-4 py-3.5">
+        <span className="block h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" aria-hidden />
+        <span className="t-caption font-medium text-[var(--color-ink)]">leetlab</span>
         <span className="t-micro-cap ml-auto">desk</span>
       </div>
 
-      <div className="hairline mx-5 h-px" />
+      <div className="hairline mx-4 h-px" />
 
-      <nav className="flex-1 overflow-y-auto px-3 py-5">
+      <nav className="flex-1 overflow-y-auto px-2.5 py-4">
         {/* LEET RESEARCH section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between px-3 pb-2">
+        <div className="mb-5">
+          <div className="flex items-center justify-between px-2.5 pb-1.5">
             <p className="t-micro-cap">Leet Research</p>
             <span
               className="t-micro-cap text-[10px] text-[var(--color-ink-mute)]"
@@ -58,21 +58,21 @@ export function LeftSidebar({
             <NavItem href="/write" label="Research and Write" active={isResearchWrite} muted />
             <li>
               <div
-                className={`flex items-center justify-between rounded-md px-3 py-2 t-body-md ${
+                className={`flex items-center justify-between rounded-md px-2.5 py-1.5 t-caption ${
                   isConstruction ? "text-[var(--color-ink)]" : "text-[var(--color-ink-2)]"
                 }`}
               >
                 <span className="flex items-center gap-2">
                   {isConstruction && (
                     <span
-                      className="h-3.5 w-[2px] rounded-full bg-[var(--color-primary)]"
+                      className="h-3 w-[2px] rounded-full bg-[var(--color-primary)]"
                       aria-hidden
                     />
                   )}
                   Portfolio Construction
                 </span>
               </div>
-              <ul className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-[var(--color-hairline-2)] pl-2">
+              <ul className="ml-3 mt-1 flex flex-col gap-0.5 border-l border-[var(--color-hairline-2)] pl-2">
                 {providers.map((p) => {
                   const active = activeProvider === p.slug;
                   if (p.disabled) {
@@ -80,7 +80,7 @@ export function LeftSidebar({
                       <li key={p.slug}>
                         <span
                           aria-disabled="true"
-                          className="flex items-center justify-between rounded-md px-3 py-1.5 t-body-md text-[var(--color-ink-mute)] opacity-55"
+                          className="flex items-center justify-between rounded-md px-2.5 py-1 t-caption text-[var(--color-ink-mute)] opacity-55"
                         >
                           {p.short}
                           <span className="num text-[10px]">—</span>
@@ -93,7 +93,7 @@ export function LeftSidebar({
                       <Link
                         href={`/construction/${p.slug}`}
                         className={[
-                          "flex items-center justify-between rounded-md px-3 py-1.5 t-body-md transition-colors",
+                          "flex items-center justify-between rounded-md px-2.5 py-1 t-caption transition-colors",
                           active
                             ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
                             : "text-[var(--color-ink-2)] hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]",
@@ -110,7 +110,7 @@ export function LeftSidebar({
                   <Link
                     href="/portfolios"
                     className={[
-                      "flex items-center justify-between rounded-md px-3 py-1.5 t-body-md transition-colors",
+                      "flex items-center justify-between rounded-md px-2.5 py-1 t-caption transition-colors",
                       pathname === "/portfolios"
                         ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
                         : "text-[var(--color-ink-2)] hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]",
@@ -126,7 +126,7 @@ export function LeftSidebar({
         </div>
 
         {/* divider */}
-        <div className="hairline my-4 mx-3 h-px" />
+        <div className="hairline my-3 mx-2.5 h-px" />
 
         {/* Switch analysis standalone */}
         <ul className="flex flex-col gap-0.5">
@@ -134,18 +134,18 @@ export function LeftSidebar({
         </ul>
       </nav>
 
-      <div className="hairline mx-5 h-px" />
-      <div className="relative px-3 py-3">
+      <div className="hairline mx-4 h-px" />
+      <div className="relative px-2.5 py-2.5">
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-2 hover:bg-[var(--color-canvas-soft)]"
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 hover:bg-[var(--color-canvas-soft)]"
           aria-label="Account menu"
         >
           {user.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.image} alt="" className="h-7 w-7 shrink-0 rounded-full" />
+            <img src={user.image} alt="" className="h-6 w-6 shrink-0 rounded-full" />
           ) : (
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-bg)] text-[10px] font-medium text-[var(--color-primary-deep)]">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-bg)] text-[10px] font-medium text-[var(--color-primary-deep)]">
               {initials}
             </span>
           )}
@@ -180,7 +180,7 @@ function NavItem({ href, label, active, muted }: { href: string; label: string; 
       <Link
         href={href}
         className={[
-          "flex items-center gap-2 rounded-md px-3 py-2 t-body-md transition-colors",
+          "flex items-center gap-2 rounded-md px-2.5 py-1.5 t-caption transition-colors",
           active
             ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
             : muted
@@ -189,7 +189,7 @@ function NavItem({ href, label, active, muted }: { href: string; label: string; 
         ].join(" ")}
       >
         {active && (
-          <span className="h-3.5 w-[2px] rounded-full bg-[var(--color-primary)]" aria-hidden />
+          <span className="h-3 w-[2px] rounded-full bg-[var(--color-primary)]" aria-hidden />
         )}
         {label}
       </Link>

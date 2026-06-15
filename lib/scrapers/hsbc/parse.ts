@@ -196,14 +196,21 @@ function parseAllocations(md: string, asOf: string): NormalizedAllocation[] {
     const m = md.match(re);
     if (!m) return;
     const body = m[1];
-    // Each line looks like "Stock99.16%" or "Technology29.29%" — label glued to %
-    const entryRe = /([A-Za-z][A-Za-z0-9 &\-\/.()]+?)([0-9]+(?:\.[0-9]+)?)\s*%/g;
+    // Each entry looks like "Stock99.16%" or "Technology29.29%" — label glued to %.
+    // Two tricky cases:
+    //   "Asia - Developed3.25%"   → label "Asia - Developed", value +3.25
+    //   "Cash-72.82%"             → label "Cash", value -72.82  (leveraged short)
+    // Distinguish by whether the hyphen is space-surrounded (part of label) or
+    // glued to the digits (sign).
+    const entryRe =
+      /([A-Za-z](?:[A-Za-z0-9 &/.()]|\s-\s)*?[A-Za-z0-9)])(-?)([0-9]+(?:\.[0-9]+)?)\s*%/g;
     let match;
     while ((match = entryRe.exec(body)) !== null) {
+      const sign = match[2] === "-" ? -1 : 1;
       out.push({
         kind,
         label: match[1].trim(),
-        weightPct: parseFloat(match[2]),
+        weightPct: sign * parseFloat(match[3]),
         asOf,
       });
     }

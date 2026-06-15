@@ -112,6 +112,9 @@ function detectHallucination(raw: FwdExtractJson): string | null {
   // Firecrawl's JSON extractor falls back to plausible-but-fake values when
   // the target page didn't render — usually a landing-page fallback. Catch
   // the common tells before we write fake data to the DB.
+  const name = String(raw.name ?? "").trim();
+  if (!name) return "no name returned (empty extraction)";
+  if (/^FWD\s+Singapore\s+Fund$/i.test(name)) return "name matches landing-page fallback";
   const placeholderHolding = (raw.topHoldings ?? []).some((h) =>
     /^Company\s+[A-Z]\b/i.test(String(h?.label ?? "")),
   );
@@ -120,8 +123,6 @@ function detectHallucination(raw: FwdExtractJson): string | null {
   if (/^SG00012345/.test(isin) || /^[A-Z]{2}0+1234/.test(isin)) {
     return `placeholder ISIN ${isin}`;
   }
-  const name = String(raw.name ?? "").trim();
-  if (/^FWD\s+Singapore\s+Fund$/i.test(name)) return "name matches landing-page fallback";
   return null;
 }
 
