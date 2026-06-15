@@ -1,4 +1,4 @@
-import { TopNav, type TopNavProvider } from "@/components/TopNav";
+import { LeftSidebar, type SidebarProvider } from "@/components/LeftSidebar";
 import { listProvidersWithCounts, countAllConfirmedPortfolios } from "@/lib/db/queries";
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
@@ -21,9 +21,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     countAllConfirmedPortfolios(),
   ]);
 
-  const providers: TopNavProvider[] = rawProviders.map((p) => ({
+  const providers: SidebarProvider[] = rawProviders.map((p) => ({
     slug: p.slug,
-    name: p.name,
     short: SHORT_NAMES[p.slug] ?? p.name,
     count: p.fund_count,
     disabled: p.fund_count === 0,
@@ -35,8 +34,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--color-canvas-soft)]">
-      <TopNav
+    <div className="flex min-h-screen bg-[var(--color-canvas-soft)]">
+      <LeftSidebar
         providers={providers}
         confirmedCount={confirmedCount}
         user={{
@@ -46,7 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         }}
         signOutAction={signOutAction}
       />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 min-w-0">{children}</main>
     </div>
   );
 }

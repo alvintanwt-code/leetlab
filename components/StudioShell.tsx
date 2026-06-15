@@ -3,7 +3,16 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FundInspector } from "./FundInspector";
+import { TrailingChart } from "./TrailingChart";
 import type { FundInspectorData, AllocationDetail } from "@/lib/db/queries";
+
+type ChartData = {
+  funds: { isin: string; name: string; weight: number; points: { d: string; v: number }[]; terminal: number }[];
+  model: { points: { d: string; v: number }[]; terminal: number };
+  commonStart: string;
+  commonEnd: string;
+  skipped: number;
+};
 
 type Holding = { fundId: number; weightBps: number };
 type DocByFund = Record<number, { type: string; label: string }[]>;
@@ -114,9 +123,10 @@ export function StudioShell({
     if (basket.length === 0) return null;
     let expense = 0, r1y = 0, r3y = 0, r5y = 0, r10y = 0, risk = 0;
     let covEx = 0, cov1y = 0, cov3y = 0, cov5y = 0, cov10y = 0, covRisk = 0;
-    const aggAsset: Record<string, number> = {};
+    let equityCoverage = 0;
     const aggGeo: Record<string, number> = {};
     const aggSector: Record<string, number> = {};
+    const aggHoldings: Record<string, number> = {};
 
     for (const h of basket) {
       const w = h.weightBps / 10000;
@@ -129,14 +139,33 @@ export function StudioShell({
       if (f.ann_10y != null) { r10y += w * f.ann_10y; cov10y += w; }
       if (f.risk_rating != null) { risk += w * f.risk_rating; covRisk += w; }
       const allocs = allocsByFund.get(f.id) ?? [];
+
+      // Compute this fund's equity proportion from its asset allocation, so sector/geo
+      // (which are equity-sleeve breakdowns) can be scaled by the equity weight.
+      const stockAlloc = allocs.find((a) => a.kind === "asset" && /stock/i.test(a.label));
+      const equityShare = stockAlloc ? stockAlloc.weight_pct / 100 : (f.asset_class?.toLowerCase().includes("equity") ? 1 : 0);
+      equityCoverage += w * equityShare;
+
       for (const a of allocs) {
-        if (a.kind === "asset") aggAsset[a.label] = (aggAsset[a.label] ?? 0) + w * a.weight_pct;
-        else if (a.kind === "geography") aggGeo[a.label] = (aggGeo[a.label] ?? 0) + w * a.weight_pct;
-        else if (a.kind === "sector") aggSector[a.label] = (aggSector[a.label] ?? 0) + w * a.weight_pct;
+        if (a.kind === "geography") {
+          aggGeo[a.label] = (aggGeo[a.label] ?? 0) + w * equityShare * a.weight_pct;
+        } else if (a.kind === "sector") {
+          aggSector[a.label] = (aggSector[a.label] ?? 0) + w * equityShare * a.weight_pct;
+        } else if (a.kind === "holding") {
+          aggHoldings[a.label] = (aggHoldings[a.label] ?? 0) + w * a.weight_pct;
+        }
       }
     }
-    const sorted = (agg: Record<string, number>) =>
-      Object.entries(agg).map(([label, w]) => ({ label, weight_pct: w })).sort((a, b) => b.weight_pct - a.weight_pct);
+
+    // Normalise sector/geo (each is a breakdown of the equity sleeve, so divide by the
+    // total equity exposure to sum to ~100%).
+    const sSec = Object.values(aggSector).reduce((a, b) => a + b, 0) || 1;
+    const sGeo = Object.values(aggGeo).reduce((a, b) => a + b, 0) || 1;
+    const sortedNorm = (agg: Record<string, number>, total: number) =>
+      Object.entries(agg)
+        .map(([label, w]) => ({ label, weight_pct: (w / total) * 100 }))
+        .sort((a, b) => b.weight_pct - a.weight_pct);
+
     return {
       expense: covEx > 0 ? expense / covEx : null,
       risk: covRisk > 0 ? risk / covRisk : null,
@@ -144,11 +173,47 @@ export function StudioShell({
       r3y: cov3y > 0 ? r3y / cov3y : null,
       r5y: cov5y > 0 ? r5y / cov5y : null,
       r10y: cov10y > 0 ? r10y / cov10y : null,
-      asset: sorted(aggAsset),
-      geo: sorted(aggGeo),
-      sector: sorted(aggSector),
+      equityCoverage,
+      geo: sortedNorm(aggGeo, sGeo),
+      sector: sortedNorm(aggSector, sSec),
+      holdings: Object.entries(aggHoldings)
+        .map(([label, w]) => ({ label, weight_pct: w }))
+        .sort((a, b) => b.weight_pct - a.weight_pct)
+        .slice(0, 10),
     };
   }, [basket, fundsById, allocsByFund]);
+
+  const [chart, setChart] = useState<ChartData | null>(null);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [chartError, setChartError] = useState<string | null>(null);
+
+  // Stale the chart whenever basket changes — user must re-analyse to refresh.
+  useEffect(() => { setChart(null); setChartError(null); }, [basket]);
+
+  async function analysePerformance() {
+    setChartLoading(true); setChartError(null);
+    try {
+      const components = basket
+        .map((h) => {
+          const f = fundsById.get(h.fundId);
+          return f && f.isin ? { isin: f.isin, weight: h.weightBps / 10000, name: f.name } : null;
+        })
+        .filter((c): c is { isin: string; weight: number; name: string } => c !== null);
+      if (components.length === 0) throw new Error("None of the basket components have an ISIN to chart.");
+      const res = await fetch("/api/performance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ components }),
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) throw new Error(data?.error ?? `HTTP ${res.status}`);
+      setChart(data as ChartData);
+    } catch (e) {
+      setChartError((e as Error).message);
+    } finally {
+      setChartLoading(false);
+    }
+  }
 
   function toggleAdd(fundId: number) {
     setBasket((prev) =>
@@ -357,37 +422,112 @@ export function StudioShell({
                 </table>
               </div>
 
-              {/* X-ray */}
+              {/* X-ray — Weighted trailing returns KPIs */}
               {xray && (
                 <section className="mt-6 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-                  <p className="t-micro-cap mb-4">X-ray</p>
-                  <div className="grid grid-cols-4 gap-4">
-                    <Metric label="Expense" value={xray.expense != null ? `${xray.expense.toFixed(2)}%` : "—"} />
-                    <Metric label="Risk" value={xray.risk != null ? `${xray.risk.toFixed(1)} / 5` : "—"} />
-                    <Metric label="3Y return" {...fmtPctMetric(xray.r3y)} />
-                    <Metric label="5Y return" {...fmtPctMetric(xray.r5y)} />
+                  <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
+                    <p className="t-micro-cap">Weighted trailing returns</p>
+                    <p className="t-caption text-[var(--color-ink-mute)]">arithmetic weight-average of component returns, fund-ccy basis</p>
                   </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[var(--color-hairline-2)]">
+                    <KpiTile label="1Y" {...fmtPctMetric(xray.r1y)} />
+                    <KpiTile label="3Y pa" {...fmtPctMetric(xray.r3y)} />
+                    <KpiTile label="5Y pa" {...fmtPctMetric(xray.r5y)} />
+                    <KpiTile label="10Y pa" {...fmtPctMetric(xray.r10y)} />
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[var(--color-hairline-2)] border-t border-[var(--color-hairline-2)] pt-4">
+                    <KpiTile label="Expense" value={xray.expense != null ? `${xray.expense.toFixed(2)}%` : "—"} />
+                    <KpiTile label="Risk score" value={xray.risk != null ? `${xray.risk.toFixed(1)} / 5` : "—"} />
+                    <KpiTile label="Equity coverage" value={`${(xray.equityCoverage * 100).toFixed(0)}%`} />
+                    <KpiTile label="Holdings" value={`${basket.length}`} />
+                  </div>
+                </section>
+              )}
 
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {xray.asset.length > 0 && (
-                      <div>
-                        <p className="t-caption mb-3 text-[var(--color-ink-mute)]">Asset allocation</p>
-                        <BarsLite items={xray.asset.slice(0, 8)} />
+              {/* Sector + Geographic allocation — two-column */}
+              {xray && (xray.sector.length > 0 || xray.geo.length > 0) && (
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {xray.sector.length > 0 && (
+                    <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                      <div className="mb-4 flex items-baseline justify-between gap-3">
+                        <p className="t-micro-cap">Sector allocation</p>
+                        <p className="t-caption text-[var(--color-ink-mute)]">equity sleeve &middot; <span className="num">{(xray.equityCoverage * 100).toFixed(0)}%</span> of portfolio is equity</p>
                       </div>
-                    )}
-                    {xray.geo.length > 0 && (
-                      <div>
-                        <p className="t-caption mb-3 text-[var(--color-ink-mute)]">Geographies</p>
-                        <BarsLite items={xray.geo.slice(0, 8)} />
+                      <BarsRow items={xray.sector.slice(0, 11)} color="var(--color-primary)" />
+                    </section>
+                  )}
+                  {xray.geo.length > 0 && (
+                    <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                      <div className="mb-4 flex items-baseline justify-between gap-3">
+                        <p className="t-micro-cap">Geographic allocation</p>
+                        <p className="t-caption text-[var(--color-ink-mute)]">equity sleeve, by domicile region</p>
                       </div>
-                    )}
-                    {xray.sector.length > 0 && (
-                      <div>
-                        <p className="t-caption mb-3 text-[var(--color-ink-mute)]">Sectors</p>
-                        <BarsLite items={xray.sector.slice(0, 8)} />
-                      </div>
-                    )}
+                      <BarsRow items={xray.geo.slice(0, 11)} color="#946638" />
+                    </section>
+                  )}
+                </div>
+              )}
+
+              {/* Top 10 look-through holdings */}
+              {xray && xray.holdings.length > 0 && (
+                <section className="mt-4 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                  <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
+                    <p className="t-micro-cap">Top 10 look-through holdings</p>
+                    <p className="t-caption text-[var(--color-ink-mute)]">weight &times; position, across all components</p>
                   </div>
+                  <table className="table-pro" style={{ tableLayout: "fixed" }}>
+                    <colgroup>
+                      <col style={{ width: "8%" }} />
+                      <col style={{ width: "72%" }} />
+                      <col style={{ width: "20%" }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Holding</th>
+                        <th className="right">Portfolio weight</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {xray.holdings.map((h, i) => (
+                        <tr key={h.label}>
+                          <td className="nowrap">
+                            <span className="num text-[var(--color-ink-mute)]">{i + 1}</span>
+                          </td>
+                          <td className="cell-fund">
+                            <span className="name text-[var(--color-ink)]" title={h.label}>{h.label}</span>
+                          </td>
+                          <td className="nowrap right">
+                            <span className="num text-[var(--color-ink)]">{h.weight_pct.toFixed(2)}%</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              )}
+
+              {/* Trailing performance chart */}
+              {xray && (
+                <section className="mt-4">
+                  {chart ? (
+                    <TrailingChart {...chart} />
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-8 text-center">
+                      <p className="t-micro-cap mb-2">Trailing performance · growth of 100</p>
+                      <p className="t-body-md mx-auto max-w-md text-[var(--color-ink-mute)]">
+                        Pull a live Morningstar look-through for each component and chart the weight-blended model line against its components, rebased to 100.
+                      </p>
+                      {chartError && <p className="mt-3 t-caption text-[var(--color-negative)]">{chartError}</p>}
+                      <button
+                        onClick={analysePerformance}
+                        disabled={chartLoading || basket.length === 0}
+                        className={`mt-5 btn-pill ${chartLoading || basket.length === 0 ? "btn-ghost opacity-60" : "btn-primary"}`}
+                      >
+                        {chartLoading ? "Fetching from Morningstar…" : "Analyse trailing performance"}
+                      </button>
+                    </div>
+                  )}
                 </section>
               )}
             </>
@@ -459,11 +599,11 @@ export function StudioShell({
   );
 }
 
-function Metric({ label, value, valueCls }: { label: string; value: string; valueCls?: string }) {
+function KpiTile({ label, value, valueCls }: { label: string; value: string; valueCls?: string }) {
   return (
-    <div>
-      <p className="t-caption text-[var(--color-ink-mute)]">{label}</p>
-      <p className={`t-h-md num mt-1 ${valueCls ?? "text-[var(--color-ink)]"}`}>{value}</p>
+    <div className="px-4 first:pl-0 last:pr-0">
+      <p className={`num t-display-md leading-none ${valueCls ?? "text-[var(--color-ink)]"}`}>{value}</p>
+      <p className="t-micro-cap mt-2 text-[10px]">{label}</p>
     </div>
   );
 }
@@ -473,19 +613,20 @@ function fmtPctMetric(v: number | null): { value: string; valueCls: string } {
   return { value: f.text, valueCls: f.cls };
 }
 
-function BarsLite({ items }: { items: { label: string; weight_pct: number }[] }) {
+function BarsRow({ items, color }: { items: { label: string; weight_pct: number }[]; color: string }) {
+  const max = items.length > 0 ? items[0].weight_pct : 1;
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="flex flex-col gap-1.5">
       {items.map((a) => (
         <li key={a.label} className="flex items-center gap-3">
-          <span className="t-body-md w-28 shrink-0 truncate text-[var(--color-ink-2)]" title={a.label}>{a.label}</span>
-          <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--color-hairline-2)]">
+          <span className="t-body-md w-32 shrink-0 truncate text-[var(--color-ink-2)]" title={a.label}>{a.label}</span>
+          <span className="relative h-3.5 flex-1 overflow-hidden rounded-sm bg-[var(--color-canvas-soft)]">
             <span
-              className="absolute inset-y-0 left-0 bg-[var(--color-primary)]"
-              style={{ width: `${Math.min(100, a.weight_pct).toFixed(2)}%` }}
+              className="absolute inset-y-0 left-0 rounded-sm"
+              style={{ width: `${Math.max(1, Math.min(100, (a.weight_pct / max) * 100)).toFixed(1)}%`, background: color }}
             />
           </span>
-          <span className="num w-12 shrink-0 text-right text-[11px] text-[var(--color-ink)]">{a.weight_pct.toFixed(1)}%</span>
+          <span className="num w-14 shrink-0 text-right text-[12px] text-[var(--color-ink)]">{a.weight_pct.toFixed(1)}%</span>
         </li>
       ))}
     </ul>
