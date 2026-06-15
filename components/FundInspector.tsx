@@ -1,6 +1,7 @@
 "use client";
 
 import type { FundInspectorData, AllocationDetail } from "@/lib/db/queries";
+import { NavSparkline } from "./NavSparkline";
 
 type DocInfo = { type: string; label: string };
 
@@ -124,19 +125,27 @@ export function FundInspector({
         </header>
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          {/* NAV block */}
+          {/* NAV block + live sparkline */}
           {fund.nav != null && (
             <div className="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft)] p-4">
-              <p className="t-micro-cap mb-1">NAV</p>
-              <p className="num t-display-md text-[var(--color-ink)]">
-                {fund.currency} {fund.nav.toFixed(2)}
-              </p>
-              <p className="t-caption mt-1 text-[var(--color-ink-mute)]">
-                as of <span className="num">{fmtDate(fund.nav_as_of)}</span>
-                {fund.change_pct != null && (
-                  <> &middot; <span className={change.cls}>{change.text}</span></>
-                )}
-              </p>
+              <div className="flex items-baseline justify-between gap-2">
+                <div>
+                  <p className="t-micro-cap mb-1">NAV</p>
+                  <p className="num t-display-md text-[var(--color-ink)]">
+                    {fund.currency} {fund.nav.toFixed(2)}
+                  </p>
+                </div>
+                <p className="t-caption text-right text-[var(--color-ink-mute)]">
+                  as of <span className="num">{fmtDate(fund.nav_as_of)}</span>
+                  {fund.change_pct != null && (
+                    <>
+                      <br />
+                      1d <span className={change.cls}>{change.text}</span>
+                    </>
+                  )}
+                </p>
+              </div>
+              {fund.isin && <NavSparkline isin={fund.isin} name={fund.name} currency={fund.currency} />}
             </div>
           )}
 
