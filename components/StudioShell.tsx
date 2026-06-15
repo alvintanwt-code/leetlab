@@ -152,6 +152,15 @@ export function StudioShell({
         } else if (a.kind === "sector") {
           aggSector[a.label] = (aggSector[a.label] ?? 0) + w * equityShare * a.weight_pct;
         } else if (a.kind === "holding") {
+          // Filter garbled bond-fund holdings (weight > 100% impossible, or
+          // label is just a date fragment like "11/15/" from a parser split
+          // on an embedded coupon %).
+          if (
+            a.weight_pct > 100 ||
+            a.weight_pct < 0 ||
+            /^\d+\/\d*\/?$/.test(a.label) ||
+            a.label.length < 3
+          ) continue;
           aggHoldings[a.label] = (aggHoldings[a.label] ?? 0) + w * a.weight_pct;
         }
       }
@@ -399,6 +408,7 @@ export function StudioShell({
                               max={100}
                               step={0.1}
                               value={h.weightBps / 100}
+                              onFocus={(e) => e.target.select()}
                               onChange={(e) => setWeight(h.fundId, parseFloat(e.target.value || "0"))}
                               className="num w-20 rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-2 py-1 text-right text-[var(--color-ink)] outline-none focus:border-[var(--color-primary)]"
                             />

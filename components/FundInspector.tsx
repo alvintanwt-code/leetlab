@@ -67,7 +67,17 @@ export function FundInspector({
   const asset = allocations.filter((a) => a.kind === "asset");
   const geo = allocations.filter((a) => a.kind === "geography");
   const sector = allocations.filter((a) => a.kind === "sector");
-  const holdings = allocations.filter((a) => a.kind === "holding");
+  const holdings = allocations.filter(
+    // Drop garbled bond-fund rows: weight > 100% impossible for a single
+    // holding, and date-only labels like "11/15/" mean the parser split on
+    // an embedded coupon "%" and the real label is lost.
+    (a) =>
+      a.kind === "holding" &&
+      a.weight_pct <= 100 &&
+      a.weight_pct >= 0 &&
+      !/^\d+\/\d*\/?$/.test(a.label) &&
+      a.label.length >= 3,
+  );
 
   const change = fmtPct(fund.change_pct);
 
