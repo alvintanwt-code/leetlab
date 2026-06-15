@@ -36,7 +36,8 @@ export function LeftSidebar({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isResearchWrite = pathname.startsWith("/write");
-  const isBuilder = pathname.startsWith("/construction") || pathname === "/portfolios";
+  const isBuilder = pathname.startsWith("/construction");
+  const isModels = pathname.startsWith("/portfolios");
   const isSwitch = pathname.startsWith("/switch");
 
   const initials = user.name
@@ -49,6 +50,7 @@ export function LeftSidebar({
         <ul className="flex flex-col gap-0.5">
           <NavItem href="/write" label="Research and Write" active={isResearchWrite} locked />
           <NavItem href={defaultBuilderHref} label="Portfolio Builder" active={isBuilder} locked />
+          <NavItem href="/portfolios" label="Model Portfolios" active={isModels} />
           <NavItem href="/switch" label="Fund Switch Analysis" active={isSwitch} />
         </ul>
       </nav>
