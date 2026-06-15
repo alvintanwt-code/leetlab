@@ -79,6 +79,9 @@ export function StudioShell({
   const [confirmNotes, setConfirmNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Track which weight input is focused so we can show the placeholder
+  // (empty field) instead of a literal "0" while the user is typing.
+  const [focusedWeightId, setFocusedWeightId] = useState<number | null>(null);
 
   // "/" focuses search like the HTML prototype.
   useEffect(() => {
@@ -273,7 +276,7 @@ export function StudioShell({
   }
 
   return (
-    <div className="grid h-[calc(100vh-104px)] grid-cols-12 gap-0">
+    <div className="grid h-[calc(100vh-48px)] grid-cols-12 gap-0">
       {/* LEFT — fund picker */}
       <section className="col-span-4 flex flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
         <div className="border-b border-[var(--color-hairline)] px-4 py-3">
@@ -407,10 +410,19 @@ export function StudioShell({
                               min={0}
                               max={100}
                               step={0.1}
-                              value={h.weightBps / 100}
-                              onFocus={(e) => e.target.select()}
+                              placeholder="0"
+                              value={
+                                focusedWeightId === h.fundId && h.weightBps === 0
+                                  ? ""
+                                  : h.weightBps / 100
+                              }
+                              onFocus={(e) => {
+                                setFocusedWeightId(h.fundId);
+                                e.target.select();
+                              }}
+                              onBlur={() => setFocusedWeightId(null)}
                               onChange={(e) => setWeight(h.fundId, parseFloat(e.target.value || "0"))}
-                              className="num w-20 rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-2 py-1 text-right text-[var(--color-ink)] outline-none focus:border-[var(--color-primary)]"
+                              className="num w-20 rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-2 py-1 text-right text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-mute)] focus:border-[var(--color-primary)]"
                             />
                           </td>
                           <td className="nowrap right"><span className={`num ${r1.cls}`}>{r1.text}</span></td>

@@ -33,15 +33,7 @@ export function LeftSidebar({
     : (user.email?.[0] ?? "?").toUpperCase();
 
   return (
-    <aside className="sticky top-0 flex h-screen w-[220px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
-      <div className="flex items-center gap-1.5 px-4 py-3.5">
-        <span className="block h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" aria-hidden />
-        <span className="t-caption font-medium text-[var(--color-ink)]">leetlab</span>
-        <span className="t-micro-cap ml-auto">desk</span>
-      </div>
-
-      <div className="hairline mx-4 h-px" />
-
+    <aside className="flex h-full w-[220px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
       <nav className="flex-1 overflow-y-auto px-2.5 py-4">
         {/* LEET RESEARCH section */}
         <div className="mb-5">
