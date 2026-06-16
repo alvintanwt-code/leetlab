@@ -21,7 +21,13 @@ function fmtPct(v: number | null): { text: string; cls: string } {
   return { text: `${sign}${Math.abs(v).toFixed(2)}%`, cls };
 }
 
-function Bars({ items }: { items: { label: string; weight_pct: number }[] }) {
+function Bars({
+  items,
+  color = "var(--color-primary)",
+}: {
+  items: { label: string; weight_pct: number }[];
+  color?: string;
+}) {
   if (items.length === 0) return <p className="t-caption text-[var(--color-ink-mute)]">Not disclosed.</p>;
   return (
     <ul className="flex flex-col gap-2">
@@ -30,14 +36,50 @@ function Bars({ items }: { items: { label: string; weight_pct: number }[] }) {
           <span className="t-body-md w-32 shrink-0 truncate text-[var(--color-ink-2)]" title={a.label}>{a.label}</span>
           <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--color-hairline-2)]">
             <span
-              className="absolute inset-y-0 left-0 bg-[var(--color-primary)]"
-              style={{ width: `${Math.min(100, a.weight_pct).toFixed(2)}%` }}
+              className="absolute inset-y-0 left-0"
+              style={{ width: `${Math.min(100, a.weight_pct).toFixed(2)}%`, background: color }}
             />
           </span>
           <span className="num w-14 shrink-0 text-right text-[12px] text-[var(--color-ink)]">{a.weight_pct.toFixed(1)}%</span>
         </li>
       ))}
     </ul>
+  );
+}
+
+function HoldingsTable({ items }: { items: { label: string; weight_pct: number }[] }) {
+  if (items.length === 0) return <p className="t-caption text-[var(--color-ink-mute)]">Not disclosed.</p>;
+  return (
+    <table className="w-full">
+      <thead>
+        <tr className="border-b border-[var(--color-hairline)]">
+          <th className="t-micro-cap pb-2 pr-2 text-left w-8 font-normal">#</th>
+          <th className="t-micro-cap pb-2 text-left font-normal">Holding</th>
+          <th className="t-micro-cap pb-2 pl-2 text-right font-normal">Weight</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.slice(0, 10).map((h, i) => (
+          <tr
+            key={h.label}
+            className="border-b border-[var(--color-hairline-2)] last:border-0"
+          >
+            <td className="num py-2.5 pr-2 text-left text-[var(--color-ink-mute)]">
+              {i + 1}
+            </td>
+            <td
+              className="t-body-md py-2.5 text-left text-[var(--color-ink)] truncate"
+              title={h.label}
+            >
+              {h.label}
+            </td>
+            <td className="num py-2.5 pl-2 text-right text-[var(--color-ink)]">
+              {h.weight_pct.toFixed(2)}%
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -179,29 +221,29 @@ export function FundInspector({
 
           {holdings.length > 0 && (
             <section className="mt-6">
-              <p className="t-micro-cap mb-3">Top holdings</p>
-              <Bars items={holdings} />
-            </section>
-          )}
-
-          {geo.length > 0 && (
-            <section className="mt-6">
-              <p className="t-micro-cap mb-3">Geographic allocation</p>
-              <Bars items={geo} />
+              <p className="t-micro-cap mb-3">Top {Math.min(10, holdings.length)} holdings</p>
+              <HoldingsTable items={holdings} />
             </section>
           )}
 
           {sector.length > 0 && (
             <section className="mt-6">
               <p className="t-micro-cap mb-3">Sector allocation</p>
-              <Bars items={sector} />
+              <Bars items={sector} color="var(--color-primary)" />
+            </section>
+          )}
+
+          {geo.length > 0 && (
+            <section className="mt-6">
+              <p className="t-micro-cap mb-3">Geographic allocation</p>
+              <Bars items={geo} color="#c8810a" />
             </section>
           )}
 
           {asset.length > 0 && (
             <section className="mt-6">
               <p className="t-micro-cap mb-3">Asset allocation</p>
-              <Bars items={asset} />
+              <Bars items={asset} color="var(--color-positive)" />
             </section>
           )}
 
