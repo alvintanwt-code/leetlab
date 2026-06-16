@@ -342,11 +342,12 @@ export function StudioShell({
   }
 
   return (
-    <div className="flex h-[calc(100vh-48px)] flex-col">
-      {/* Provider tab row — full width above the studio body */}
+    <div className="flex h-[calc(100vh-48px)]">
+      {/* LEFT — fund picker (provider tabs + search + list as one panel) */}
+      <section className="flex w-[20vw] min-w-[240px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
       <nav
         aria-label="Provider"
-        className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-5 py-2"
+        className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2"
       >
         {providerTabs.map((t) => {
           const active = t.slug === providerSlug;
@@ -381,13 +382,8 @@ export function StudioShell({
           );
         })}
       </nav>
-
-      {/* Studio body — fund picker + builder */}
-      <div className="flex flex-1 min-h-0">
-      {/* LEFT — fund picker */}
-      <section className="flex w-[20vw] min-w-[240px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
         <div className="border-b border-[var(--color-hairline)] px-4 py-3">
-          <p className="t-micro-cap mb-2">Available on {providerName} · click name to inspect, + to add</p>
+          <p className="t-micro-cap mb-2">Click name to inspect · + to add</p>
           <div className="flex items-center gap-2 rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-1.5">
             <span className="text-[var(--color-ink-mute)]">⌕</span>
             <input
@@ -420,7 +416,6 @@ export function StudioShell({
                   <span className="min-w-0 flex-1 t-body-md truncate text-[var(--color-ink)]" title={f.name}>
                     {f.name}
                   </span>
-                  <span className="num shrink-0 text-[10px] text-[var(--color-ink-mute)]">{f.isin ?? f.external_id}</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleAdd(f.id); }}
                     className={[
@@ -480,7 +475,7 @@ export function StudioShell({
           ) : (
             <>
               {/* basket table */}
-              <div className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+              <div className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
                 <table className="table-pro" style={{ tableLayout: "fixed" }}>
                   <colgroup>
                     <col style={{ width: "42%" }} />
@@ -551,119 +546,124 @@ export function StudioShell({
                 </table>
               </div>
 
-              {/* X-ray — Weighted trailing returns KPIs */}
+              {/* Portfolio X-ray — analysis panel groups all weighted-exposure cards */}
               {xray && (
-                <section className="mt-6 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                <section className="mt-6 rounded-xl bg-[var(--color-canvas-xray)] p-5">
                   <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
-                    <p className="t-micro-cap">Weighted trailing returns</p>
-                    <p className="t-caption text-[var(--color-ink-mute)]">arithmetic weight-average of component returns, fund-ccy basis</p>
+                    <p className="t-micro-cap text-[var(--color-ink)]">Portfolio X-ray</p>
+                    <p className="t-caption text-[var(--color-ink-mute)]">weighted exposure analysis across the basket</p>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[var(--color-hairline-2)]">
-                    <KpiTile label="1Y" {...fmtPctMetric(xray.r1y)} />
-                    <KpiTile label="3Y pa" {...fmtPctMetric(xray.r3y)} />
-                    <KpiTile label="5Y pa" {...fmtPctMetric(xray.r5y)} />
-                    <KpiTile label="10Y pa" {...fmtPctMetric(xray.r10y)} />
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[var(--color-hairline-2)] border-t border-[var(--color-hairline-2)] pt-4">
-                    <KpiTile label="Expense" value={xray.expense != null ? `${xray.expense.toFixed(2)}%` : "—"} />
-                    <KpiTile label="Risk score" value={xray.risk != null ? `${xray.risk.toFixed(1)} / 5` : "—"} />
-                    <KpiTile label="Equity coverage" value={`${(xray.equityCoverage * 100).toFixed(0)}%`} />
-                    <KpiTile label="Holdings" value={`${basket.length}`} />
-                  </div>
-                </section>
-              )}
 
-              {/* Sector + Geographic allocation — two-column */}
-              {xray && (xray.sector.length > 0 || xray.geo.length > 0) && (
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {xray.sector.length > 0 && (
-                    <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-                      <div className="mb-4 flex items-baseline justify-between gap-3">
-                        <p className="t-micro-cap">Sector allocation</p>
-                        <p className="t-caption text-[var(--color-ink-mute)]">equity sleeve &middot; <span className="num">{(xray.equityCoverage * 100).toFixed(0)}%</span> of portfolio is equity</p>
-                      </div>
-                      <BarsRow items={xray.sector.slice(0, 11)} color="var(--color-primary)" />
-                    </section>
-                  )}
-                  {xray.geo.length > 0 && (
-                    <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-                      <div className="mb-4 flex items-baseline justify-between gap-3">
-                        <p className="t-micro-cap">Geographic allocation</p>
-                        <p className="t-caption text-[var(--color-ink-mute)]">equity sleeve, by domicile region</p>
-                      </div>
-                      <BarsRow items={xray.geo.slice(0, 11)} color="#946638" />
-                    </section>
-                  )}
-                </div>
-              )}
+                  {/* Weighted trailing returns KPIs */}
+                  <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                    <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
+                      <p className="t-micro-cap">Weighted trailing returns</p>
+                      <p className="t-caption text-[var(--color-ink-mute)]">arithmetic weight-average of component returns, fund-ccy basis</p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[var(--color-hairline-2)]">
+                      <KpiTile label="1Y" {...fmtPctMetric(xray.r1y)} />
+                      <KpiTile label="3Y pa" {...fmtPctMetric(xray.r3y)} />
+                      <KpiTile label="5Y pa" {...fmtPctMetric(xray.r5y)} />
+                      <KpiTile label="10Y pa" {...fmtPctMetric(xray.r10y)} />
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[var(--color-hairline-2)] border-t border-[var(--color-hairline-2)] pt-4">
+                      <KpiTile label="Expense" value={xray.expense != null ? `${xray.expense.toFixed(2)}%` : "—"} />
+                      <KpiTile label="Risk score" value={xray.risk != null ? `${xray.risk.toFixed(1)} / 5` : "—"} />
+                      <KpiTile label="Equity coverage" value={`${(xray.equityCoverage * 100).toFixed(0)}%`} />
+                      <KpiTile label="Holdings" value={`${basket.length}`} />
+                    </div>
+                  </section>
 
-              {/* Top 10 look-through holdings */}
-              {xray && xray.holdings.length > 0 && (
-                <section className="mt-4 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-                  <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
-                    <p className="t-micro-cap">Top 10 look-through holdings</p>
-                    <p className="t-caption text-[var(--color-ink-mute)]">weight &times; position, across all components</p>
-                  </div>
-                  <table className="table-pro" style={{ tableLayout: "fixed" }}>
-                    <colgroup>
-                      <col style={{ width: "8%" }} />
-                      <col style={{ width: "72%" }} />
-                      <col style={{ width: "20%" }} />
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Holding</th>
-                        <th className="right">Portfolio weight</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {xray.holdings.map((h, i) => (
-                        <tr key={h.label}>
-                          <td className="nowrap">
-                            <span className="num text-[var(--color-ink-mute)]">{i + 1}</span>
-                          </td>
-                          <td className="cell-fund">
-                            <span className="name text-[var(--color-ink)]" title={h.label}>{h.label}</span>
-                          </td>
-                          <td className="nowrap right">
-                            <span className="num text-[var(--color-ink)]">{h.weight_pct.toFixed(2)}%</span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </section>
-              )}
-
-              {/* Trailing performance chart */}
-              {xray && (
-                <section className="mt-4">
-                  {chart ? (
-                    <TrailingChart {...chart} />
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-8 text-center">
-                      <p className="t-micro-cap mb-2">Trailing performance · growth of 100</p>
-                      <p className="t-body-md mx-auto max-w-md text-[var(--color-ink-mute)]">
-                        Pull a live Morningstar look-through for each component and chart the weight-blended model line against its components, rebased to 100.
-                      </p>
-                      {chartError && <p className="mt-3 t-caption text-[var(--color-negative)]">{chartError}</p>}
-                      <button
-                        onClick={analysePerformance}
-                        disabled={chartLoading || basket.length === 0}
-                        className={`mt-5 btn-pill ${chartLoading || basket.length === 0 ? "btn-ghost opacity-60" : "btn-primary"}`}
-                      >
-                        {chartLoading ? "Fetching from Morningstar…" : "Analyse trailing performance"}
-                      </button>
+                  {/* Sector + Geographic allocation — two-column */}
+                  {(xray.sector.length > 0 || xray.geo.length > 0) && (
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {xray.sector.length > 0 && (
+                        <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                          <div className="mb-4 flex items-baseline justify-between gap-3">
+                            <p className="t-micro-cap">Sector allocation</p>
+                            <p className="t-caption text-[var(--color-ink-mute)]">equity sleeve &middot; <span className="num">{(xray.equityCoverage * 100).toFixed(0)}%</span> of portfolio is equity</p>
+                          </div>
+                          <BarsRow items={xray.sector.slice(0, 11)} color="var(--color-primary)" />
+                        </section>
+                      )}
+                      {xray.geo.length > 0 && (
+                        <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                          <div className="mb-4 flex items-baseline justify-between gap-3">
+                            <p className="t-micro-cap">Geographic allocation</p>
+                            <p className="t-caption text-[var(--color-ink-mute)]">equity sleeve, by domicile region</p>
+                          </div>
+                          <BarsRow items={xray.geo.slice(0, 11)} color="#946638" />
+                        </section>
+                      )}
                     </div>
                   )}
+
+                  {/* Top 10 look-through holdings */}
+                  {xray.holdings.length > 0 && (
+                    <section className="mt-4 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                      <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
+                        <p className="t-micro-cap">Top 10 look-through holdings</p>
+                        <p className="t-caption text-[var(--color-ink-mute)]">weight &times; position, across all components</p>
+                      </div>
+                      <table className="table-pro" style={{ tableLayout: "fixed" }}>
+                        <colgroup>
+                          <col style={{ width: "8%" }} />
+                          <col style={{ width: "72%" }} />
+                          <col style={{ width: "20%" }} />
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Holding</th>
+                            <th className="right">Portfolio weight</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {xray.holdings.map((h, i) => (
+                            <tr key={h.label}>
+                              <td className="nowrap">
+                                <span className="num text-[var(--color-ink-mute)]">{i + 1}</span>
+                              </td>
+                              <td className="cell-fund">
+                                <span className="name text-[var(--color-ink)]" title={h.label}>{h.label}</span>
+                              </td>
+                              <td className="nowrap right">
+                                <span className="num text-[var(--color-ink)]">{h.weight_pct.toFixed(2)}%</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </section>
+                  )}
+
+                  {/* Trailing performance chart */}
+                  <section className="mt-4">
+                    {chart ? (
+                      <TrailingChart {...chart} />
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-8 text-center">
+                        <p className="t-micro-cap mb-2">Trailing performance · growth of 100</p>
+                        <p className="t-body-md mx-auto max-w-md text-[var(--color-ink-mute)]">
+                          Pull a live Morningstar look-through for each component and chart the weight-blended model line against its components, rebased to 100.
+                        </p>
+                        {chartError && <p className="mt-3 t-caption text-[var(--color-negative)]">{chartError}</p>}
+                        <button
+                          onClick={analysePerformance}
+                          disabled={chartLoading || basket.length === 0}
+                          className={`mt-5 btn-pill ${chartLoading || basket.length === 0 ? "btn-ghost opacity-60" : "btn-primary"}`}
+                        >
+                          {chartLoading ? "Fetching from Morningstar…" : "Analyse trailing performance"}
+                        </button>
+                      </div>
+                    )}
+                  </section>
                 </section>
               )}
             </>
           )}
         </div>
       </section>
-      </div>
 
       {/* Inspector drawer */}
       {inspected && (
