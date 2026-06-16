@@ -64,7 +64,7 @@ function HoldingsTable({ items }: { items: { label: string; weight_pct: number }
             key={h.label}
             className="border-b border-[var(--color-hairline-2)] last:border-0"
           >
-            <td className="num py-2.5 pr-2 text-left text-[var(--color-ink-mute)]">
+            <td className="num py-2.5 pr-2 text-left text-[12px] text-[var(--color-ink-mute)]">
               {i + 1}
             </td>
             <td
@@ -73,7 +73,7 @@ function HoldingsTable({ items }: { items: { label: string; weight_pct: number }
             >
               {h.label}
             </td>
-            <td className="num py-2.5 pl-2 text-right text-[var(--color-ink)]">
+            <td className="num py-2.5 pl-2 text-right text-[12px] text-[var(--color-ink)]">
               {h.weight_pct.toFixed(2)}%
             </td>
           </tr>
