@@ -3,7 +3,7 @@ import { join } from "node:path";
 config({ path: join(process.cwd(), ".env.local") });
 
 import { readFileSync } from "node:fs";
-import { fetchUniverse, fetchFundSnapshot } from "../lib/morningstar/api";
+import { fetchUniverse, fetchFundSnapshotByAny } from "../lib/morningstar/api";
 import { parseMorningstarSnapshot } from "../lib/morningstar/parse";
 import {
   getProviderId,
@@ -102,7 +102,7 @@ async function syncProvider(p: Provider, sample: number | null): Promise<void> {
   for (const [i, entry] of targets.entries()) {
     if (i > 0) await new Promise((r) => setTimeout(r, THROTTLE_MS));
     try {
-      const json = await fetchFundSnapshot(entry.isin);
+      const json = await fetchFundSnapshotByAny(entry.isin, entry.secId);
       // The API returns {} for unknown ISINs — treat that as a soft failure.
       if (!json || Object.keys(json).length <= 2) {
         throw new Error("empty snapshot from Morningstar");

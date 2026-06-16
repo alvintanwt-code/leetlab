@@ -54,20 +54,46 @@ export async function fetchUniverse(universeId: string): Promise<UniverseFund[]>
   return data.rows ?? [];
 }
 
+export type IdType = "isin" | "msid";
+
 /**
- * Fetch the full MFsnapshot payload for one fund by ISIN.
- * Returns the raw JSON — pass to parseMorningstarSnapshot to map into ScrapedFund.
+ * Fetch the full MFsnapshot payload for one fund.
+ *   idType="isin"  → standard ISIN (works for most LU/IE funds)
+ *   idType="msid"  → Morningstar security ID (e.g. F00000XOR0) — required
+ *                    for SG-prefixed local codes that aren't true ISINs.
  */
-export async function fetchFundSnapshot(isin: string): Promise<MorningstarSnapshot> {
+export async function fetchFundSnapshot(
+  id: string,
+  idType: IdType = "isin",
+): Promise<MorningstarSnapshot> {
   const params = new URLSearchParams({
-    idtype: "isin",
+    idtype: idType,
     languageId: "en-GB",
     responseViewFormat: "json",
     viewId: "MFsnapshot",
   });
-  const url = `${BASE_URL}/security_details/${encodeURIComponent(isin)}?${params}`;
+  const url = `${BASE_URL}/security_details/${encodeURIComponent(id)}?${params}`;
   const res = await fetchWithRetry(url);
-  if (!res.ok) throw new Error(`Morningstar snapshot HTTP ${res.status} for ISIN ${isin}`);
+  if (!res.ok) throw new Error(`Morningstar snapshot HTTP ${res.status} for ${idType} ${id}`);
   const data = (await res.json()) as MorningstarSnapshot | MorningstarSnapshot[];
   return Array.isArray(data) ? data[0] : data;
+}
+
+/**
+ * Try ISIN first, fall back to Morningstar secId if the snapshot comes back empty
+ * (Singapore-domiciled funds with MAS-issued SG9999... codes aren't indexed by
+ * ISIN at Morningstar — they need msid).
+ */
+export async function fetchFundSnapshotByAny(
+  isin: string,
+  secId: string | null,
+): Promise<MorningstarSnapshot> {
+  if (isin) {
+    const j = await fetchFundSnapshot(isin, "isin");
+    if (j && Object.keys(j).length > 2) return j;
+  }
+  if (secId) {
+    return fetchFundSnapshot(secId, "msid");
+  }
+  throw new Error(`No usable identifier (isin=${isin}, secId=${secId})`);
 }
