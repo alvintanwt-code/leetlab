@@ -85,7 +85,7 @@ function HoldingsTable({ items }: { items: { label: string; weight_pct: number }
 
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] py-2 last:border-0">
+    <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] py-1.5 last:border-0">
       <dt className="t-caption text-[var(--color-ink-mute)]">{label}</dt>
       <dd className="t-body-md text-[var(--color-ink)]">{value ?? "—"}</dd>
     </div>
@@ -134,7 +134,7 @@ export function FundInspector({
         role="dialog"
         aria-label={`Fund inspector — ${fund.name}`}
       >
-        <header className="border-b border-[var(--color-hairline)] px-5 py-4">
+        <header className="border-b border-[var(--color-hairline)] px-5 py-3">
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">
               <p className="t-micro-cap mb-1">Fund</p>
@@ -166,7 +166,7 @@ export function FundInspector({
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex-1 overflow-y-auto px-5 py-4">
           {/* NAV block + live sparkline */}
           {fund.nav != null && (
             <div className="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft)] p-4">
@@ -192,7 +192,7 @@ export function FundInspector({
           )}
 
           {/* Returns */}
-          <section className="mt-6">
+          <section className="mt-4">
             <p className="t-micro-cap mb-2">Annualised returns</p>
             <div className="grid grid-cols-4 gap-3 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3">
               {([
@@ -213,41 +213,41 @@ export function FundInspector({
           </section>
 
           {fund.investment_objective && (
-            <section className="mt-6">
+            <section className="mt-4">
               <p className="t-micro-cap mb-2">Investment objective</p>
-              <p className="t-body-md leading-relaxed text-[var(--color-ink-2)]">{fund.investment_objective}</p>
+              <p className="t-body-md text-[var(--color-ink-2)]">{fund.investment_objective}</p>
             </section>
           )}
 
           {holdings.length > 0 && (
-            <section className="mt-6">
-              <p className="t-micro-cap mb-3">Top {Math.min(10, holdings.length)} holdings</p>
+            <section className="mt-4">
+              <p className="t-micro-cap mb-2">Top {Math.min(10, holdings.length)} holdings</p>
               <HoldingsTable items={holdings} />
             </section>
           )}
 
           {sector.length > 0 && (
-            <section className="mt-6">
-              <p className="t-micro-cap mb-3">Sector allocation</p>
+            <section className="mt-4">
+              <p className="t-micro-cap mb-2">Sector allocation</p>
               <Bars items={sector} color="var(--color-primary)" />
             </section>
           )}
 
           {geo.length > 0 && (
-            <section className="mt-6">
-              <p className="t-micro-cap mb-3">Geographic allocation</p>
+            <section className="mt-4">
+              <p className="t-micro-cap mb-2">Geographic allocation</p>
               <Bars items={geo} color="#c8810a" />
             </section>
           )}
 
           {asset.length > 0 && (
-            <section className="mt-6">
-              <p className="t-micro-cap mb-3">Asset allocation</p>
+            <section className="mt-4">
+              <p className="t-micro-cap mb-2">Asset allocation</p>
               <Bars items={asset} color="var(--color-positive)" />
             </section>
           )}
 
-          <section className="mt-6">
+          <section className="mt-4">
             <p className="t-micro-cap mb-2">Fund facts</p>
             <dl className="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-2">
               <Fact label="ISIN" value={<span className="num">{fund.isin ?? "—"}</span>} />
@@ -282,7 +282,7 @@ export function FundInspector({
               <p className="t-micro-cap mb-2">Documents</p>
               <ul className="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] divide-y divide-[var(--color-hairline-2)]">
                 {documents.map((d) => (
-                  <li key={d.type} className="flex items-center justify-between px-4 py-2.5">
+                  <li key={d.type} className="flex items-center justify-between px-4 py-1.5">
                     <span className="t-body-md text-[var(--color-ink-2)]">{d.label}</span>
                     <a
                       href={`/api/factsheet/${fund.external_id}?type=${d.type}`}

@@ -382,8 +382,8 @@ export function StudioShell({
           );
         })}
       </nav>
-        <div className="border-b border-[var(--color-hairline)] px-4 py-3">
-          <p className="t-micro-cap mb-2">Click name to inspect · + to add</p>
+        <div className="border-b border-[var(--color-hairline)] px-4 py-2.5">
+          <p className="t-micro-cap mb-1.5">Click name to inspect · + to add</p>
           <div className="flex items-center gap-2 rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-1.5">
             <span className="text-[var(--color-ink-mute)]">⌕</span>
             <input
@@ -395,7 +395,7 @@ export function StudioShell({
             />
           </div>
         </div>
-        <ul className="flex-1 overflow-y-auto py-2">
+        <ul className="flex-1 overflow-y-auto py-1">
           {filteredFunds.length === 0 ? (
             <li className="px-4 py-8 text-center t-body-md text-[var(--color-ink-mute)]">No matches.</li>
           ) : (
@@ -405,7 +405,7 @@ export function StudioShell({
               return (
                 <li
                   key={f.id}
-                  className="group flex items-center gap-2 px-4 py-2 hover:bg-[var(--color-canvas-soft)] cursor-pointer"
+                  className="group flex items-center gap-2 px-4 py-1 hover:bg-[var(--color-canvas-soft)] cursor-pointer"
                   onClick={() => setInspectFundId(f.id)}
                 >
                   <span
@@ -548,7 +548,7 @@ export function StudioShell({
 
               {/* Portfolio X-ray — analysis panel groups all weighted-exposure cards */}
               {xray && (
-                <section className="mt-6 rounded-xl bg-[var(--color-canvas-xray)] p-5">
+                <section className="mt-6 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
                   <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
                     <p className="t-micro-cap text-[var(--color-ink)]">Portfolio X-ray</p>
                     <p className="t-caption text-[var(--color-ink-mute)]">weighted exposure analysis across the basket</p>
