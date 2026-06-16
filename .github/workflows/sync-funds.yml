@@ -1,0 +1,30 @@
+name: Sync funds from Morningstar
+
+on:
+  # Daily at 10:00 UTC = 18:00 SGT, just after the Singapore market close.
+  schedule:
+    - cron: "0 10 * * *"
+  # Also allow manual runs from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run Morningstar sync
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run sync
