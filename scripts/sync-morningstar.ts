@@ -97,7 +97,10 @@ async function syncProvider(p: Provider, sample: number | null): Promise<void> {
 
   let ok = 0;
   let failed = 0;
+  // 400ms throttle keeps us under Morningstar's free-tier ~3 req/s ceiling.
+  const THROTTLE_MS = 400;
   for (const [i, entry] of targets.entries()) {
+    if (i > 0) await new Promise((r) => setTimeout(r, THROTTLE_MS));
     try {
       const json = await fetchFundSnapshot(entry.isin);
       // The API returns {} for unknown ISINs — treat that as a soft failure.

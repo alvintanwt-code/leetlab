@@ -17,8 +17,21 @@ export type UniverseFund = {
 
 export type MorningstarSnapshot = Record<string, unknown>;
 
-async function fetchWithTimeout(url: string): Promise<Response> {
-  return fetch(url, { cache: "no-store", signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+const RETRY_DELAYS_MS = [2000, 5000, 12000];
+
+async function fetchWithRetry(url: string): Promise<Response> {
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (res.status !== 429) return res;
+    const wait = RETRY_DELAYS_MS[attempt];
+    if (wait == null) return res; // out of retries; let caller see the 429
+    await new Promise((r) => setTimeout(r, wait));
+  }
+  // unreachable
+  throw new Error("fetchWithRetry: exhausted attempts");
 }
 
 /**
@@ -35,7 +48,7 @@ export async function fetchUniverse(universeId: string): Promise<UniverseFund[]>
     pageSize: "500",
   });
   const url = `${BASE_URL}/security/screener?${params}`;
-  const res = await fetchWithTimeout(url);
+  const res = await fetchWithRetry(url);
   if (!res.ok) throw new Error(`Morningstar screener HTTP ${res.status} for universe ${universeId}`);
   const data = (await res.json()) as { rows?: UniverseFund[]; total?: number };
   return data.rows ?? [];
@@ -53,7 +66,7 @@ export async function fetchFundSnapshot(isin: string): Promise<MorningstarSnapsh
     viewId: "MFsnapshot",
   });
   const url = `${BASE_URL}/security_details/${encodeURIComponent(isin)}?${params}`;
-  const res = await fetchWithTimeout(url);
+  const res = await fetchWithRetry(url);
   if (!res.ok) throw new Error(`Morningstar snapshot HTTP ${res.status} for ISIN ${isin}`);
   const data = (await res.json()) as MorningstarSnapshot | MorningstarSnapshot[];
   return Array.isArray(data) ? data[0] : data;
