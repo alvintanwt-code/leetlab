@@ -38,19 +38,20 @@
   --radius-xl: 16px;
   --radius-pill: 9999px;
 
-  /* Type tokens (size, line-height) — weights/tracking applied per-class */
-  --text-display-xxl: 56px;
-  --text-display-xl: 48px;
-  --text-display-lg: 32px;
-  --text-display-md: 26px;
-  --text-h-lg: 22px;
-  --text-h-md: 20px;
-  --text-h-sm: 18px;
-  --text-body-lg: 16px;
-  --text-body-md: 15px;
-  --text-body-tab: 14px;
-  --text-caption: 13px;
-  --text-micro: 11px;
+  /* Type tokens — terminal-density scale, modelled on the HTML mockup.
+     Body at 13px, captions at 11.5px, KPI display at 21px. */
+  --text-display-xxl: 48px;
+  --text-display-xl: 40px;
+  --text-display-lg: 28px;
+  --text-display-md: 21px;
+  --text-h-lg: 18px;
+  --text-h-md: 15px;
+  --text-h-sm: 14px;
+  --text-body-lg: 14px;
+  --text-body-md: 13px;
+  --text-body-tab: 12px;
+  --text-caption: 11.5px;
+  --text-micro: 10.5px;
   --text-micro-cap: 10px;
 }
 
@@ -64,18 +65,20 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
-/* Display tier — thin weight, negative tracking (Stripi signature) */
-.t-display-xxl { font-size: var(--text-display-xxl); font-weight: 300; line-height: 1.03; letter-spacing: -1.4px; }
-.t-display-xl  { font-size: var(--text-display-xl);  font-weight: 300; line-height: 1.15; letter-spacing: -0.96px; }
-.t-display-lg  { font-size: var(--text-display-lg);  font-weight: 300; line-height: 1.1;  letter-spacing: -0.64px; }
-.t-display-md  { font-size: var(--text-display-md);  font-weight: 300; line-height: 1.12; letter-spacing: -0.26px; }
+/* Display + heading tiers — weights nudged up so they still read as
+   headings against 13px body text. Letter-spacing relaxed since
+   negative tracking at smaller sizes looks pinched. */
+.t-display-xxl { font-size: var(--text-display-xxl); font-weight: 400; line-height: 1.05; letter-spacing: -1.1px; }
+.t-display-xl  { font-size: var(--text-display-xl);  font-weight: 400; line-height: 1.1;  letter-spacing: -0.7px; }
+.t-display-lg  { font-size: var(--text-display-lg);  font-weight: 500; line-height: 1.15; letter-spacing: -0.4px; }
+.t-display-md  { font-size: var(--text-display-md);  font-weight: 600; line-height: 1.2;  letter-spacing: -0.2px; }
 
-.t-h-lg { font-size: var(--text-h-lg); font-weight: 300; line-height: 1.1;  letter-spacing: -0.22px; }
-.t-h-md { font-size: var(--text-h-md); font-weight: 300; line-height: 1.4;  letter-spacing: -0.2px; }
-.t-h-sm { font-size: var(--text-h-sm); font-weight: 300; line-height: 1.4;  letter-spacing: 0; }
+.t-h-lg { font-size: var(--text-h-lg); font-weight: 500; line-height: 1.3;  letter-spacing: -0.1px; }
+.t-h-md { font-size: var(--text-h-md); font-weight: 600; line-height: 1.35; letter-spacing: -0.05px; }
+.t-h-sm { font-size: var(--text-h-sm); font-weight: 600; line-height: 1.35; letter-spacing: 0; }
 
-.t-body-lg  { font-size: var(--text-body-lg);  font-weight: 300; line-height: 1.5; }
-.t-body-md  { font-size: var(--text-body-md);  font-weight: 300; line-height: 1.45; }
+.t-body-lg  { font-size: var(--text-body-lg);  font-weight: 400; line-height: 1.5; }
+.t-body-md  { font-size: var(--text-body-md);  font-weight: 400; line-height: 1.45; }
 .t-body-tab { font-size: var(--text-body-tab); font-weight: 300; line-height: 1.4; letter-spacing: -0.42px; font-feature-settings: "ss01", "tnum"; font-variant-numeric: tabular-nums; }
 .t-caption  { font-size: var(--text-caption);  font-weight: 400; line-height: 1.4; letter-spacing: -0.39px; }
 .t-micro    { font-size: var(--text-micro);    font-weight: 300; line-height: 1.4; }
