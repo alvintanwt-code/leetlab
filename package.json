@@ -11,6 +11,7 @@
     "scrape:hsbc": "env -u ANTHROPIC_API_KEY -u FIRECRAWL_API_KEY tsx scripts/scrape-hsbc.ts",
     "scrape:fwd": "env -u ANTHROPIC_API_KEY -u FIRECRAWL_API_KEY tsx scripts/scrape-fwd.ts",
     "scrape:tmls": "env -u ANTHROPIC_API_KEY -u FIRECRAWL_API_KEY tsx scripts/scrape-tmls.ts",
+    "sync": "env -u ANTHROPIC_API_KEY -u FIRECRAWL_API_KEY tsx scripts/sync-morningstar.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db-migrate.ts",
     "db:push": "drizzle-kit push",

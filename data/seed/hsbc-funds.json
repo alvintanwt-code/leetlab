@@ -1,0 +1,862 @@
+[
+  {
+    "name": "AB FCP I - American Income Portfolio AT Inc",
+    "isin": "LU0157308031",
+    "status": "Active"
+  },
+  {
+    "name": "AB FCP I - American Income Portfolio AT SGD H Inc",
+    "isin": "LU0592505829",
+    "status": "Active"
+  },
+  {
+    "name": "AB FCP I - Emerging Markets Debt Portfolio A2 SGD H Acc",
+    "isin": "LU0592506637",
+    "status": "Active"
+  },
+  {
+    "name": "AB FCP I - Global High Yield Portfolio A2 SGD H Acc",
+    "isin": "LU0592507445",
+    "status": "Active"
+  },
+  {
+    "name": "AB SICAV I - Emerging Markets Multi-Asset Portfolio AD USD Inc",
+    "isin": "LU0633140727",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "AB SICAV I - International Health Care Portfolio A Acc",
+    "isin": "LU0058720904",
+    "status": "Active"
+  },
+  {
+    "name": "AB SICAV I - International Health Care Portfolio Class A SGD Shares",
+    "isin": "LU0289739699",
+    "status": "Active"
+  },
+  {
+    "name": "AB SICAV I - Low Volatility Equity Portfolio A USD Acc",
+    "isin": "LU0861579265",
+    "status": "Active"
+  },
+  {
+    "name": "AB SICAV I \u2013 Sustainable US Thematic Portfolio Class A SGDH Acc",
+    "isin": "LU0592508096",
+    "status": "Active"
+  },
+  {
+    "name": "AB SICAV I-Sustainable Global Thematic Portfolio A",
+    "isin": "LU0069063385",
+    "status": "Active"
+  },
+  {
+    "name": "AB SICAV I-Sustainable Global Thematic Portfolio A SGD Hedged",
+    "isin": "LU0590156302",
+    "status": "Active"
+  },
+  {
+    "name": "abrdn Pacific Equity Fund - SGD",
+    "isin": "SG9999000459",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "abrdn Pacific Equity Fund - USD",
+    "isin": "SG9999001903",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Allianz Global Investors Fund - Allianz China A Shares AT SGD",
+    "isin": "LU1997245094",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Global Investors Fund - Allianz China A Shares AT USD",
+    "isin": "LU1997245177",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Global Investors Fund - Allianz Global Artificial Intelligence AT H2 SGD",
+    "isin": "LU1720051017",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Global Investors Fund - Allianz Global Artificial Intelligence AT USD",
+    "isin": "LU1548497426",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Global Investors Fund - Allianz Income and Growth AM USD",
+    "isin": "LU0820561818",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Global Investors Fund - Allianz Income and Growth AMi3 (H2-SGD)",
+    "isin": "LU0943347566",
+    "status": "Active"
+  },
+  {
+    "name": "Amundi Funds - Cash USD A2 USD (C)",
+    "isin": "LU0568621618",
+    "status": "Active"
+  },
+  {
+    "name": "Amundi Funds - US Bond A2 SGD Hgd (C)",
+    "isin": "LU1883849512",
+    "status": "Active"
+  },
+  {
+    "name": "Amundi Funds - US Bond A2 USD (C)",
+    "isin": "LU1883849603",
+    "status": "Active"
+  },
+  {
+    "name": "Amundi Funds - US Equity Fundamental Growth A USD C",
+    "isin": "LU1883854355",
+    "status": "Active"
+  },
+  {
+    "name": "Architas Flexible Equity Retail Class R (SGD) Unhedged Units Accumulation",
+    "isin": "IE00BZ128165",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Architas Multi-Asset Balanced Retail Class R (SGD) Unhedged Units Accumulation",
+    "isin": "IE00BZ127S69",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Ascend Asia Trust Global Equity Fund Class A SGD (Hedged)",
+    "isin": "SGXZ58547654",
+    "status": "Active"
+  },
+  {
+    "name": "Ascend Asia Trust Global Multi Asset Growth Fund Class A USD",
+    "isin": "SGXZ13719315",
+    "status": "Active"
+  },
+  {
+    "name": "Ascend Asia Trust Global Multi Asset Income Fund Class A USD",
+    "isin": "SGXZ71589303",
+    "status": "Active"
+  },
+  {
+    "name": "AXA World Funds - Europe Real Estate A Capitalisation EUR",
+    "isin": "LU0216734045",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "AXA World Funds - Europe Small Cap A Capitalisation EUR",
+    "isin": "LU0125741180",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "AXA World Funds - Global High Yield Bonds A Capitalisation SGD (Hedged)",
+    "isin": "LU0982017856",
+    "status": "Active"
+  },
+  {
+    "name": "AXA World Funds - Global Inflation Bonds A Capitalisation SGD (Hedged)",
+    "isin": "LU0964942972",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "BlackRock Global Funds - Asian Tiger Bond Fund A2",
+    "isin": "LU0063729296",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - Asian Tiger Bond Fund A2 SGD Hedged",
+    "isin": "LU0540000063",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - China Fund A2 SGD Hedged",
+    "isin": "LU0359202008",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "BlackRock Global Funds - European Equity Income Fund A6 SGD Hedged",
+    "isin": "LU1019634622",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - European Equity Income Fund A6 USD Hedged",
+    "isin": "LU1019632923",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - Global Allocation Fund A2",
+    "isin": "LU0072462426",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - Global Allocation Fund A2 SGD Hedged",
+    "isin": "LU0308772762",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - Global Equity Income Fund A2 SGD Hedged",
+    "isin": "LU0661495795",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "BlackRock Global Funds - Global Equity Income Fund A5G",
+    "isin": "LU0553294199",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "BlackRock Global Funds - Global Equity Income Fund A5G SGD Hedged",
+    "isin": "LU0661504455",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "BlackRock Global Funds - Global High Yield Bond Fund A6",
+    "isin": "LU0764618640",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - Global High Yield Bond Fund A6 SGD Hedged",
+    "isin": "LU1830001522",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - Latin American Fund A2 SGD Hedged",
+    "isin": "LU0572108347",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "BlackRock Global Funds - World Energy Fund A2 SGD Hedged",
+    "isin": "LU0368265418",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - World Gold Fund A2",
+    "isin": "LU0055631609",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - World Gold Fund A2 SGD Hedged",
+    "isin": "LU0368265764",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - World Healthscience Fund A2",
+    "isin": "LU0122379950",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - World Mining Fund A2 SGD Hedged",
+    "isin": "LU0330918003",
+    "status": "Active"
+  },
+  {
+    "name": "BlackRock Global Funds - World Technology Fund A2",
+    "isin": "LU0056508442",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group Global High Income Opportunities (LUX) Bfdm",
+    "isin": "LU1598307301",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group Global High Income Opportunities (LUX) Bfdmh-SGD",
+    "isin": "LU1707064124",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group New Perspective Fund (LUX) B",
+    "isin": "LU1295551573",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group New Perspective Fund (LUX) Bh-SGD",
+    "isin": "LU1295552977",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Funds - Global Financial Services Fund A-Acc-SGD",
+    "isin": "LU1363072403",
+    "status": "Active"
+  },
+  {
+    "name": "First Sentier Bridge Fund Class A (H Dist)",
+    "isin": "SG9999002067",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Alternative Strategies Fund A(acc)SGD-H1",
+    "isin": "LU1093756325",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Franklin Biotechnology Discovery Fund A(acc)SGD",
+    "isin": "LU0320765992",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Biotechnology Discovery Fund A(acc)USD",
+    "isin": "LU0109394709",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Global Sukuk Fund A(Mdis)SGD",
+    "isin": "LU0923116197",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Income Fund A(Mdis)SGD-H1",
+    "isin": "LU0320765646",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Income Fund A(Mdis)USD",
+    "isin": "LU0098860793",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin India Fund A(acc)SGD",
+    "isin": "LU0536402901",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Technology Fund A (Acc) SGD-H1",
+    "isin": "LU1803068979",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Technology Fund A (Acc) USD",
+    "isin": "LU0109392836",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Templeton Western Asset Global Bond Trust Class A (SGD) Accumulating",
+    "isin": "SG9999005193",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Franklin U.S. Opportunities Fund A(acc)SGD-H1",
+    "isin": "LU0672654240",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin U.S. Opportunities Fund A(acc)USD",
+    "isin": "LU0109391861",
+    "status": "Active"
+  },
+  {
+    "name": "FSSA Dividend Advantage Fund Class A (Quarterly Distributing)",
+    "isin": "SG9999002083",
+    "status": "Active"
+  },
+  {
+    "name": "FSSA Regional China Fund Class A Accumulation",
+    "isin": "SG9999000194",
+    "status": "Active"
+  },
+  {
+    "name": "FTGF Western Asset Asian Opportunities Fund Class A SGD Accumulating (Hedged)",
+    "isin": "IE00B2Q1FH21",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Fullerton Total Return Multi - Asset Advantage Class A Units",
+    "isin": "SG9999010128",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Fundsmith Equity Fund R EUR Acc",
+    "isin": "LU0690374615",
+    "status": "Active"
+  },
+  {
+    "name": "Goldman Sachs Emerging Markets CORE Equity Portfolio Base Acc USD Close",
+    "isin": "LU0313355587",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Asia Bond S47M3HSGD",
+    "isin": "LU2585153823",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Asia Pacific ex Japan Equity High Dividend AM2",
+    "isin": "LU0630378429",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Asia Pacific ex Japan Equity High Dividend S48M2SGD",
+    "isin": "LU2584144385",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Global Equity Climate Solutions AC",
+    "isin": "LU0323239441",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Global Equity Climate Solutions ACOSGD",
+    "isin": "LU2343852328",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Global Equity Climate Transition AD",
+    "isin": "LU1674673691",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Global High Income Bond AM2",
+    "isin": "LU0524291456",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Global High Income Bond AM3HSGD",
+    "isin": "LU0669553546",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Global Short Duration Bond AC",
+    "isin": "LU1163226092",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Global Short Duration Bond ACHSGD",
+    "isin": "LU1272399756",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Indian Equity AD",
+    "isin": "LU0066902890",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Managed Solutions - Asia Focused Income AM2",
+    "isin": "LU0762541174",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Managed Solutions - Asia Focused Income AM3OSGD",
+    "isin": "LU0831093199",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Singapore Dollar Income Bond AM2",
+    "isin": "LU1734076539",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Global Investment Funds - Singapore Dollar Income Bond AM3HUSD",
+    "isin": "LU1734076703",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Life Asian Growth",
+    "isin": "SG9999003701",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Life Fortress Fund A",
+    "isin": "SG9999003693",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Life Global Balanced Fund",
+    "isin": "SG9999003594",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Life Global Defensive Fund",
+    "isin": "SG9999003578",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "HSBC Life Global Growth Fund",
+    "isin": "SG9999003602",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Life Global High Growth Fund",
+    "isin": "SG9999003610",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Life Global Secure Fund",
+    "isin": "SG9999003586",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Life Greater China Fund",
+    "isin": "SG9999003669",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Life India Opportunities Fund",
+    "isin": "SG9999003685",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Life Pacific Equity Fund",
+    "isin": "SG9999003651",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "HSBC Life Singapore Equity Fund",
+    "isin": "SG9999003644",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 1 AC",
+    "isin": "LU0447610337",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 1 ACHSGD",
+    "isin": "LU1048550328",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 2 AC",
+    "isin": "LU0447610683",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 2 ACHSGD",
+    "isin": "LU1863921836",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 3 AC",
+    "isin": "LU0447610923",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 3 ACHSGD",
+    "isin": "LU1048558149",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 4 AC",
+    "isin": "LU0447611228",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 4 ACHSGD",
+    "isin": "LU1863921919",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 5 AC",
+    "isin": "LU0447611657",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 5 ACHSGD",
+    "isin": "LU1048559030",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC Portfolios - World Selection 5 AMFLXHSGD",
+    "isin": "LU2561745709",
+    "status": "Active"
+  },
+  {
+    "name": "Invesco Funds - Invesco Asia Consumer Demand Fund A Accumulation USD",
+    "isin": "LU0334857355",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Invesco Funds - Invesco Emerging Markets ex-China Equity Fund A Annual Distribution USD",
+    "isin": "LU1775963454",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Janus Henderson Continental European Fund A2 EUR",
+    "isin": "LU0201071890",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Janus Henderson Horizon Discovering New Alpha Fund A2 HSGD Acc",
+    "isin": "LU3154198322",
+    "status": "Active"
+  },
+  {
+    "name": "Janus Henderson Horizon Discovering New Alpha Fund A2 USD Acc",
+    "isin": "LU3154197191",
+    "status": "Active"
+  },
+  {
+    "name": "Janus Henderson Horizon Global Technology Leaders Fund A2 SGD",
+    "isin": "LU1316542783",
+    "status": "Active"
+  },
+  {
+    "name": "Janus Henderson Horizon Global Technology Leaders Fund A2 USD",
+    "isin": "LU0070992663",
+    "status": "Active"
+  },
+  {
+    "name": "Janus Henderson Horizon Japan Opportunities Fund A2 USD",
+    "isin": "LU0011889929",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Janus Henderson Horizon Pan European Absolute Return Fund A2 HSGD",
+    "isin": "LU0506197887",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "JPMorgan Funds - ASEAN Equity Fund A (acc) SGD",
+    "isin": "LU0532188223",
+    "status": "Active"
+  },
+  {
+    "name": "JPMorgan Funds - ASEAN Equity Fund A (acc) USD",
+    "isin": "LU0441851309",
+    "status": "Active"
+  },
+  {
+    "name": "JPMorgan Funds - Greater China Fund A (acc) USD",
+    "isin": "LU0210526801",
+    "status": "Active"
+  },
+  {
+    "name": "JPMorgan Funds - India Fund A (acc) USD",
+    "isin": "LU0210527015",
+    "status": "Active"
+  },
+  {
+    "name": "JPMorgan Investment Funds - Global Income Fund A (mth) SGD (hedged)",
+    "isin": "LU0912757837",
+    "status": "Active"
+  },
+  {
+    "name": "JPMorgan Investment Funds - Global Income Fund A (mth) USD (hedged)",
+    "isin": "LU0815074496",
+    "status": "Active"
+  },
+  {
+    "name": "Mirae Asset Global Discovery Fund - ESG Asia Great Consumer Equity Fund A USD Capitalization",
+    "isin": "LU0593848301",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Mirova Funds - Mirova Global Sustainable Equity Fund R/A-NPF (USD)",
+    "isin": "LU1623119135",
+    "status": "Active"
+  },
+  {
+    "name": "Natixis International Funds (Dublin) I - Loomis Sayles Multisector Income Fund R/A (H-SGD)",
+    "isin": "IE00B92R0G77",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Neuberger Berman Strategic Income Fund SGD A (Monthly) Distributing Class",
+    "isin": "IE00BRJFZM13",
+    "status": "Active"
+  },
+  {
+    "name": "Nomura Funds Ireland plc - Japan High Conviction Fund Class A USD",
+    "isin": "IE00BBT38022",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "PGIM Global Total Return Bond Fund SGD Hedged A Distribution (Q) Class",
+    "isin": "IE00BM8DBS97",
+    "status": "Active"
+  },
+  {
+    "name": "Pictet-Asian Local Currency Debt P USD",
+    "isin": "LU0255797556",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Pictet-Global Emerging Debt P USD",
+    "isin": "LU0128467544",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Pictet-Premium Brands HP SGD",
+    "isin": "LU0663513272",
+    "status": "Active"
+  },
+  {
+    "name": "Pictet-Security P USD",
+    "isin": "LU0256846139",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "PIMCO GIS Emerging Markets Bond Fund E Class SGD (Hedged) Accumulation",
+    "isin": "IE00B1LHWT95",
+    "status": "Active"
+  },
+  {
+    "name": "PIMCO GIS Emerging Markets Bond Fund E Class USD Accumulation",
+    "isin": "IE00B11XYX59",
+    "status": "Active"
+  },
+  {
+    "name": "PIMCO GIS Income Fund Administrative SGD (Hedged) Income",
+    "isin": "IE00B91RQ825",
+    "status": "Active"
+  },
+  {
+    "name": "PIMCO GIS Income Fund Administrative USD Income",
+    "isin": "IE00B91X6F72",
+    "status": "Active"
+  },
+  {
+    "name": "PineBridge Asia ex Japan Small Cap Equity Fund Class A5",
+    "isin": "IE00BYTNYN87",
+    "status": "Active"
+  },
+  {
+    "name": "Principal Global Investors Funds - Preferred Securities Fund A Hedged Inc SGD",
+    "isin": "IE00BZBWH539",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Robeco Credit Income BxH SGD",
+    "isin": "LU2066015582",
+    "status": "Active"
+  },
+  {
+    "name": "Robeco Global Consumer Trends Equities D $",
+    "isin": "LU0554840073",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Schroder Asian Growth Fund Class SGD A Distribution Units",
+    "isin": "SG9999000327",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Asian Growth Fund Class USD A Distribution Units",
+    "isin": "SG9999001689",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Asian Income SGD X Dis",
+    "isin": "SG9999009757",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Global Emerging Market Opportunities Fund",
+    "isin": "SG9999006852",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder International Selection Fund Asian Dividend Maximiser A Distribution SGD Hedged M",
+    "isin": "LU1130305938",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder International Selection Fund Asian Dividend Maximiser A Distribution USD MF",
+    "isin": "LU0955648018",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder International Selection Fund Emerging Markets Multi-Asset A Distribution SGD Hedged M",
+    "isin": "LU1196710864",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder International Selection Fund Emerging Markets Multi-Asset A Distribution USD MF",
+    "isin": "LU1196710351",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder International Selection Fund Global Emerging Market Opportunities A Accumulation SGD",
+    "isin": "LU0279460462",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder International Selection Fund Global Emerging Market Opportunities A Accumulation USD",
+    "isin": "LU0269904917",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder International Selection Fund Global Equity Alpha A Accumulation USD",
+    "isin": "LU0225283273",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder International Selection Fund QEP Global Quality A Accumulation USD",
+    "isin": "LU0323591593",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Schroder International Selection Fund Taiwanese Equity A Accumulation USD",
+    "isin": "LU0270814014",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Multi-Asset Revolution 30 A SGD Accumulation",
+    "isin": "SG9999007769",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Multi-Asset Revolution 50",
+    "isin": "SG9999007512",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Multi-Asset Revolution 70",
+    "isin": "SG9999007520",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Singapore Fixed Income Fund Class A Acc",
+    "isin": "SG9999006530",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Singapore Trust SGD A Acc",
+    "isin": "SG9999016042",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Singapore Trust SGD A Dis",
+    "isin": "SG9999000343",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Singapore Trust USD A Acc",
+    "isin": "SG9999016059",
+    "status": "Active"
+  },
+  {
+    "name": "Templeton China Fund A(acc)SGD",
+    "isin": "LU0320764599",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Templeton Latin America Fund A(acc)SGD",
+    "isin": "LU0320763518",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "Templeton Shariah Global Equity Fund A(acc)SGD",
+    "isin": "LU0889566641",
+    "status": "Active"
+  },
+  {
+    "name": "United Asian Bond Fund - Class SGD Dist",
+    "isin": "SG9999001416",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "United Emerging Markets Bond Fund - Class A SGD Dist",
+    "isin": "SG9999002174",
+    "status": "Sell-tradable"
+  },
+  {
+    "name": "United SGD Fund - Class A SGD Acc",
+    "isin": "SG9999001382",
+    "status": "Active"
+  },
+  {
+    "name": "United Singapore Bond Fund \u2013 Class A SGD Acc",
+    "isin": "SG9999003412",
+    "status": "Active"
+  }
+]
