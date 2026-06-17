@@ -347,7 +347,7 @@ export function StudioShell({
       <section className="flex w-[20vw] min-w-[240px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
       <nav
         aria-label="Provider"
-        className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2"
+        className="flex h-[52px] shrink-0 items-center gap-1 overflow-x-auto border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3"
       >
         {providerTabs.map((t) => {
           const active = t.slug === providerSlug;
@@ -437,7 +437,7 @@ export function StudioShell({
 
       {/* RIGHT — basket + x-ray */}
       <section className="flex flex-1 min-w-0 flex-col overflow-hidden bg-[var(--color-canvas-soft)]">
-        <div className="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-6 py-3">
+        <div className="flex h-[52px] shrink-0 items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-6">
           <div>
             <p className="t-micro-cap">Model portfolio</p>
             <p className="t-caption mt-0.5 text-[var(--color-ink-mute)]">
