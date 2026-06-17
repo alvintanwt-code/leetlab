@@ -24,6 +24,23 @@ const PROVIDER_SHORT: Record<string, string> = {
   gwm: "GWM",
 };
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function fmtDate(s: string | null): string {
+  if (!s) return "—";
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return s;
+  return `${m[3]} ${MONTHS[parseInt(m[2], 10) - 1]} ${m[1]}`;
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="t-micro-cap mb-1.5">{label}</p>
+      <p className="num text-[22px] font-medium leading-none text-[var(--color-ink)]">{value}</p>
+    </div>
+  );
+}
+
 function buildHref(params: { provider?: string | null; category?: string | null; view?: string | null }): string {
   const sp = new URLSearchParams();
   if (params.view) sp.set("view", params.view);
@@ -80,8 +97,9 @@ function TabLink({
 function GridCell({ p }: { p: ConfirmedPortfolio | null }) {
   if (!p) {
     return (
-      <div className="flex h-full flex-col justify-center rounded-md border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-center">
-        <p className="t-caption text-[var(--color-ink-mute)]">Not built</p>
+      <div className="flex h-full flex-col items-start justify-center rounded-md border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3.5">
+        <p className="num text-[18px] font-medium leading-none text-[var(--color-ink-mute)]">—</p>
+        <p className="t-micro-cap mt-1.5">Not built</p>
       </div>
     );
   }
@@ -90,30 +108,38 @@ function GridCell({ p }: { p: ConfirmedPortfolio | null }) {
     xray = p.xray_json ? JSON.parse(p.xray_json) : {};
   } catch {}
   const r3y = xray.r3y;
-  const r3yCls = r3y == null ? "text-[var(--color-ink-mute)]" : r3y > 0 ? "text-[var(--color-positive)]" : r3y < 0 ? "text-[var(--color-negative)]" : "text-[var(--color-ink)]";
+  const r3yCls =
+    r3y == null
+      ? "text-[var(--color-ink-mute)]"
+      : r3y > 0
+        ? "text-[var(--color-positive)]"
+        : r3y < 0
+          ? "text-[var(--color-negative)]"
+          : "text-[var(--color-ink)]";
   return (
     <Link
       href={buildHref({ provider: p.provider_slug, category: p.category })}
-      className="block rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--color-canvas-soft)]"
+      className="block h-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3.5 transition-colors hover:border-[var(--color-ink)]"
     >
-      <p className="t-caption truncate text-[var(--color-ink)]" title={p.name}>{p.name}</p>
-      <p className="t-micro mt-0.5 text-[var(--color-ink-mute)]">
-        v<span className="num">{p.version}</span> · <span className="num">{p.holding_count}</span> fund{p.holding_count === 1 ? "" : "s"}
+      <p className="t-body-md truncate font-medium text-[var(--color-ink)]" title={p.name}>{p.name}</p>
+      <p className="t-micro-cap mt-1">
+        v<span className="num">{p.version}</span> &middot; <span className="num">{p.holding_count}</span>{" "}
+        {p.holding_count === 1 ? "fund" : "funds"}
       </p>
-      <dl className="mt-2 grid grid-cols-2 gap-1.5">
+      <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[var(--color-hairline-2)] pt-3">
         <div>
-          <dt className="t-micro-cap text-[10px]">3Y</dt>
-          <dd className={`num t-caption ${r3yCls}`}>
-            {r3y != null ? `${r3y > 0 ? "+" : ""}${r3y.toFixed(2)}%` : "—"}
-          </dd>
+          <p className={`num text-[15px] font-medium leading-none ${r3yCls}`}>
+            {r3y != null ? `${r3y > 0 ? "+" : ""}${r3y.toFixed(1)}%` : "—"}
+          </p>
+          <p className="t-micro-cap mt-1.5">3Y CAGR</p>
         </div>
         <div>
-          <dt className="t-micro-cap text-[10px]">Risk</dt>
-          <dd className="num t-caption text-[var(--color-ink)]">
-            {xray.risk != null ? `${xray.risk.toFixed(1)}/5` : "—"}
-          </dd>
+          <p className="num text-[15px] font-medium leading-none text-[var(--color-ink)]">
+            {xray.risk != null ? xray.risk.toFixed(1) : "—"}
+          </p>
+          <p className="t-micro-cap mt-1.5">Risk</p>
         </div>
-      </dl>
+      </div>
     </Link>
   );
 }
@@ -143,6 +169,8 @@ export default async function ModelPortfoliosIndex({
 
   // Resolve the active provider — explicit param wins, else first provider that has any saved portfolio.
   const providersWithSaved = providers.filter((p) => (providerCounts.get(p.slug) ?? 0) > 0);
+  const distinctMandates = new Set(portfolios.map((p) => p.category)).size;
+  const lastConfirmedAt = portfolios[0]?.confirmed_at ?? null;
   const activeProvider =
     sp.provider && providersWithSaved.some((p) => p.slug === sp.provider)
       ? sp.provider
@@ -193,11 +221,61 @@ export default async function ModelPortfoliosIndex({
         </div>
       ) : (
         <>
-          {/* Sticky chrome — title + platform + mandate, in eyebrow-aligned rows */}
+          {/* Hero header — scrolls away */}
+          <header className="mt-6">
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="inline-block h-2.5 w-2.5 bg-[var(--color-primary)]" aria-hidden />
+              <p className="t-micro-cap">
+                Research Desk <span className="mx-1.5 text-[var(--color-hairline)]">·</span> Catalog
+              </p>
+            </div>
+            <div className="flex flex-wrap-reverse items-end justify-between gap-x-8 gap-y-3">
+              <h1
+                className="font-medium leading-[0.95] text-[var(--color-ink)] text-[44px] sm:text-[52px]"
+                style={{ letterSpacing: "-0.025em" }}
+              >
+                Model Portfolios
+              </h1>
+              <div className="text-right">
+                <p
+                  className="num font-medium leading-[0.9] text-[var(--color-ink)] text-[44px] sm:text-[52px]"
+                  style={{ letterSpacing: "-0.03em" }}
+                >
+                  {portfolios.length}
+                </p>
+                <p className="t-micro-cap mt-2">Portfolios confirmed</p>
+              </div>
+            </div>
+          </header>
+
+          {/* Mandate facts strip */}
+          <section className="mt-7 mb-8 grid grid-cols-3 gap-x-8 gap-y-4 border-t border-[var(--color-hairline)] pt-5">
+            <Fact label="Platforms" value={`${providersWithSaved.length}`} />
+            <Fact label="Mandates" value={`${distinctMandates}`} />
+            <Fact label="Last confirmed" value={fmtDate(lastConfirmedAt)} />
+          </section>
+
+          {/* Sticky filter chrome — only the filter rows pin */}
           <div className="sticky top-0 z-20 -mx-10 mb-6 bg-[var(--color-canvas-soft)] px-10">
-            {/* Row 1: title + show-all toggle */}
-            <div className="flex items-center justify-between gap-3 border-b border-[var(--color-hairline-2)] py-3">
-              <h1 className="t-h-md text-[var(--color-ink)]">Model Portfolio</h1>
+            {/* PLATFORM + Show all */}
+            <div className="flex items-center justify-between gap-6 border-b border-[var(--color-hairline-2)]">
+              <div className="flex min-w-0 flex-1 items-center gap-6">
+                <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
+                <nav aria-label="Platform" className="flex items-center gap-3 overflow-x-auto">
+                  {providers.map((p) => {
+                    const n = providerCounts.get(p.slug) ?? 0;
+                    return (
+                      <TabLink
+                        key={p.slug}
+                        href={buildHref({ provider: p.slug })}
+                        label={PROVIDER_SHORT[p.slug] ?? p.name}
+                        active={!isShowAll && activeProvider === p.slug}
+                        disabled={n === 0}
+                      />
+                    );
+                  })}
+                </nav>
+              </div>
               <Link
                 href={buildHref({ view: "all" })}
                 className={`flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 t-caption transition-colors ${
@@ -210,26 +288,7 @@ export default async function ModelPortfoliosIndex({
               </Link>
             </div>
 
-            {/* Row 2: PLATFORM */}
-            <div className="flex items-center gap-6 border-b border-[var(--color-hairline-2)]">
-              <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
-              <nav aria-label="Platform" className="flex items-center gap-3 overflow-x-auto">
-                {providers.map((p) => {
-                  const n = providerCounts.get(p.slug) ?? 0;
-                  return (
-                    <TabLink
-                      key={p.slug}
-                      href={buildHref({ provider: p.slug })}
-                      label={PROVIDER_SHORT[p.slug] ?? p.name}
-                      active={!isShowAll && activeProvider === p.slug}
-                      disabled={n === 0}
-                    />
-                  );
-                })}
-              </nav>
-            </div>
-
-            {/* Row 3: MANDATE — hidden in show-all */}
+            {/* MANDATE — hidden in show-all */}
             {!isShowAll && activeProvider && (
               <div className="flex items-center gap-6 border-b border-[var(--color-hairline)]">
                 <p className="t-micro-cap w-20 shrink-0 py-2">Mandate</p>
@@ -273,8 +332,8 @@ export default async function ModelPortfoliosIndex({
                     style={{ gridTemplateColumns: "160px repeat(5, 1fr)" }}
                   >
                     <div className="flex flex-col justify-center pr-3">
-                      <p className="t-body-md text-[var(--color-ink)]">{PROVIDER_SHORT[prov.slug] ?? prov.name}</p>
-                      <p className="t-micro mt-0.5 text-[var(--color-ink-mute)]">
+                      <p className="t-body-md font-medium text-[var(--color-ink)]">{PROVIDER_SHORT[prov.slug] ?? prov.name}</p>
+                      <p className="t-micro-cap mt-1">
                         <span className="num">{providerCounts.get(prov.slug) ?? 0}</span> saved
                       </p>
                     </div>
