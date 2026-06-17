@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { TrailingChart } from "./TrailingChart";
 import type { ConfirmedPortfolio, ConfirmedPortfolioHolding } from "@/lib/db/queries";
 
@@ -94,10 +95,35 @@ function BarsRow({
 export function PortfolioDetail({
   portfolio,
   holdings,
+  allowDelete = false,
 }: {
   portfolio: ConfirmedPortfolio;
   holdings: ConfirmedPortfolioHolding[];
+  allowDelete?: boolean;
 }) {
+  const router = useRouter();
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function deletePortfolio() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/portfolios/${portfolio.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d?.error ?? `HTTP ${res.status}`);
+      }
+      router.push("/portfolios");
+      router.refresh();
+    } catch (e) {
+      setDeleteError((e as Error).message);
+      setDeleting(false);
+    }
+  }
+
   const xray: XRay = (() => {
     try {
       return portfolio.xray_json ? (JSON.parse(portfolio.xray_json) as XRay) : {};
@@ -341,6 +367,87 @@ export function PortfolioDetail({
           </div>
         )}
       </section>
+
+      {/* Danger zone — only on the standalone /portfolios/[id] view */}
+      {allowDelete && (
+        <section className="mt-12 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <p className="t-micro-cap" style={{ color: "var(--color-negative)" }}>Danger zone</p>
+              <p className="t-caption mt-1 text-[var(--color-ink-mute)]">
+                Permanently delete this portfolio and its <span className="num">{holdings.length}</span> {holdings.length === 1 ? "holding" : "holdings"}. This cannot be undone.
+              </p>
+            </div>
+            <button
+              onClick={() => { setShowDelete(true); setDeleteInput(""); setDeleteError(null); }}
+              className="btn-pill"
+              style={{
+                background: "transparent",
+                color: "var(--color-negative)",
+                border: "1px solid var(--color-negative)",
+              }}
+            >
+              Delete portfolio
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Type-to-confirm modal */}
+      {showDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(13,37,61,0.45)]"
+          onClick={() => !deleting && setShowDelete(false)}
+        >
+          <div
+            className="w-[480px] max-w-[92vw] rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="t-micro-cap mb-2" style={{ color: "var(--color-negative)" }}>Delete portfolio</p>
+            <h2 className="t-h-md text-[var(--color-ink)]">{portfolio.name}</h2>
+            <p className="t-body-md mt-3 text-[var(--color-ink-2)]">
+              This will permanently delete this portfolio and its <span className="num">{holdings.length}</span>{" "}
+              {holdings.length === 1 ? "holding" : "holdings"}.
+            </p>
+            <p className="t-caption mt-2 text-[var(--color-ink-mute)]">
+              Type <span className="num text-[var(--color-ink)]">{portfolio.name}</span> to confirm.
+            </p>
+            <input
+              type="text"
+              value={deleteInput}
+              onChange={(e) => setDeleteInput(e.target.value)}
+              placeholder={portfolio.name}
+              disabled={deleting}
+              className="t-body-md mt-3 w-full rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-2 outline-none focus:border-[var(--color-negative)]"
+              autoFocus
+            />
+            {deleteError && (
+              <p className="mt-2 t-caption text-[var(--color-negative)]">{deleteError}</p>
+            )}
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setShowDelete(false)}
+                disabled={deleting}
+                className="btn-pill btn-ghost"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={deletePortfolio}
+                disabled={deleteInput !== portfolio.name || deleting}
+                className="btn-pill text-white"
+                style={{
+                  background: "var(--color-negative)",
+                  opacity: deleteInput === portfolio.name && !deleting ? 1 : 0.55,
+                  cursor: deleteInput === portfolio.name && !deleting ? "pointer" : "not-allowed",
+                }}
+              >
+                {deleting ? "Deleting…" : "Delete permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

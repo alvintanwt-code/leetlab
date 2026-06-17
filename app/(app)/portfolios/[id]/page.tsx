@@ -30,7 +30,7 @@ export default async function PortfolioDetailPage({
       >
         &larr; Back to Model Portfolios
       </Link>
-      <PortfolioDetail portfolio={portfolio} holdings={holdings} />
+      <PortfolioDetail portfolio={portfolio} holdings={holdings} allowDelete />
     </div>
   );
 }
