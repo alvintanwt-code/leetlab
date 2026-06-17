@@ -4,6 +4,7 @@ import {
   fundsInspectorForProvider,
   detailedAllocationsForProvider,
   documentsForProvider,
+  listConfirmedPortfolios,
   listProvidersWithCounts,
 } from "@/lib/db/queries";
 
@@ -16,11 +17,22 @@ export default async function StudioPage({ params }: { params: Promise<{ provide
   const meta = allProviders.find((p) => p.slug === provider);
   if (!meta) notFound();
 
-  const [funds, allocsFlat, docsFlat] = await Promise.all([
+  const [funds, allocsFlat, docsFlat, allConfirmed] = await Promise.all([
     fundsInspectorForProvider(provider),
     detailedAllocationsForProvider(provider),
     documentsForProvider(provider),
+    listConfirmedPortfolios(),
   ]);
+  const savedPortfolios = allConfirmed
+    .filter((p) => p.provider_slug === provider)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      version: p.version,
+      confirmed_at: p.confirmed_at,
+      holding_count: p.holding_count,
+    }));
 
   // shape docs to { fundId: [{type, label}] }
   const documents: Record<number, { type: string; label: string }[]> = {};
@@ -62,6 +74,7 @@ export default async function StudioPage({ params }: { params: Promise<{ provide
       funds={funds}
       allocations={allocsFlat}
       documents={documents}
+      savedPortfolios={savedPortfolios}
     />
   );
 }

@@ -120,6 +120,15 @@ function fmtPct(v: number | null, places = 2): { text: string; cls: string } {
 
 export type ProviderTab = { slug: string; short: string; count: number; disabled: boolean };
 
+export type SavedPortfolioRef = {
+  id: number;
+  name: string;
+  category: string;
+  version: number;
+  confirmed_at: string | null;
+  holding_count: number;
+};
+
 export function StudioShell({
   providerSlug,
   providerName,
@@ -127,6 +136,7 @@ export function StudioShell({
   funds,
   allocations,
   documents,
+  savedPortfolios,
 }: {
   providerSlug: string;
   providerName: string;
@@ -134,6 +144,7 @@ export function StudioShell({
   funds: FundInspectorData[];
   allocations: AllocationDetail[];
   documents: DocByFund;
+  savedPortfolios: SavedPortfolioRef[];
 }) {
   const router = useRouter();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -146,6 +157,12 @@ export function StudioShell({
   const [confirmNotes, setConfirmNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Manage saved portfolios modal — hidden surface for delete.
+  const [showManage, setShowManage] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<SavedPortfolioRef | null>(null);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   // Track which weight input is focused so we can show the placeholder
   // (empty field) instead of a literal "0" while the user is typing.
   const [focusedWeightId, setFocusedWeightId] = useState<number | null>(null);
@@ -341,6 +358,26 @@ export function StudioShell({
     }
   }
 
+  async function deleteSavedPortfolio() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/portfolios/${deleteTarget.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d?.error ?? `HTTP ${res.status}`);
+      }
+      setDeleteTarget(null);
+      setDeleteInput("");
+      router.refresh();
+    } catch (e) {
+      setDeleteError((e as Error).message);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="flex h-[calc(100vh-48px)]">
       {/* LEFT — fund picker (provider tabs + search + list as one panel) */}
@@ -449,6 +486,14 @@ export function StudioShell({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setShowManage(true); setDeleteTarget(null); setDeleteInput(""); setDeleteError(null); }}
+              className="t-caption whitespace-nowrap px-2 py-1.5 text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
+              title="Manage saved portfolios on this platform"
+            >
+              Saved &middot; <span className="num">{savedPortfolios.length}</span>
+            </button>
+            <span className="mx-1 h-4 w-px bg-[var(--color-hairline)]" aria-hidden />
             <button onClick={distributeEvenly} disabled={basket.length === 0} className="btn-pill btn-ghost whitespace-nowrap disabled:opacity-50">
               Equal weight
             </button>
@@ -722,6 +767,123 @@ export function StudioShell({
                 {saving ? "Saving…" : "Save model portfolio"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage saved portfolios modal — admin surface for delete */}
+      {showManage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(13,37,61,0.45)]"
+          onClick={() => { if (!deleting) { setShowManage(false); setDeleteTarget(null); } }}
+        >
+          <div
+            className="flex max-h-[80vh] w-[640px] max-w-[92vw] flex-col rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="border-b border-[var(--color-hairline)] px-6 py-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="t-body-lg font-medium text-[var(--color-ink)]">Saved portfolios</p>
+                <p className="t-micro-cap">{providerName}</p>
+              </div>
+              <p className="t-caption mt-1 text-[var(--color-ink-mute)]">
+                <span className="num">{savedPortfolios.length}</span>{" "}
+                {savedPortfolios.length === 1 ? "portfolio" : "portfolios"} confirmed on this platform.
+              </p>
+            </header>
+
+            <div className="flex-1 overflow-y-auto px-6 py-3">
+              {savedPortfolios.length === 0 ? (
+                <p className="t-body-md py-8 text-center text-[var(--color-ink-mute)]">
+                  No portfolios saved on {providerName} yet.
+                </p>
+              ) : (
+                <ul className="flex flex-col">
+                  {savedPortfolios.map((p) => {
+                    const isTarget = deleteTarget?.id === p.id;
+                    const categoryLabel = CATEGORIES.find((c) => c.key === p.category)?.label ?? p.category;
+                    return (
+                      <li
+                        key={p.id}
+                        className="border-b border-[var(--color-hairline-2)] py-3 last:border-0"
+                      >
+                        <div className="flex items-baseline justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="t-body-md truncate text-[var(--color-ink)]" title={p.name}>
+                              {p.name}
+                            </p>
+                            <p className="t-caption mt-0.5 text-[var(--color-ink-mute)]">
+                              {categoryLabel} &middot; v<span className="num">{p.version}</span> &middot;{" "}
+                              <span className="num">{p.holding_count}</span> {p.holding_count === 1 ? "fund" : "funds"}
+                            </p>
+                          </div>
+                          {!isTarget && (
+                            <button
+                              onClick={() => { setDeleteTarget(p); setDeleteInput(""); setDeleteError(null); }}
+                              className="t-caption shrink-0 px-2 py-1 text-[var(--color-ink-mute)] hover:text-[var(--color-negative)]"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                        {isTarget && (
+                          <div className="mt-3 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft)] p-3">
+                            <p className="t-caption text-[var(--color-ink-2)]">
+                              Type <span className="num text-[var(--color-ink)]">{p.name}</span> to confirm permanent deletion.
+                            </p>
+                            <input
+                              type="text"
+                              value={deleteInput}
+                              onChange={(e) => setDeleteInput(e.target.value)}
+                              placeholder={p.name}
+                              disabled={deleting}
+                              autoFocus
+                              className="t-body-md mt-2 w-full rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-2 outline-none focus:border-[var(--color-negative)]"
+                            />
+                            {deleteError && (
+                              <p className="mt-2 t-caption text-[var(--color-negative)]">{deleteError}</p>
+                            )}
+                            <div className="mt-3 flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => { setDeleteTarget(null); setDeleteInput(""); setDeleteError(null); }}
+                                disabled={deleting}
+                                className="btn-pill btn-ghost"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={deleteSavedPortfolio}
+                                disabled={deleteInput !== p.name || deleting}
+                                className="btn-pill text-white"
+                                style={{
+                                  background: "var(--color-negative)",
+                                  opacity: deleteInput === p.name && !deleting ? 1 : 0.55,
+                                  cursor: deleteInput === p.name && !deleting ? "pointer" : "not-allowed",
+                                }}
+                              >
+                                {deleting ? "Deleting…" : "Delete permanently"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            <footer className="border-t border-[var(--color-hairline)] px-6 py-3">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => { setShowManage(false); setDeleteTarget(null); }}
+                  disabled={deleting}
+                  className="btn-pill btn-ghost"
+                >
+                  Close
+                </button>
+              </div>
+            </footer>
           </div>
         </div>
       )}

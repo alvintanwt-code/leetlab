@@ -289,14 +289,6 @@ export default async function ModelPortfoliosIndex({
             </section>
           ) : activePortfolio ? (
             <div className="pb-10">
-              <div className="mb-3 flex justify-end">
-                <Link
-                  href={`/portfolios/${activePortfolio.id}`}
-                  className="t-caption text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
-                >
-                  open standalone →
-                </Link>
-              </div>
               <PortfolioDetail portfolio={activePortfolio} holdings={holdings} />
             </div>
           ) : activeProvider ? (
