@@ -50,6 +50,86 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
+// Year-end / prior-year-end annual returns from the chart's daily/weekly
+// model.points series. First year uses the very first point as its start, so
+// a partial first year still surfaces as a return number rather than dropping.
+function computeAnnualReturns(
+  points: { d: string; v: number }[],
+): { year: number; return_pct: number }[] {
+  if (points.length < 2) return [];
+  const yearEnd = new Map<number, number>();
+  const firstYear = parseInt(points[0].d.slice(0, 4), 10);
+  const firstVal = points[0].v;
+  for (const p of points) {
+    const y = parseInt(p.d.slice(0, 4), 10);
+    yearEnd.set(y, p.v); // last point per year wins
+  }
+  const years = Array.from(yearEnd.keys()).sort((a, b) => a - b);
+  const out: { year: number; return_pct: number }[] = [];
+  for (let i = 0; i < years.length; i++) {
+    const y = years[i];
+    const endV = yearEnd.get(y)!;
+    const startV = i === 0 || y === firstYear ? firstVal : yearEnd.get(years[i - 1])!;
+    out.push({ year: y, return_pct: (endV / startV - 1) * 100 });
+  }
+  return out;
+}
+
+// Annual-return bar chart — editorial. Central baseline, ink bars up for
+// positive, negative-red down for losses. Square ends, value labels outside
+// each bar, '15 / '16 / … tick labels on the x-axis.
+function AnnualReturnsBars({ data }: { data: { year: number; return_pct: number }[] }) {
+  if (data.length === 0) {
+    return <p className="t-caption text-[var(--color-ink-mute)]">Not enough data to compute annual returns yet.</p>;
+  }
+  const maxAbs = Math.max(...data.map((d) => Math.abs(d.return_pct)), 1);
+  return (
+    <div className="flex items-stretch gap-2 sm:gap-3">
+      {data.map((d) => {
+        const isPos = d.return_pct >= 0;
+        const heightPct = (Math.abs(d.return_pct) / maxAbs) * 42;
+        const yearLabel = `'${(d.year % 100).toString().padStart(2, "0")}`;
+        const isZero = Math.abs(d.return_pct) < 0.05;
+        return (
+          <div key={d.year} className="flex min-w-0 flex-1 flex-col items-stretch">
+            <div className="relative w-full" style={{ height: "260px" }}>
+              {/* Central baseline */}
+              <div className="absolute left-0 right-0 top-1/2 h-px bg-[var(--color-hairline)]" aria-hidden />
+              {/* Bar */}
+              {!isZero && (
+                <div
+                  className={isPos ? "absolute left-0 right-0 bg-[var(--color-ink)]" : "absolute left-0 right-0 bg-[var(--color-negative)]"}
+                  style={isPos ? { bottom: "50%", height: `${heightPct}%` } : { top: "50%", height: `${heightPct}%` }}
+                />
+              )}
+              {/* Zero-return marker — short tick at the baseline */}
+              {isZero && (
+                <div
+                  className="absolute bg-[var(--color-ink)]"
+                  style={{ left: "18%", right: "18%", top: "calc(50% - 1px)", height: "2px" }}
+                  aria-hidden
+                />
+              )}
+              {/* Value label */}
+              <p
+                className={`absolute left-0 right-0 text-center t-caption num leading-none ${isPos ? "text-[var(--color-ink)]" : "text-[var(--color-negative)]"}`}
+                style={
+                  isPos
+                    ? { bottom: `calc(50% + ${heightPct}% + 6px)` }
+                    : { top: `calc(50% + ${heightPct}% + 6px)` }
+                }
+              >
+                {isPos ? (isZero ? "+0.0" : `+${d.return_pct.toFixed(1)}`) : d.return_pct.toFixed(1)}
+              </p>
+            </div>
+            <p className="num t-caption mt-2 text-center text-[var(--color-ink-mute)]">{yearLabel}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // Editorial bar — 2px hairline-thin, monochrome ink fill on hairline-2 track,
 // no rounding. Reads as a sparkline, not a chart.
 function BarsRow({
@@ -266,6 +346,17 @@ export function PortfolioDetail({
           </div>
         )}
       </section>
+
+      {/* Annual Total Returns — only renders once the chart series is loaded */}
+      {chart && chart.model.points.length >= 2 && (
+        <section className="mt-4 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+          <div className="mb-5 flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] pb-3">
+            <p className="t-body-lg font-medium text-[var(--color-ink)]">Annual Total Returns</p>
+            <p className="t-micro-cap">% per annum</p>
+          </div>
+          <AnnualReturnsBars data={computeAnnualReturns(chart.model.points)} />
+        </section>
+      )}
 
       {/* Sector + Geographic — two-column */}
       {((xray.sector?.length ?? 0) > 0 || (xray.geo?.length ?? 0) > 0) && (
