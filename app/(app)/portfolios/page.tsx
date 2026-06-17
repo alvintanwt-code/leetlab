@@ -46,17 +46,17 @@ function TabLink({
   active: boolean;
   disabled?: boolean;
 }) {
+  // Underline-style: active = ink + 2px ink underline aligned with row border; inactive = ink-mute.
   const base =
-    "flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 t-caption transition-colors";
+    "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 pt-2 pb-2 -mb-px t-caption transition-colors";
   if (disabled) {
     return (
       <span
         aria-disabled="true"
-        className={`${base} text-[var(--color-ink-mute)] opacity-55`}
+        className={`${base} border-transparent text-[var(--color-ink-mute)] opacity-50`}
         title={`${label} · none saved`}
       >
         {label}
-        <span className="num text-[10px]">—</span>
       </span>
     );
   }
@@ -65,8 +65,8 @@ function TabLink({
       href={href}
       className={`${base} ${
         active
-          ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
-          : "text-[var(--color-ink-2)] hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]"
+          ? "border-[var(--color-ink)] text-[var(--color-ink)] font-medium"
+          : "border-transparent text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
       }`}
     >
       {label}
@@ -169,22 +169,11 @@ export default async function ModelPortfoliosIndex({
   const holdings = activePortfolio ? await getPortfolioHoldings(activePortfolio.id) : [];
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-10 py-8">
-      <header className="mb-6">
-        <p className="t-micro-cap mb-1.5">Analysis</p>
-        <h1 className="t-display-md text-[var(--color-ink)]">Model Portfolios</h1>
-        <p className="t-body-md mt-1.5 text-[var(--color-ink-mute)]">
-          <span className="num">{portfolios.length}</span> confirmed{" "}
-          {portfolios.length === 1 ? "portfolio" : "portfolios"} across{" "}
-          <span className="num">{providerCounts.size}</span>{" "}
-          {providerCounts.size === 1 ? "provider" : "providers"}.
-        </p>
-      </header>
-
+    <div className="mx-auto w-full max-w-[1280px] px-10">
       {sp.confirmed && (
-        <div className="mb-6 flex items-center justify-between rounded-md border border-[#cfd7e1] bg-[#eef3fb] px-4 py-3">
-          <p className="t-body-md text-[var(--color-ink)]">
-            Model portfolio saved.{" "}
+        <div className="mt-4 flex items-center justify-between rounded-md border border-[#cfd7e1] bg-[#eef3fb] px-4 py-2.5">
+          <p className="t-caption text-[var(--color-ink)]">
+            Saved.{" "}
             <Link href={`/portfolios/${sp.confirmed}`} className="text-[var(--color-primary)]">
               View full detail →
             </Link>
@@ -204,10 +193,27 @@ export default async function ModelPortfoliosIndex({
         </div>
       ) : (
         <>
-          {/* Sticky sub-nav — only the analysis below changes on toggle */}
-          <div className="sticky top-0 z-20 -mx-10 mb-6 border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft)] px-10 pt-3 pb-2">
-            <div className="flex items-center justify-between gap-3">
-              <nav aria-label="Provider" className="flex items-center gap-1 overflow-x-auto">
+          {/* Sticky chrome — title + platform + mandate, in eyebrow-aligned rows */}
+          <div className="sticky top-0 z-20 -mx-10 mb-6 bg-[var(--color-canvas-soft)] px-10">
+            {/* Row 1: title + show-all toggle */}
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--color-hairline-2)] py-3">
+              <h1 className="t-h-md text-[var(--color-ink)]">Model Portfolio</h1>
+              <Link
+                href={buildHref({ view: "all" })}
+                className={`flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 t-caption transition-colors ${
+                  isShowAll
+                    ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-white"
+                    : "border-[var(--color-hairline)] text-[var(--color-ink-2)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
+                }`}
+              >
+                Show all
+              </Link>
+            </div>
+
+            {/* Row 2: PLATFORM */}
+            <div className="flex items-center gap-6 border-b border-[var(--color-hairline-2)]">
+              <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
+              <nav aria-label="Platform" className="flex items-center gap-3 overflow-x-auto">
                 {providers.map((p) => {
                   const n = providerCounts.get(p.slug) ?? 0;
                   return (
@@ -215,43 +221,33 @@ export default async function ModelPortfoliosIndex({
                       key={p.slug}
                       href={buildHref({ provider: p.slug })}
                       label={PROVIDER_SHORT[p.slug] ?? p.name}
-                      count={n}
                       active={!isShowAll && activeProvider === p.slug}
                       disabled={n === 0}
                     />
                   );
                 })}
               </nav>
-              <Link
-                href={buildHref({ view: "all" })}
-                className={`flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 t-caption transition-colors ${
-                  isShowAll
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                    : "border-[var(--color-hairline)] text-[var(--color-ink-2)] hover:border-[var(--color-primary)] hover:text-[var(--color-ink)]"
-                }`}
-              >
-                Show all
-              </Link>
             </div>
 
+            {/* Row 3: MANDATE — hidden in show-all */}
             {!isShowAll && activeProvider && (
-              <nav
-                aria-label="Risk profile"
-                className="mt-2 flex items-center gap-1 overflow-x-auto border-t border-[var(--color-hairline-2)] pt-2"
-              >
-                {CATEGORIES.map((c) => {
-                  const has = savedCategoriesForProvider.has(c.key);
-                  return (
-                    <TabLink
-                      key={c.key}
-                      href={buildHref({ provider: activeProvider, category: c.key })}
-                      label={c.label}
-                      active={activeCategory === c.key}
-                      disabled={!has}
-                    />
-                  );
-                })}
-              </nav>
+              <div className="flex items-center gap-6 border-b border-[var(--color-hairline)]">
+                <p className="t-micro-cap w-20 shrink-0 py-2">Mandate</p>
+                <nav aria-label="Mandate" className="flex items-center gap-3 overflow-x-auto">
+                  {CATEGORIES.map((c) => {
+                    const has = savedCategoriesForProvider.has(c.key);
+                    return (
+                      <TabLink
+                        key={c.key}
+                        href={buildHref({ provider: activeProvider, category: c.key })}
+                        label={c.label}
+                        active={activeCategory === c.key}
+                        disabled={!has}
+                      />
+                    );
+                  })}
+                </nav>
+              </div>
             )}
           </div>
 
@@ -292,19 +288,17 @@ export default async function ModelPortfoliosIndex({
               )}
             </section>
           ) : activePortfolio ? (
-            <>
-              <p className="mb-2 t-caption text-[var(--color-ink-mute)]">
-                Latest confirmed for {PROVIDER_SHORT[activePortfolio.provider_slug] ?? activePortfolio.provider_name} · {CATEGORIES.find((c) => c.key === activePortfolio.category)?.label}
-                {" · "}
+            <div className="pb-10">
+              <div className="mb-3 flex justify-end">
                 <Link
                   href={`/portfolios/${activePortfolio.id}`}
-                  className="text-[var(--color-primary)] hover:text-[var(--color-primary-deep)]"
+                  className="t-caption text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
                 >
                   open standalone →
                 </Link>
-              </p>
+              </div>
               <PortfolioDetail portfolio={activePortfolio} holdings={holdings} />
-            </>
+            </div>
           ) : activeProvider ? (
             <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] px-10 py-12 text-center">
               <p className="t-body-md text-[var(--color-ink-mute)]">
