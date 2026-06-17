@@ -24,23 +24,6 @@ const PROVIDER_SHORT: Record<string, string> = {
   gwm: "GWM",
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-function fmtDate(s: string | null): string {
-  if (!s) return "—";
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return s;
-  return `${m[3]} ${MONTHS[parseInt(m[2], 10) - 1]} ${m[1]}`;
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="t-micro-cap mb-1.5">{label}</p>
-      <p className="num text-[22px] font-medium leading-none text-[var(--color-ink)]">{value}</p>
-    </div>
-  );
-}
-
 function buildHref(params: { provider?: string | null; category?: string | null; view?: string | null }): string {
   const sp = new URLSearchParams();
   if (params.view) sp.set("view", params.view);
@@ -169,8 +152,6 @@ export default async function ModelPortfoliosIndex({
 
   // Resolve the active provider — explicit param wins, else first provider that has any saved portfolio.
   const providersWithSaved = providers.filter((p) => (providerCounts.get(p.slug) ?? 0) > 0);
-  const distinctMandates = new Set(portfolios.map((p) => p.category)).size;
-  const lastConfirmedAt = portfolios[0]?.confirmed_at ?? null;
   const activeProvider =
     sp.provider && providersWithSaved.some((p) => p.slug === sp.provider)
       ? sp.provider
@@ -221,61 +202,11 @@ export default async function ModelPortfoliosIndex({
         </div>
       ) : (
         <>
-          {/* Hero header — scrolls away */}
-          <header className="mt-6">
-            <div className="mb-5 flex items-center gap-2.5">
-              <span className="inline-block h-2.5 w-2.5 bg-[var(--color-primary)]" aria-hidden />
-              <p className="t-micro-cap">
-                Research Desk <span className="mx-1.5 text-[var(--color-hairline)]">·</span> Catalog
-              </p>
-            </div>
-            <div className="flex flex-wrap-reverse items-end justify-between gap-x-8 gap-y-3">
-              <h1
-                className="font-medium leading-[0.95] text-[var(--color-ink)] text-[44px] sm:text-[52px]"
-                style={{ letterSpacing: "-0.025em" }}
-              >
-                Model Portfolios
-              </h1>
-              <div className="text-right">
-                <p
-                  className="num font-medium leading-[0.9] text-[var(--color-ink)] text-[44px] sm:text-[52px]"
-                  style={{ letterSpacing: "-0.03em" }}
-                >
-                  {portfolios.length}
-                </p>
-                <p className="t-micro-cap mt-2">Portfolios confirmed</p>
-              </div>
-            </div>
-          </header>
-
-          {/* Mandate facts strip */}
-          <section className="mt-7 mb-8 grid grid-cols-3 gap-x-8 gap-y-4 border-t border-[var(--color-hairline)] pt-5">
-            <Fact label="Platforms" value={`${providersWithSaved.length}`} />
-            <Fact label="Mandates" value={`${distinctMandates}`} />
-            <Fact label="Last confirmed" value={fmtDate(lastConfirmedAt)} />
-          </section>
-
-          {/* Sticky filter chrome — only the filter rows pin */}
+          {/* Sticky chrome — title + platform + mandate, in eyebrow-aligned rows */}
           <div className="sticky top-0 z-20 -mx-10 mb-6 bg-[var(--color-canvas-soft)] px-10">
-            {/* PLATFORM + Show all */}
-            <div className="flex items-center justify-between gap-6 border-b border-[var(--color-hairline-2)]">
-              <div className="flex min-w-0 flex-1 items-center gap-6">
-                <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
-                <nav aria-label="Platform" className="flex items-center gap-3 overflow-x-auto">
-                  {providers.map((p) => {
-                    const n = providerCounts.get(p.slug) ?? 0;
-                    return (
-                      <TabLink
-                        key={p.slug}
-                        href={buildHref({ provider: p.slug })}
-                        label={PROVIDER_SHORT[p.slug] ?? p.name}
-                        active={!isShowAll && activeProvider === p.slug}
-                        disabled={n === 0}
-                      />
-                    );
-                  })}
-                </nav>
-              </div>
+            {/* Row 1: title + show-all toggle */}
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--color-hairline-2)] py-3">
+              <h1 className="t-h-md text-[var(--color-ink)]">Model Portfolio</h1>
               <Link
                 href={buildHref({ view: "all" })}
                 className={`flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 t-caption transition-colors ${
@@ -288,7 +219,26 @@ export default async function ModelPortfoliosIndex({
               </Link>
             </div>
 
-            {/* MANDATE — hidden in show-all */}
+            {/* Row 2: PLATFORM */}
+            <div className="flex items-center gap-6 border-b border-[var(--color-hairline-2)]">
+              <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
+              <nav aria-label="Platform" className="flex items-center gap-3 overflow-x-auto">
+                {providers.map((p) => {
+                  const n = providerCounts.get(p.slug) ?? 0;
+                  return (
+                    <TabLink
+                      key={p.slug}
+                      href={buildHref({ provider: p.slug })}
+                      label={PROVIDER_SHORT[p.slug] ?? p.name}
+                      active={!isShowAll && activeProvider === p.slug}
+                      disabled={n === 0}
+                    />
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Row 3: MANDATE — hidden in show-all */}
             {!isShowAll && activeProvider && (
               <div className="flex items-center gap-6 border-b border-[var(--color-hairline)]">
                 <p className="t-micro-cap w-20 shrink-0 py-2">Mandate</p>
