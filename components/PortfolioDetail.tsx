@@ -33,14 +33,6 @@ const CATEGORY_LABEL: Record<string, string> = {
   dividend_income: "Income",
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-function fmtDate(s: string | null): string {
-  if (!s) return "—";
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return s;
-  return `${m[3]} ${MONTHS[parseInt(m[2], 10) - 1]} ${m[1]}`;
-}
-
 function fmtPct(v: number | null | undefined, places = 2): { text: string; cls: string } {
   if (v == null) return { text: "—", cls: "text-[var(--color-ink-mute)]" };
   if (v === 0) return { text: "0.00%", cls: "text-[var(--color-ink)]" };
@@ -49,11 +41,11 @@ function fmtPct(v: number | null | undefined, places = 2): { text: string; cls: 
   return { text: `${sign}${Math.abs(v).toFixed(places)}%`, cls };
 }
 
-function KpiTile({ label, value, valueCls }: { label: string; value: string; valueCls?: string }) {
+function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="px-4 first:pl-0 last:pr-0">
-      <p className={`num t-display-md leading-none ${valueCls ?? "text-[var(--color-ink)]"}`}>{value}</p>
-      <p className="t-micro-cap mt-2 text-[10px]">{label}</p>
+    <div>
+      <p className="t-micro-cap mb-1.5">{label}</p>
+      <p className="num text-[26px] font-medium leading-none text-[var(--color-ink)]">{value}</p>
     </div>
   );
 }
@@ -142,102 +134,137 @@ export function PortfolioDetail({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const totalBps = holdings.reduce((s, h) => s + h.weight_bps, 0);
-  const totalPct = totalBps / 100;
-  const equityCoveragePct =
-    xray.equityCoverage != null ? Math.round(xray.equityCoverage * 100) : null;
+  // Derived facts for the mandate strip + hero.
+  const equityPct = xray.equityCoverage != null ? Math.round(xray.equityCoverage * 100) : null;
+  // Fixed Income is an approximation: 100 − equity. Cash/alts get lumped in.
+  const fixedIncomeApprox = equityPct != null ? Math.max(0, 100 - equityPct) : null;
+  // Ending value assumes the 10Y CAGR compounded from S$100. Same conceit as
+  // PhillipCapital's "S$348.65 grown from S$100" hero metric.
+  const endingFrom100 =
+    xray.r10y != null ? (100 * Math.pow(1 + xray.r10y / 100, 10)).toFixed(2) : null;
+  const r10yCls =
+    xray.r10y != null && xray.r10y > 0
+      ? "text-[var(--color-positive)]"
+      : xray.r10y != null && xray.r10y < 0
+        ? "text-[var(--color-negative)]"
+        : "text-[var(--color-ink-mute)]";
 
   return (
     <>
-      <header className="mt-4 mb-8">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <p className="t-micro-cap mb-2">{CATEGORY_LABEL[portfolio.category] ?? portfolio.category}</p>
-            <h1 className="t-display-md text-[var(--color-ink)]">{portfolio.name}</h1>
-            <p className="t-body-md mt-2 text-[var(--color-ink-mute)]">
-              {portfolio.provider_name} &middot; v<span className="num">{portfolio.version}</span> &middot;{" "}
-              {portfolio.holding_count} fund{portfolio.holding_count === 1 ? "" : "s"} &middot;{" "}
-              confirmed {fmtDate(portfolio.confirmed_at)} &middot; weights{" "}
-              <span className="num">{totalPct.toFixed(2)}%</span>
-              {totalBps === 10000 ? " ✓" : ""}
-            </p>
-          </div>
+      <header className="mt-6">
+        {/* Eyebrow — provider · category · risk */}
+        <div className="mb-6 flex items-center gap-2.5">
+          <span className="inline-block h-2.5 w-2.5 bg-[var(--color-primary)]" aria-hidden />
+          <p className="t-micro-cap">
+            {portfolio.provider_name.toUpperCase()} <span className="mx-1.5 text-[var(--color-hairline)]">·</span>{" "}
+            {(CATEGORY_LABEL[portfolio.category] ?? portfolio.category).toUpperCase()}
+            {xray.risk != null && (
+              <>
+                {" "}
+                <span className="mx-1.5 text-[var(--color-hairline)]">·</span> RISK{" "}
+                {Math.round(xray.risk)}/5
+              </>
+            )}
+          </p>
         </div>
+
+        {/* Title + hero KPI */}
+        <div className="flex flex-wrap-reverse items-end justify-between gap-x-8 gap-y-4">
+          <h1
+            className="font-medium leading-[0.95] text-[var(--color-ink)] text-[56px] sm:text-[64px]"
+            style={{ letterSpacing: "-0.025em" }}
+          >
+            {portfolio.name}
+          </h1>
+          {xray.r10y != null && (
+            <div className="text-right">
+              <p className="font-medium leading-[0.9]">
+                <span
+                  className="num text-[var(--color-ink)] text-[60px] sm:text-[72px]"
+                  style={{ letterSpacing: "-0.03em" }}
+                >
+                  {Math.round(xray.r10y)}
+                </span>
+                <span
+                  className={`text-[28px] sm:text-[34px] ${r10yCls}`}
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  %
+                </span>
+              </p>
+              <p className="t-micro-cap mt-2.5">10-year annualised total return</p>
+            </div>
+          )}
+        </div>
+
         {portfolio.notes && (
-          <p className="mt-4 t-body-md italic text-[var(--color-ink-2)]">&ldquo;{portfolio.notes}&rdquo;</p>
+          <p className="mt-5 t-body-md italic text-[var(--color-ink-2)]">&ldquo;{portfolio.notes}&rdquo;</p>
         )}
       </header>
 
-      {/* Holdings table */}
-      <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
-        <table className="table-pro" style={{ tableLayout: "fixed" }}>
-          <colgroup>
-            <col style={{ width: "48%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "13%" }} />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Instrument</th>
-              <th className="right">Weight %</th>
-              <th className="right">1Y</th>
-              <th className="right">3Y</th>
-              <th className="right">5Y</th>
-            </tr>
-          </thead>
-          <tbody>
-            {holdings.map((h) => {
-              const r1 = fmtPct(h.ann_1y);
-              const r3 = fmtPct(h.ann_3y);
-              const r5 = fmtPct(h.ann_5y);
-              return (
-                <tr key={h.fund_id}>
-                  <td className="cell-fund">
-                    <span className="name text-[var(--color-ink)]" title={h.name}>{h.name}</span>
-                    <span className="meta">{h.isin ?? h.external_id}</span>
-                  </td>
-                  <td className="nowrap right">
-                    <span className="num text-[var(--color-ink)]">{(h.weight_bps / 100).toFixed(2)}%</span>
-                  </td>
-                  <td className="nowrap right"><span className={`num ${r1.cls}`}>{r1.text}</span></td>
-                  <td className="nowrap right"><span className={`num ${r3.cls}`}>{r3.text}</span></td>
-                  <td className="nowrap right"><span className={`num ${r5.cls}`}>{r5.text}</span></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      {/* Mandate facts strip */}
+      <section className="mt-8 mb-10 grid grid-cols-2 gap-x-8 gap-y-5 border-t border-[var(--color-hairline)] pt-6 sm:grid-cols-4">
+        <Fact label="Equity" value={equityPct != null ? `${equityPct}%` : "—"} />
+        <Fact label="Fixed Income" value={fixedIncomeApprox != null ? `${fixedIncomeApprox}%` : "—"} />
+        <Fact
+          label="OCF P.A."
+          value={xray.expense != null ? `${xray.expense.toFixed(3)}%` : "—"}
+        />
+        <Fact label="Funds" value={`${holdings.length}`} />
       </section>
 
-      {/* X-ray — Weighted trailing returns KPIs */}
-      <section className="mt-6 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-        <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
-          <p className="t-body-lg font-medium text-[var(--color-ink)]">Weighted trailing returns</p>
-          <p className="t-micro-cap">Weight-average</p>
+      {/* Trailing performance — hero card */}
+      <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+          <div>
+            <p className="t-body-lg font-medium text-[var(--color-ink)]">
+              Price Performance &middot; Growth of 100
+            </p>
+            <p className="t-micro-cap mt-1">Net of OCF · Fund-currency basis</p>
+          </div>
+          <div className="flex items-start gap-6">
+            {endingFrom100 != null && (
+              <div>
+                <p className="num text-[20px] font-medium leading-none text-[var(--color-ink)]">
+                  {endingFrom100}
+                </p>
+                <p className="t-micro-cap mt-1.5">Ending value</p>
+              </div>
+            )}
+            {xray.r10y != null && (
+              <div>
+                <p className={`num text-[20px] font-medium leading-none ${r10yCls}`}>
+                  {xray.r10y > 0 ? "+" : ""}
+                  {xray.r10y.toFixed(1)}%
+                </p>
+                <p className="t-micro-cap mt-1.5">CAGR</p>
+              </div>
+            )}
+            <button
+              onClick={fetchChart}
+              disabled={chartLoading}
+              className="btn-pill btn-ghost text-[12px] disabled:opacity-50"
+            >
+              {chartLoading ? "Loading…" : "Refresh"}
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[var(--color-hairline-2)]">
-          <KpiTile label="1Y" value={fmtPct(xray.r1y).text} valueCls={fmtPct(xray.r1y).cls} />
-          <KpiTile label="3Y pa" value={fmtPct(xray.r3y).text} valueCls={fmtPct(xray.r3y).cls} />
-          <KpiTile label="5Y pa" value={fmtPct(xray.r5y).text} valueCls={fmtPct(xray.r5y).cls} />
-          <KpiTile label="10Y pa" value={fmtPct(xray.r10y).text} valueCls={fmtPct(xray.r10y).cls} />
-        </div>
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[var(--color-hairline-2)] border-t border-[var(--color-hairline-2)] pt-4">
-          <KpiTile
-            label="Expense"
-            value={xray.expense != null ? `${xray.expense.toFixed(2)}%` : "—"}
-          />
-          <KpiTile
-            label="Risk score"
-            value={xray.risk != null ? `${xray.risk.toFixed(1)} / 5` : "—"}
-          />
-          <KpiTile
-            label="Equity coverage"
-            value={equityCoveragePct != null ? `${equityCoveragePct}%` : "—"}
-          />
-          <KpiTile label="Holdings" value={`${holdings.length}`} />
-        </div>
+        {chart ? (
+          <TrailingChart {...chart} />
+        ) : chartError ? (
+          <div className="rounded-md border border-dashed border-[var(--color-hairline)] p-6 text-center">
+            <p className="t-caption text-[var(--color-negative)]">{chartError}</p>
+            <button onClick={fetchChart} className="btn-pill btn-ghost mt-3 text-[12px]">
+              Retry
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-md border border-dashed border-[var(--color-hairline)] p-8 text-center">
+            <p className="t-body-md text-[var(--color-ink-mute)]">
+              Pulling live Morningstar look-through for each component…
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Sector + Geographic — two-column */}
@@ -303,39 +330,52 @@ export function PortfolioDetail({
         </section>
       )}
 
-      {/* Trailing performance chart */}
-      <section className="mt-4 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-        <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
-          <p className="t-body-lg font-medium text-[var(--color-ink)]">Trailing performance</p>
-          <div className="flex items-center gap-4">
-            <p className="t-micro-cap">Growth of 100</p>
-            <button
-              onClick={fetchChart}
-              disabled={chartLoading}
-              className="btn-pill btn-ghost text-[12px] disabled:opacity-50"
-            >
-              {chartLoading ? "Loading…" : "Refresh"}
-            </button>
-          </div>
+      {/* Instruments — moved to the bottom, the constituent funds */}
+      <section className="mt-4 overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+        <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3">
+          <p className="t-body-lg font-medium text-[var(--color-ink)]">Instruments</p>
+          <p className="t-micro-cap">Mandate constituents</p>
         </div>
-        {chart ? (
-          <TrailingChart {...chart} />
-        ) : chartError ? (
-          <div className="rounded-md border border-dashed border-[var(--color-hairline)] p-6 text-center">
-            <p className="t-caption text-[var(--color-negative)]">{chartError}</p>
-            <button onClick={fetchChart} className="btn-pill btn-ghost mt-3 text-[12px]">
-              Retry
-            </button>
-          </div>
-        ) : (
-          <div className="rounded-md border border-dashed border-[var(--color-hairline)] p-8 text-center">
-            <p className="t-body-md text-[var(--color-ink-mute)]">
-              Pulling live Morningstar look-through for each component…
-            </p>
-          </div>
-        )}
+        <table className="table-pro" style={{ tableLayout: "fixed" }}>
+          <colgroup>
+            <col style={{ width: "48%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "13%" }} />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Instrument</th>
+              <th className="right">Weight %</th>
+              <th className="right">1Y</th>
+              <th className="right">3Y</th>
+              <th className="right">5Y</th>
+            </tr>
+          </thead>
+          <tbody>
+            {holdings.map((h) => {
+              const r1 = fmtPct(h.ann_1y);
+              const r3 = fmtPct(h.ann_3y);
+              const r5 = fmtPct(h.ann_5y);
+              return (
+                <tr key={h.fund_id}>
+                  <td className="cell-fund">
+                    <span className="name text-[var(--color-ink)]" title={h.name}>{h.name}</span>
+                    <span className="meta">{h.isin ?? h.external_id}</span>
+                  </td>
+                  <td className="nowrap right">
+                    <span className="num text-[var(--color-ink)]">{(h.weight_bps / 100).toFixed(2)}%</span>
+                  </td>
+                  <td className="nowrap right"><span className={`num ${r1.cls}`}>{r1.text}</span></td>
+                  <td className="nowrap right"><span className={`num ${r3.cls}`}>{r3.text}</span></td>
+                  <td className="nowrap right"><span className={`num ${r5.cls}`}>{r5.text}</span></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </section>
-
     </>
   );
 }
