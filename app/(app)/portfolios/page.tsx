@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { PortfolioDetail } from "@/components/PortfolioDetail";
 import {
   listConfirmedPortfolios,
   listProvidersWithCounts,
+  getPortfolioHoldings,
   type ConfirmedPortfolio,
 } from "@/lib/db/queries";
 
@@ -22,68 +24,13 @@ const PROVIDER_SHORT: Record<string, string> = {
   gwm: "GWM",
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-function fmtDate(s: string | null): string {
-  if (!s) return "—";
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return s;
-  return `${m[3]} ${MONTHS[parseInt(m[2], 10) - 1]} ${m[1]}`;
-}
-
-function buildHref(provider: string | null, category: string | null): string {
-  const params = new URLSearchParams();
-  if (provider) params.set("provider", provider);
-  if (category) params.set("category", category);
-  const q = params.toString();
+function buildHref(params: { provider?: string | null; category?: string | null; view?: string | null }): string {
+  const sp = new URLSearchParams();
+  if (params.view) sp.set("view", params.view);
+  if (params.provider) sp.set("provider", params.provider);
+  if (params.category) sp.set("category", params.category);
+  const q = sp.toString();
   return q ? `/portfolios?${q}` : "/portfolios";
-}
-
-function PortfolioCard({ p }: { p: ConfirmedPortfolio }) {
-  let xray: { expense?: number | null; risk?: number | null; r3y?: number | null } = {};
-  try {
-    xray = p.xray_json ? JSON.parse(p.xray_json) : {};
-  } catch {}
-  return (
-    <Link
-      href={`/portfolios/${p.id}`}
-      className="block rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--color-canvas-soft)]"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="t-h-md truncate text-[var(--color-ink)]" title={p.name}>
-            {p.name}
-          </p>
-          <p className="t-caption mt-1 text-[var(--color-ink-mute)]">
-            {p.provider_name} &middot; v<span className="num">{p.version}</span> &middot; {p.holding_count} fund
-            {p.holding_count === 1 ? "" : "s"}
-          </p>
-        </div>
-        <span className="tag tag-primary whitespace-nowrap">Confirmed</span>
-      </div>
-      <dl className="mt-4 grid grid-cols-3 gap-3">
-        <div>
-          <dt className="t-caption text-[var(--color-ink-mute)]">Expense</dt>
-          <dd className="num t-body-md text-[var(--color-ink)]">
-            {xray.expense != null ? `${xray.expense.toFixed(2)}%` : "—"}
-          </dd>
-        </div>
-        <div>
-          <dt className="t-caption text-[var(--color-ink-mute)]">Risk</dt>
-          <dd className="num t-body-md text-[var(--color-ink)]">
-            {xray.risk != null ? `${xray.risk.toFixed(1)} / 5` : "—"}
-          </dd>
-        </div>
-        <div>
-          <dt className="t-caption text-[var(--color-ink-mute)]">3Y return</dt>
-          <dd className="num t-body-md text-[var(--color-ink)]">
-            {xray.r3y != null ? `${xray.r3y > 0 ? "+" : ""}${xray.r3y.toFixed(2)}%` : "—"}
-          </dd>
-        </div>
-      </dl>
-      {p.notes && <p className="mt-4 t-body-md italic text-[var(--color-ink-2)]">&ldquo;{p.notes}&rdquo;</p>}
-      <p className="mt-4 t-caption text-[var(--color-ink-mute)]">Confirmed {fmtDate(p.confirmed_at)}</p>
-    </Link>
-  );
 }
 
 function TabLink({
@@ -106,7 +53,7 @@ function TabLink({
       <span
         aria-disabled="true"
         className={`${base} text-[var(--color-ink-mute)] opacity-55`}
-        title={`${label} · none yet`}
+        title={`${label} · none saved`}
       >
         {label}
         <span className="num text-[10px]">—</span>
@@ -130,108 +77,120 @@ function TabLink({
   );
 }
 
+function GridCell({ p }: { p: ConfirmedPortfolio | null }) {
+  if (!p) {
+    return (
+      <div className="flex h-full flex-col justify-center rounded-md border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-center">
+        <p className="t-caption text-[var(--color-ink-mute)]">Not built</p>
+      </div>
+    );
+  }
+  let xray: { expense?: number | null; risk?: number | null; r3y?: number | null } = {};
+  try {
+    xray = p.xray_json ? JSON.parse(p.xray_json) : {};
+  } catch {}
+  const r3y = xray.r3y;
+  const r3yCls = r3y == null ? "text-[var(--color-ink-mute)]" : r3y > 0 ? "text-[var(--color-positive)]" : r3y < 0 ? "text-[var(--color-negative)]" : "text-[var(--color-ink)]";
+  return (
+    <Link
+      href={buildHref({ provider: p.provider_slug, category: p.category })}
+      className="block rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--color-canvas-soft)]"
+    >
+      <p className="t-caption truncate text-[var(--color-ink)]" title={p.name}>{p.name}</p>
+      <p className="t-micro mt-0.5 text-[var(--color-ink-mute)]">
+        v<span className="num">{p.version}</span> · <span className="num">{p.holding_count}</span> fund{p.holding_count === 1 ? "" : "s"}
+      </p>
+      <dl className="mt-2 grid grid-cols-2 gap-1.5">
+        <div>
+          <dt className="t-micro-cap text-[10px]">3Y</dt>
+          <dd className={`num t-caption ${r3yCls}`}>
+            {r3y != null ? `${r3y > 0 ? "+" : ""}${r3y.toFixed(2)}%` : "—"}
+          </dd>
+        </div>
+        <div>
+          <dt className="t-micro-cap text-[10px]">Risk</dt>
+          <dd className="num t-caption text-[var(--color-ink)]">
+            {xray.risk != null ? `${xray.risk.toFixed(1)}/5` : "—"}
+          </dd>
+        </div>
+      </dl>
+    </Link>
+  );
+}
+
 export default async function ModelPortfoliosIndex({
   searchParams,
 }: {
-  searchParams: Promise<{ provider?: string; category?: string; confirmed?: string }>;
+  searchParams: Promise<{ view?: string; provider?: string; category?: string; confirmed?: string }>;
 }) {
-  const { provider: providerFilter, category: categoryFilter, confirmed } = await searchParams;
+  const sp = await searchParams;
+  const isShowAll = sp.view === "all";
 
   const [portfolios, providers] = await Promise.all([
     listConfirmedPortfolios(),
     listProvidersWithCounts(),
   ]);
 
-  // Counts for tab badges, computed from the unfiltered list.
+  // Latest version per (provider, category) — the list is ordered by confirmed_at DESC
+  // so the first occurrence wins.
+  const latestByKey = new Map<string, ConfirmedPortfolio>();
   const providerCounts = new Map<string, number>();
-  const categoryCounts = new Map<string, number>();
   for (const p of portfolios) {
+    const key = `${p.provider_slug}::${p.category}`;
+    if (!latestByKey.has(key)) latestByKey.set(key, p);
     providerCounts.set(p.provider_slug, (providerCounts.get(p.provider_slug) ?? 0) + 1);
-    categoryCounts.set(p.category, (categoryCounts.get(p.category) ?? 0) + 1);
   }
 
-  const filtered = portfolios.filter(
-    (p) =>
-      (!providerFilter || p.provider_slug === providerFilter) &&
-      (!categoryFilter || p.category === categoryFilter),
-  );
+  // Resolve the active provider — explicit param wins, else first provider that has any saved portfolio.
+  const providersWithSaved = providers.filter((p) => (providerCounts.get(p.slug) ?? 0) > 0);
+  const activeProvider =
+    sp.provider && providersWithSaved.some((p) => p.slug === sp.provider)
+      ? sp.provider
+      : providersWithSaved[0]?.slug ?? null;
+
+  // Categories saved on the active provider.
+  const savedCategoriesForProvider = activeProvider
+    ? new Set(portfolios.filter((p) => p.provider_slug === activeProvider).map((p) => p.category))
+    : new Set<string>();
+
+  // Resolve the active category — explicit param if saved on this provider, else first saved category.
+  const activeCategory =
+    !isShowAll && sp.category && savedCategoriesForProvider.has(sp.category)
+      ? sp.category
+      : !isShowAll && activeProvider
+      ? CATEGORIES.find((c) => savedCategoriesForProvider.has(c.key))?.key ?? null
+      : null;
+
+  const activePortfolio =
+    !isShowAll && activeProvider && activeCategory
+      ? latestByKey.get(`${activeProvider}::${activeCategory}`) ?? null
+      : null;
+
+  const holdings = activePortfolio ? await getPortfolioHoldings(activePortfolio.id) : [];
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-10 py-10">
-      <header className="mb-8">
-        <p className="t-micro-cap mb-2">Analysis</p>
+    <div className="mx-auto w-full max-w-[1280px] px-10 py-8">
+      <header className="mb-6">
+        <p className="t-micro-cap mb-1.5">Analysis</p>
         <h1 className="t-display-md text-[var(--color-ink)]">Model Portfolios</h1>
-        <p className="t-body-md mt-2 text-[var(--color-ink-mute)]">
+        <p className="t-body-md mt-1.5 text-[var(--color-ink-mute)]">
           <span className="num">{portfolios.length}</span> confirmed{" "}
           {portfolios.length === 1 ? "portfolio" : "portfolios"} across{" "}
           <span className="num">{providerCounts.size}</span>{" "}
-          {providerCounts.size === 1 ? "provider" : "providers"}. Click any card for the full
-          analysis, including the trailing-return chart.
+          {providerCounts.size === 1 ? "provider" : "providers"}.
         </p>
       </header>
 
-      {confirmed && (
+      {sp.confirmed && (
         <div className="mb-6 flex items-center justify-between rounded-md border border-[#cfd7e1] bg-[#eef3fb] px-4 py-3">
           <p className="t-body-md text-[var(--color-ink)]">
             Model portfolio saved.{" "}
-            <Link href={`/portfolios/${confirmed}`} className="text-[var(--color-primary)]">
-              View &rarr;
+            <Link href={`/portfolios/${sp.confirmed}`} className="text-[var(--color-primary)]">
+              View full detail →
             </Link>
           </p>
         </div>
       )}
-
-      {/* Provider filter row */}
-      <nav
-        aria-label="Provider filter"
-        className="mb-3 flex items-center gap-1 overflow-x-auto border-b border-[var(--color-hairline)] pb-2"
-      >
-        <TabLink
-          href={buildHref(null, categoryFilter ?? null)}
-          label="All providers"
-          count={portfolios.length}
-          active={!providerFilter}
-        />
-        {providers.map((p) => {
-          const n = providerCounts.get(p.slug) ?? 0;
-          return (
-            <TabLink
-              key={p.slug}
-              href={buildHref(p.slug, categoryFilter ?? null)}
-              label={PROVIDER_SHORT[p.slug] ?? p.name}
-              count={n}
-              active={providerFilter === p.slug}
-              disabled={n === 0}
-            />
-          );
-        })}
-      </nav>
-
-      {/* Category filter row */}
-      <nav
-        aria-label="Category filter"
-        className="mb-8 flex items-center gap-1 overflow-x-auto"
-      >
-        <TabLink
-          href={buildHref(providerFilter ?? null, null)}
-          label="All categories"
-          count={portfolios.length}
-          active={!categoryFilter}
-        />
-        {CATEGORIES.map((c) => {
-          const n = categoryCounts.get(c.key) ?? 0;
-          return (
-            <TabLink
-              key={c.key}
-              href={buildHref(providerFilter ?? null, c.key)}
-              label={c.label}
-              count={n}
-              active={categoryFilter === c.key}
-              disabled={n === 0}
-            />
-          );
-        })}
-      </nav>
 
       {portfolios.length === 0 ? (
         <div className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-10 py-16 text-center">
@@ -240,25 +199,133 @@ export default async function ModelPortfoliosIndex({
             Build one in the Portfolio Builder to see it here.
           </h2>
           <p className="t-body-md mx-auto mt-3 max-w-md text-[var(--color-ink-mute)]">
-            Confirmed portfolios appear here, sortable by provider and category — conservative,
-            balanced, growth, aggressive, and income.
-          </p>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] px-10 py-12 text-center">
-          <p className="t-body-md text-[var(--color-ink-mute)]">
-            No portfolios match this filter combination.{" "}
-            <Link href="/portfolios" className="text-[var(--color-primary)]">
-              Clear filters
-            </Link>
+            Confirmed portfolios appear here, sortable by provider and risk profile.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p) => (
-            <PortfolioCard key={p.id} p={p} />
-          ))}
-        </div>
+        <>
+          {/* Sticky sub-nav — only the analysis below changes on toggle */}
+          <div className="sticky top-0 z-20 -mx-10 mb-6 border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft)] px-10 pt-3 pb-2">
+            <div className="flex items-center justify-between gap-3">
+              <nav aria-label="Provider" className="flex items-center gap-1 overflow-x-auto">
+                {providers.map((p) => {
+                  const n = providerCounts.get(p.slug) ?? 0;
+                  return (
+                    <TabLink
+                      key={p.slug}
+                      href={buildHref({ provider: p.slug })}
+                      label={PROVIDER_SHORT[p.slug] ?? p.name}
+                      count={n}
+                      active={!isShowAll && activeProvider === p.slug}
+                      disabled={n === 0}
+                    />
+                  );
+                })}
+              </nav>
+              <Link
+                href={buildHref({ view: "all" })}
+                className={`flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 t-caption transition-colors ${
+                  isShowAll
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                    : "border-[var(--color-hairline)] text-[var(--color-ink-2)] hover:border-[var(--color-primary)] hover:text-[var(--color-ink)]"
+                }`}
+              >
+                Show all
+              </Link>
+            </div>
+
+            {!isShowAll && activeProvider && (
+              <nav
+                aria-label="Risk profile"
+                className="mt-2 flex items-center gap-1 overflow-x-auto border-t border-[var(--color-hairline-2)] pt-2"
+              >
+                {CATEGORIES.map((c) => {
+                  const has = savedCategoriesForProvider.has(c.key);
+                  return (
+                    <TabLink
+                      key={c.key}
+                      href={buildHref({ provider: activeProvider, category: c.key })}
+                      label={c.label}
+                      active={activeCategory === c.key}
+                      disabled={!has}
+                    />
+                  );
+                })}
+              </nav>
+            )}
+          </div>
+
+          {/* Expanded portfolio detail OR show-all grid */}
+          {isShowAll ? (
+            <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+              {/* Header row */}
+              <div className="grid border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft)] px-4 py-2.5" style={{ gridTemplateColumns: "160px repeat(5, 1fr)" }}>
+                <p className="t-micro-cap">Platform</p>
+                {CATEGORIES.map((c) => (
+                  <p key={c.key} className="t-micro-cap pl-3">{c.label}</p>
+                ))}
+              </div>
+              {providersWithSaved.length === 0 ? (
+                <div className="p-10 text-center">
+                  <p className="t-body-md text-[var(--color-ink-mute)]">No saved portfolios yet.</p>
+                </div>
+              ) : (
+                providersWithSaved.map((prov) => (
+                  <div
+                    key={prov.slug}
+                    className="grid items-stretch border-b border-[var(--color-hairline-2)] px-4 py-3 last:border-0"
+                    style={{ gridTemplateColumns: "160px repeat(5, 1fr)" }}
+                  >
+                    <div className="flex flex-col justify-center pr-3">
+                      <p className="t-body-md text-[var(--color-ink)]">{PROVIDER_SHORT[prov.slug] ?? prov.name}</p>
+                      <p className="t-micro mt-0.5 text-[var(--color-ink-mute)]">
+                        <span className="num">{providerCounts.get(prov.slug) ?? 0}</span> saved
+                      </p>
+                    </div>
+                    {CATEGORIES.map((c) => (
+                      <div key={c.key} className="pl-3">
+                        <GridCell p={latestByKey.get(`${prov.slug}::${c.key}`) ?? null} />
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
+            </section>
+          ) : activePortfolio ? (
+            <>
+              <p className="mb-2 t-caption text-[var(--color-ink-mute)]">
+                Latest confirmed for {PROVIDER_SHORT[activePortfolio.provider_slug] ?? activePortfolio.provider_name} · {CATEGORIES.find((c) => c.key === activePortfolio.category)?.label}
+                {" · "}
+                <Link
+                  href={`/portfolios/${activePortfolio.id}`}
+                  className="text-[var(--color-primary)] hover:text-[var(--color-primary-deep)]"
+                >
+                  open standalone →
+                </Link>
+              </p>
+              <PortfolioDetail portfolio={activePortfolio} holdings={holdings} />
+            </>
+          ) : activeProvider ? (
+            <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] px-10 py-12 text-center">
+              <p className="t-body-md text-[var(--color-ink-mute)]">
+                No risk profile saved for this platform yet.{" "}
+                <Link href={`/construction/${activeProvider}`} className="text-[var(--color-primary)]">
+                  Build one →
+                </Link>
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] px-10 py-12 text-center">
+              <p className="t-body-md text-[var(--color-ink-mute)]">
+                Select a platform above, or{" "}
+                <Link href={buildHref({ view: "all" })} className="text-[var(--color-primary)]">
+                  show all
+                </Link>
+                .
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
