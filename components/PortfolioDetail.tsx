@@ -41,13 +41,39 @@ function fmtPct(v: number | null | undefined, places = 2): { text: string; cls: 
   return { text: `${sign}${Math.abs(v).toFixed(places)}%`, cls };
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+// Three-line editorial cell for the performance strip above the chart.
+// Top eyebrow → big value (medium ink or semantic colour) → bottom eyebrow.
+function PerformanceFact({
+  label,
+  value,
+  valueCls,
+  sublabel,
+}: {
+  label: string;
+  value: string;
+  valueCls?: string;
+  sublabel: string;
+}) {
   return (
-    <div>
-      <p className="t-micro-cap mb-1.5">{label}</p>
-      <p className="num text-[24px] font-medium leading-none text-[var(--color-ink)]">{value}</p>
+    <div className="px-3 first:pl-0 last:pr-0">
+      <p className="t-micro-cap mb-2">{label}</p>
+      <p className={`num text-[20px] font-medium leading-none ${valueCls ?? "text-[var(--color-ink)]"}`}>{value}</p>
+      <p className="t-micro-cap mt-2">{sublabel}</p>
     </div>
   );
+}
+
+function fmtSignedPct(v: number | null | undefined, places = 1): string {
+  if (v == null) return "—";
+  const sign = v > 0 ? "+" : v < 0 ? "−" : "";
+  return `${sign}${Math.abs(v).toFixed(places)}%`;
+}
+
+function pctCls(v: number | null | undefined): string {
+  if (v == null) return "text-[var(--color-ink-mute)]";
+  if (v > 0) return "text-[var(--color-positive)]";
+  if (v < 0) return "text-[var(--color-negative)]";
+  return "text-[var(--color-ink)]";
 }
 
 // Year-end / prior-year-end annual returns from the chart's daily/weekly
@@ -214,10 +240,6 @@ export function PortfolioDetail({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Derived facts for the mandate strip + hero.
-  const equityPct = xray.equityCoverage != null ? Math.round(xray.equityCoverage * 100) : null;
-  // Fixed Income is an approximation: 100 − equity. Cash/alts get lumped in.
-  const fixedIncomeApprox = equityPct != null ? Math.max(0, 100 - equityPct) : null;
   // Ending value assumes the 10Y CAGR compounded from S$100. Same conceit as
   // PhillipCapital's "S$348.65 grown from S$100" hero metric.
   const endingFrom100 =
@@ -228,6 +250,22 @@ export function PortfolioDetail({
       : xray.r10y != null && xray.r10y < 0
         ? "text-[var(--color-negative)]"
         : "text-[var(--color-ink-mute)]";
+
+  // Performance strip — computed once, reused by the cells above the chart
+  // and the Annual Total Returns chart below.
+  const annualReturns =
+    chart && chart.model.points.length >= 2
+      ? computeAnnualReturns(chart.model.points)
+      : [];
+  const bestYearReturn = annualReturns.length
+    ? annualReturns.reduce((a, b) => (a.return_pct > b.return_pct ? a : b))
+    : null;
+  const worstYearReturn = annualReturns.length
+    ? annualReturns.reduce((a, b) => (a.return_pct < b.return_pct ? a : b))
+    : null;
+  const endYear = chart ? parseInt(chart.commonEnd.slice(0, 4), 10) : null;
+  const rangeLabel = (yearsBack: number): string =>
+    endYear ? `${endYear - yearsBack} - ${endYear}` : "—";
 
   return (
     <>
@@ -282,15 +320,49 @@ export function PortfolioDetail({
         )}
       </header>
 
-      {/* Mandate facts strip */}
-      <section className="mt-8 mb-12 grid grid-cols-2 gap-x-8 gap-y-5 border-t border-[var(--color-hairline)] pt-6 sm:grid-cols-4">
-        <Fact label="Equity" value={equityPct != null ? `${equityPct}%` : "—"} />
-        <Fact label="Fixed Income" value={fixedIncomeApprox != null ? `${fixedIncomeApprox}%` : "—"} />
-        <Fact
-          label="OCF P.A."
-          value={xray.expense != null ? `${xray.expense.toFixed(3)}%` : "—"}
+      {/* Performance strip — 7 cells above the chart */}
+      <section className="mt-8 mb-4 grid grid-cols-2 gap-y-5 divide-x divide-[var(--color-hairline-2)] border-y border-[var(--color-hairline)] py-5 sm:grid-cols-4 md:grid-cols-7">
+        <PerformanceFact
+          label="1-Year"
+          value={fmtSignedPct(xray.r1y)}
+          valueCls={pctCls(xray.r1y)}
+          sublabel={endYear ? `Cal. ${endYear}` : "—"}
         />
-        <Fact label="Funds" value={`${holdings.length}`} />
+        <PerformanceFact
+          label="3-YR Ann."
+          value={fmtSignedPct(xray.r3y)}
+          valueCls={pctCls(xray.r3y)}
+          sublabel={rangeLabel(2)}
+        />
+        <PerformanceFact
+          label="5-YR Ann."
+          value={fmtSignedPct(xray.r5y)}
+          valueCls={pctCls(xray.r5y)}
+          sublabel={rangeLabel(4)}
+        />
+        <PerformanceFact
+          label="10-YR Ann."
+          value={fmtSignedPct(xray.r10y)}
+          valueCls={pctCls(xray.r10y)}
+          sublabel={rangeLabel(9)}
+        />
+        <PerformanceFact
+          label="Best Year"
+          value={bestYearReturn ? fmtSignedPct(bestYearReturn.return_pct) : "—"}
+          valueCls={bestYearReturn ? pctCls(bestYearReturn.return_pct) : ""}
+          sublabel="Calendar"
+        />
+        <PerformanceFact
+          label="Worst Year"
+          value={worstYearReturn ? fmtSignedPct(worstYearReturn.return_pct) : "—"}
+          valueCls={worstYearReturn ? pctCls(worstYearReturn.return_pct) : ""}
+          sublabel="Calendar"
+        />
+        <PerformanceFact
+          label="OCF"
+          value={xray.expense != null ? `${xray.expense.toFixed(3)}%` : "—"}
+          sublabel="Blended p.a."
+        />
       </section>
 
       {/* Trailing performance — hero card */}
@@ -354,8 +426,8 @@ export function PortfolioDetail({
             <p className="t-body-lg font-medium text-[var(--color-ink)]">Annual Total Returns</p>
             <p className="t-micro-cap">% per annum</p>
           </div>
-          {chart && chart.model.points.length >= 2 ? (
-            <AnnualReturnsBars data={computeAnnualReturns(chart.model.points)} />
+          {annualReturns.length >= 2 ? (
+            <AnnualReturnsBars data={annualReturns} />
           ) : (
             <div className="flex min-h-[260px] flex-1 items-center justify-center">
               <p className="t-caption text-[var(--color-ink-mute)]">
