@@ -347,16 +347,70 @@ export function PortfolioDetail({
         )}
       </section>
 
-      {/* Annual Total Returns — only renders once the chart series is loaded */}
-      {chart && chart.model.points.length >= 2 && (
-        <section className="mt-4 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+      {/* Annual Returns + Instruments — side-by-side, equal-width columns */}
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <section className="flex flex-col rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
           <div className="mb-5 flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] pb-3">
             <p className="t-body-lg font-medium text-[var(--color-ink)]">Annual Total Returns</p>
             <p className="t-micro-cap">% per annum</p>
           </div>
-          <AnnualReturnsBars data={computeAnnualReturns(chart.model.points)} />
+          {chart && chart.model.points.length >= 2 ? (
+            <AnnualReturnsBars data={computeAnnualReturns(chart.model.points)} />
+          ) : (
+            <div className="flex min-h-[260px] flex-1 items-center justify-center">
+              <p className="t-caption text-[var(--color-ink-mute)]">
+                {chartLoading ? "Computing annual returns…" : chartError ? "Unavailable" : "—"}
+              </p>
+            </div>
+          )}
         </section>
-      )}
+
+        <section className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+          <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3">
+            <p className="t-body-lg font-medium text-[var(--color-ink)]">Instruments</p>
+            <p className="t-micro-cap">Mandate constituents</p>
+          </div>
+          <table className="table-pro" style={{ tableLayout: "fixed" }}>
+            <colgroup>
+              <col style={{ width: "48%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "13%" }} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Instrument</th>
+                <th className="right">Weight %</th>
+                <th className="right">1Y</th>
+                <th className="right">3Y</th>
+                <th className="right">5Y</th>
+              </tr>
+            </thead>
+            <tbody>
+              {holdings.map((h) => {
+                const r1 = fmtPct(h.ann_1y);
+                const r3 = fmtPct(h.ann_3y);
+                const r5 = fmtPct(h.ann_5y);
+                return (
+                  <tr key={h.fund_id}>
+                    <td className="cell-fund">
+                      <span className="name text-[var(--color-ink)]" title={h.name}>{h.name}</span>
+                      <span className="meta">{h.isin ?? h.external_id}</span>
+                    </td>
+                    <td className="nowrap right">
+                      <span className="num text-[var(--color-ink)]">{(h.weight_bps / 100).toFixed(2)}%</span>
+                    </td>
+                    <td className="nowrap right"><span className={`num ${r1.cls}`}>{r1.text}</span></td>
+                    <td className="nowrap right"><span className={`num ${r3.cls}`}>{r3.text}</span></td>
+                    <td className="nowrap right"><span className={`num ${r5.cls}`}>{r5.text}</span></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      </div>
 
       {/* Sector + Geographic — two-column */}
       {((xray.sector?.length ?? 0) > 0 || (xray.geo?.length ?? 0) > 0) && (
@@ -421,52 +475,6 @@ export function PortfolioDetail({
         </section>
       )}
 
-      {/* Instruments — moved to the bottom, the constituent funds */}
-      <section className="mt-4 overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
-        <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3">
-          <p className="t-body-lg font-medium text-[var(--color-ink)]">Instruments</p>
-          <p className="t-micro-cap">Mandate constituents</p>
-        </div>
-        <table className="table-pro" style={{ tableLayout: "fixed" }}>
-          <colgroup>
-            <col style={{ width: "48%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "13%" }} />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Instrument</th>
-              <th className="right">Weight %</th>
-              <th className="right">1Y</th>
-              <th className="right">3Y</th>
-              <th className="right">5Y</th>
-            </tr>
-          </thead>
-          <tbody>
-            {holdings.map((h) => {
-              const r1 = fmtPct(h.ann_1y);
-              const r3 = fmtPct(h.ann_3y);
-              const r5 = fmtPct(h.ann_5y);
-              return (
-                <tr key={h.fund_id}>
-                  <td className="cell-fund">
-                    <span className="name text-[var(--color-ink)]" title={h.name}>{h.name}</span>
-                    <span className="meta">{h.isin ?? h.external_id}</span>
-                  </td>
-                  <td className="nowrap right">
-                    <span className="num text-[var(--color-ink)]">{(h.weight_bps / 100).toFixed(2)}%</span>
-                  </td>
-                  <td className="nowrap right"><span className={`num ${r1.cls}`}>{r1.text}</span></td>
-                  <td className="nowrap right"><span className={`num ${r3.cls}`}>{r3.text}</span></td>
-                  <td className="nowrap right"><span className={`num ${r5.cls}`}>{r5.text}</span></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
     </>
   );
 }
