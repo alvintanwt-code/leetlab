@@ -591,31 +591,49 @@ export function StudioShell({
                 </table>
               </div>
 
-              {/* Portfolio X-ray — analysis panel groups all weighted-exposure cards */}
+              {/* Portfolio X-ray — analysis panel with editorial mandate strip */}
               {xray && (
                 <section className="mt-6 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-                  <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
-                    <p className="t-micro-cap text-[var(--color-ink)]">Portfolio X-ray</p>
-                    <p className="t-caption text-[var(--color-ink-mute)]">weighted exposure analysis across the basket</p>
+                  {/* Editorial header */}
+                  <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                    <p className="t-body-lg font-medium text-[var(--color-ink)]">Portfolio X-ray</p>
+                    <p className="t-micro-cap">
+                      Weighted exposure
+                      {xray.risk != null && <> &nbsp;&middot;&nbsp; Risk {Math.round(xray.risk)}/5</>}
+                    </p>
                   </div>
 
-                  {/* Weighted trailing returns KPIs */}
+                  {/* Mandate facts strip — Equity / Fixed Income / OCF / Funds */}
+                  <section className="mt-5 mb-6 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-[var(--color-hairline)] pt-5 sm:grid-cols-4">
+                    <div>
+                      <p className="t-micro-cap mb-1.5">Equity</p>
+                      <p className="num text-[22px] font-medium leading-none text-[var(--color-ink)]">{`${(xray.equityCoverage * 100).toFixed(0)}%`}</p>
+                    </div>
+                    <div>
+                      <p className="t-micro-cap mb-1.5">Fixed Income</p>
+                      <p className="num text-[22px] font-medium leading-none text-[var(--color-ink)]">{`${Math.max(0, 100 - xray.equityCoverage * 100).toFixed(0)}%`}</p>
+                    </div>
+                    <div>
+                      <p className="t-micro-cap mb-1.5">OCF P.A.</p>
+                      <p className="num text-[22px] font-medium leading-none text-[var(--color-ink)]">{xray.expense != null ? `${xray.expense.toFixed(3)}%` : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="t-micro-cap mb-1.5">Funds</p>
+                      <p className="num text-[22px] font-medium leading-none text-[var(--color-ink)]">{basket.length}</p>
+                    </div>
+                  </section>
+
+                  {/* Weighted trailing returns — 4 return tiles, fundamentals row dropped (now in mandate strip) */}
                   <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
                     <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
-                      <p className="t-micro-cap">Weighted trailing returns</p>
-                      <p className="t-caption text-[var(--color-ink-mute)]">arithmetic weight-average of component returns, fund-ccy basis</p>
+                      <p className="t-body-lg font-medium text-[var(--color-ink)]">Weighted trailing returns</p>
+                      <p className="t-micro-cap">Weight-average</p>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[var(--color-hairline-2)]">
+                    <div className="grid grid-cols-2 gap-0 divide-x divide-[var(--color-hairline-2)] md:grid-cols-4">
                       <KpiTile label="1Y" {...fmtPctMetric(xray.r1y)} />
                       <KpiTile label="3Y pa" {...fmtPctMetric(xray.r3y)} />
                       <KpiTile label="5Y pa" {...fmtPctMetric(xray.r5y)} />
                       <KpiTile label="10Y pa" {...fmtPctMetric(xray.r10y)} />
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-[var(--color-hairline-2)] border-t border-[var(--color-hairline-2)] pt-4">
-                      <KpiTile label="Expense" value={xray.expense != null ? `${xray.expense.toFixed(2)}%` : "—"} />
-                      <KpiTile label="Risk score" value={xray.risk != null ? `${xray.risk.toFixed(1)} / 5` : "—"} />
-                      <KpiTile label="Equity coverage" value={`${(xray.equityCoverage * 100).toFixed(0)}%`} />
-                      <KpiTile label="Holdings" value={`${basket.length}`} />
                     </div>
                   </section>
 
@@ -625,19 +643,19 @@ export function StudioShell({
                       {xray.sector.length > 0 && (
                         <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
                           <div className="mb-4 flex items-baseline justify-between gap-3">
-                            <p className="t-micro-cap">Sector allocation</p>
-                            <p className="t-caption text-[var(--color-ink-mute)]">equity sleeve &middot; <span className="num">{(xray.equityCoverage * 100).toFixed(0)}%</span> of portfolio is equity</p>
+                            <p className="t-body-lg font-medium text-[var(--color-ink)]">Sector allocation</p>
+                            <p className="t-micro-cap">Equity sleeve</p>
                           </div>
-                          <BarsRow items={xray.sector.slice(0, 11)} color="var(--color-primary)" />
+                          <BarsRow items={xray.sector.slice(0, 11)} />
                         </section>
                       )}
                       {xray.geo.length > 0 && (
                         <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
                           <div className="mb-4 flex items-baseline justify-between gap-3">
-                            <p className="t-micro-cap">Geographic allocation</p>
-                            <p className="t-caption text-[var(--color-ink-mute)]">equity sleeve, by domicile region</p>
+                            <p className="t-body-lg font-medium text-[var(--color-ink)]">Geographic allocation</p>
+                            <p className="t-micro-cap">Equity sleeve</p>
                           </div>
-                          <BarsRow items={xray.geo.slice(0, 11)} color="#946638" />
+                          <BarsRow items={xray.geo.slice(0, 11)} />
                         </section>
                       )}
                     </div>
@@ -647,8 +665,8 @@ export function StudioShell({
                   {xray.holdings.length > 0 && (
                     <section className="mt-4 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
                       <div className="mb-4 flex items-baseline justify-between gap-3 flex-wrap">
-                        <p className="t-micro-cap">Top 10 look-through holdings</p>
-                        <p className="t-caption text-[var(--color-ink-mute)]">weight &times; position, across all components</p>
+                        <p className="t-body-lg font-medium text-[var(--color-ink)]">Top 10 look-through holdings</p>
+                        <p className="t-micro-cap">Sleeve-weighted</p>
                       </div>
                       <table className="table-pro" style={{ tableLayout: "fixed" }}>
                         <colgroup>
@@ -688,7 +706,8 @@ export function StudioShell({
                       <TrailingChart {...chart} />
                     ) : (
                       <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-8 text-center">
-                        <p className="t-micro-cap mb-2">Trailing performance · growth of 100</p>
+                        <p className="t-body-lg mb-2 font-medium text-[var(--color-ink)]">Trailing performance</p>
+                        <p className="t-micro-cap mb-3">Growth of 100</p>
                         <p className="t-body-md mx-auto max-w-md text-[var(--color-ink-mute)]">
                           Pull a live Morningstar look-through for each component and chart the weight-blended model line against its components, rebased to 100.
                         </p>
@@ -891,11 +910,13 @@ export function StudioShell({
   );
 }
 
+// Editorial KPI: small-caps label on top, 22px medium-ink value below.
+// Matches PortfolioDetail's Fact pattern.
 function KpiTile({ label, value, valueCls }: { label: string; value: string; valueCls?: string }) {
   return (
     <div className="px-4 first:pl-0 last:pr-0">
-      <p className={`num t-display-md leading-none ${valueCls ?? "text-[var(--color-ink)]"}`}>{value}</p>
-      <p className="t-micro-cap mt-2 text-[10px]">{label}</p>
+      <p className="t-micro-cap mb-1.5">{label}</p>
+      <p className={`num text-[22px] font-medium leading-none ${valueCls ?? "text-[var(--color-ink)]"}`}>{value}</p>
     </div>
   );
 }
@@ -905,17 +926,19 @@ function fmtPctMetric(v: number | null): { value: string; valueCls: string } {
   return { value: f.text, valueCls: f.cls };
 }
 
-function BarsRow({ items, color }: { items: { label: string; weight_pct: number }[]; color: string }) {
+// Editorial bar — 2px hairline-thin, monochrome ink fill on hairline-2 track.
+// `color` prop kept for back-compat but ignored; callers should drop it.
+function BarsRow({ items }: { items: { label: string; weight_pct: number }[]; color?: string }) {
   const max = items.length > 0 ? items[0].weight_pct : 1;
   return (
-    <ul className="flex flex-col gap-1.5">
+    <ul className="flex flex-col gap-3">
       {items.map((a) => (
         <li key={a.label} className="flex items-center gap-3">
           <span className="t-body-md w-32 shrink-0 truncate text-[var(--color-ink-2)]" title={a.label}>{a.label}</span>
-          <span className="relative h-3.5 flex-1 overflow-hidden rounded-sm bg-[var(--color-canvas-soft)]">
+          <span className="relative h-[2px] flex-1 bg-[var(--color-hairline-2)]">
             <span
-              className="absolute inset-y-0 left-0 rounded-sm"
-              style={{ width: `${Math.max(1, Math.min(100, (a.weight_pct / max) * 100)).toFixed(1)}%`, background: color }}
+              className="absolute inset-y-0 left-0 bg-[var(--color-ink)]"
+              style={{ width: `${Math.max(1, Math.min(100, (a.weight_pct / max) * 100)).toFixed(1)}%` }}
             />
           </span>
           <span className="num w-14 shrink-0 text-right text-[12px] text-[var(--color-ink)]">{a.weight_pct.toFixed(1)}%</span>
