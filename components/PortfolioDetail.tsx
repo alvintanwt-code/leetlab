@@ -45,7 +45,7 @@ function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="t-micro-cap mb-1.5">{label}</p>
-      <p className="num text-[26px] font-medium leading-none text-[var(--color-ink)]">{value}</p>
+      <p className="num text-[24px] font-medium leading-none text-[var(--color-ink)]">{value}</p>
     </div>
   );
 }
@@ -231,9 +231,9 @@ export function PortfolioDetail({
 
   return (
     <>
-      <header className="mt-6">
+      <header className="mt-5">
         {/* Eyebrow — provider · category · risk */}
-        <div className="mb-6 flex items-center gap-2.5">
+        <div className="mb-4 flex items-center gap-2.5">
           <span className="inline-block h-2.5 w-2.5 bg-[var(--color-primary)]" aria-hidden />
           <p className="t-micro-cap">
             {portfolio.provider_name.toUpperCase()} <span className="mx-1.5 text-[var(--color-hairline)]">·</span>{" "}
@@ -251,8 +251,8 @@ export function PortfolioDetail({
         {/* Title + hero KPI */}
         <div className="flex flex-wrap-reverse items-end justify-between gap-x-8 gap-y-4">
           <h1
-            className="font-medium leading-[0.95] text-[var(--color-ink)] text-[56px] sm:text-[64px]"
-            style={{ letterSpacing: "-0.025em" }}
+            className="font-medium leading-[0.95] text-[var(--color-ink)] text-[40px] sm:text-[48px]"
+            style={{ letterSpacing: "-0.02em" }}
           >
             {portfolio.name}
           </h1>
@@ -260,13 +260,13 @@ export function PortfolioDetail({
             <div className="text-right">
               <p className="font-medium leading-[0.9]">
                 <span
-                  className="num text-[var(--color-ink)] text-[60px] sm:text-[72px]"
+                  className="num text-[var(--color-ink)] text-[48px] sm:text-[56px]"
                   style={{ letterSpacing: "-0.03em" }}
                 >
                   {Math.round(xray.r10y)}
                 </span>
                 <span
-                  className={`text-[28px] sm:text-[34px] ${r10yCls}`}
+                  className={`text-[24px] sm:text-[28px] ${r10yCls}`}
                   style={{ letterSpacing: "-0.02em" }}
                 >
                   %
@@ -283,7 +283,7 @@ export function PortfolioDetail({
       </header>
 
       {/* Mandate facts strip */}
-      <section className="mt-8 mb-10 grid grid-cols-2 gap-x-8 gap-y-5 border-t border-[var(--color-hairline)] pt-6 sm:grid-cols-4">
+      <section className="mt-8 mb-12 grid grid-cols-2 gap-x-8 gap-y-5 border-t border-[var(--color-hairline)] pt-6 sm:grid-cols-4">
         <Fact label="Equity" value={equityPct != null ? `${equityPct}%` : "—"} />
         <Fact label="Fixed Income" value={fixedIncomeApprox != null ? `${fixedIncomeApprox}%` : "—"} />
         <Fact

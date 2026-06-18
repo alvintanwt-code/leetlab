@@ -209,13 +209,13 @@ export default async function ModelPortfoliosIndex({
               <h1 className="t-h-md text-[var(--color-ink)]">Model Portfolio</h1>
               <Link
                 href={buildHref({ view: "all" })}
-                className={`flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 t-caption transition-colors ${
+                className={`shrink-0 t-caption transition-colors ${
                   isShowAll
-                    ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-white"
-                    : "border-[var(--color-hairline)] text-[var(--color-ink-2)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
+                    ? "font-medium text-[var(--color-ink)]"
+                    : "text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
                 }`}
               >
-                Show all
+                Show all →
               </Link>
             </div>
 
