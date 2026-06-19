@@ -28,6 +28,7 @@ const PayloadSchema = z.object({
     .array(
       z.object({
         fund: z.string().min(1).max(200),
+        fundId: z.number().int().positive().optional(),
         units: z.string().max(40).optional(),
         costBasis: z.string().max(40).optional(),
         currentValue: z.string().min(1).max(40),
@@ -113,11 +114,15 @@ export async function generateSwitch(input: unknown): Promise<GenerateSwitchResu
     ann_3y: f.ann_3y,
   }));
 
+  const byId = new Map<number, FundMeta>();
+  for (const f of fundLookup) byId.set(f.id, f);
+
   const resolved: ResolvedHolding[] = holdings.map((h) => {
-    const matched = matchFund(h.fund, fundLookup);
     const cv = parseNum(h.currentValue) ?? 0;
     const cb = parseNum(h.costBasis);
     const u = parseNum(h.units);
+    const explicit = h.fundId != null ? byId.get(h.fundId) ?? null : null;
+    const matched = explicit ?? matchFund(h.fund, fundLookup);
     if (!matched) {
       return {
         inputName: h.fund,

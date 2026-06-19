@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import type { ConfirmedPortfolio } from "@/lib/db/queries";
 import type { SwitchMemo } from "@/lib/switch/types";
@@ -9,9 +9,18 @@ import { FundSwitchMemo } from "@/components/FundSwitchMemo";
 
 type Provider = { slug: string; name: string };
 
+export type FundOption = {
+  id: number;
+  name: string;
+  fund_house: string | null;
+  asset_class: string | null;
+  risk_rating: number | null;
+};
+
 type Holding = {
   id: string;
   fund: string;
+  fundId: number | null;
   units: string;
   costBasis: string;
   currentValue: string;
@@ -24,7 +33,7 @@ type PerPlatform = {
 
 type WorkspaceState = Record<string, PerPlatform>;
 
-const STORAGE_KEY = "fundswitch:v1";
+const STORAGE_KEY = "fundswitch:v2";
 
 const PROVIDER_SHORT: Record<string, string> = {
   hsbc: "HSBC Life",
@@ -46,7 +55,7 @@ function newRow(): Holding {
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2);
-  return { id, fund: "", units: "", costBasis: "", currentValue: "" };
+  return { id, fund: "", fundId: null, units: "", costBasis: "", currentValue: "" };
 }
 
 function defaultPerPlatform(): PerPlatform {
@@ -66,9 +75,11 @@ function isHoldingValid(h: Holding): boolean {
 export function FundSwitchWorkspace({
   portfolios,
   providers,
+  fundsByPlatform,
 }: {
   portfolios: ConfirmedPortfolio[];
   providers: Provider[];
+  fundsByPlatform: Record<string, FundOption[]>;
 }) {
   const providerCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -144,9 +155,16 @@ export function FundSwitchWorkspace({
   function updateHolding(idx: number, patch: Partial<Holding>) {
     setState((s) => {
       const prev = s[platform] ?? defaultPerPlatform();
-      const rows = (prev.holdings.length > 0 ? prev.holdings : [newRow()]).map((h, i) =>
-        i === idx ? { ...h, ...patch } : h,
-      );
+      const rows = (prev.holdings.length > 0 ? prev.holdings : [newRow()]).map((h, i) => {
+        if (i !== idx) return h;
+        const next = { ...h, ...patch };
+        // Typing in the fund field invalidates a previously selected fundId
+        // unless the patch explicitly sets a new one.
+        if ("fund" in patch && !("fundId" in patch)) {
+          next.fundId = null;
+        }
+        return next;
+      });
       return { ...s, [platform]: { ...prev, holdings: rows } };
     });
   }
@@ -182,6 +200,7 @@ export function FundSwitchWorkspace({
       modelId: current.selectedModelId,
       holdings: holdings.filter(isHoldingValid).map((h) => ({
         fund: h.fund.trim(),
+        fundId: h.fundId ?? undefined,
         units: h.units || undefined,
         costBasis: h.costBasis || undefined,
         currentValue: h.currentValue,
@@ -199,6 +218,7 @@ export function FundSwitchWorkspace({
   }
 
   const platformModels = portfolios.filter((p) => p.provider_slug === platform);
+  const platformFunds = fundsByPlatform[platform] ?? [];
   const validHoldingsCount = holdings.filter(isHoldingValid).length;
   const canGenerate = validHoldingsCount > 0 && current.selectedModelId != null;
 
@@ -279,6 +299,7 @@ export function FundSwitchWorkspace({
                   <HoldingInputRow
                     key={h.id}
                     h={h}
+                    options={platformFunds}
                     canRemove={holdings.length > 1}
                     onChange={(patch) => updateHolding(i, patch)}
                     onRemove={() => removeRow(i)}
@@ -376,11 +397,13 @@ function ChromeTitle() {
 
 function HoldingInputRow({
   h,
+  options,
   canRemove,
   onChange,
   onRemove,
 }: {
   h: Holding;
+  options: FundOption[];
   canRemove: boolean;
   onChange: (patch: Partial<Holding>) => void;
   onRemove: () => void;
@@ -391,12 +414,12 @@ function HoldingInputRow({
   return (
     <tr className="group">
       <td>
-        <input
-          type="text"
+        <FundCombobox
           value={h.fund}
-          onChange={(e) => onChange({ fund: e.target.value })}
-          placeholder="Fund name…"
-          className={cell}
+          fundId={h.fundId}
+          options={options}
+          onChange={(patch) => onChange(patch)}
+          cellClassName={cell}
         />
       </td>
       <td className="nowrap right">
@@ -448,6 +471,144 @@ function HoldingInputRow({
         )}
       </td>
     </tr>
+  );
+}
+
+function FundCombobox({
+  value,
+  fundId,
+  options,
+  onChange,
+  cellClassName,
+}: {
+  value: string;
+  fundId: number | null;
+  options: FundOption[];
+  onChange: (patch: { fund: string; fundId: number | null }) => void;
+  cellClassName: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const query = value.trim().toLowerCase();
+
+  const matches = useMemo(() => {
+    if (!query) return [] as FundOption[];
+    const exact: FundOption[] = [];
+    const starts: FundOption[] = [];
+    const subs: FundOption[] = [];
+    for (const o of options) {
+      const n = o.name.toLowerCase();
+      if (n === query) exact.push(o);
+      else if (n.startsWith(query)) starts.push(o);
+      else if (n.includes(query)) subs.push(o);
+    }
+    return [...exact, ...starts, ...subs].slice(0, 8);
+  }, [query, options]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  useEffect(() => {
+    setHighlight(0);
+  }, [query]);
+
+  function commit(o: FundOption) {
+    onChange({ fund: o.name, fundId: o.id });
+    setOpen(false);
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!open && (e.key === "ArrowDown" || e.key === "Enter")) {
+      if (matches.length > 0) {
+        setOpen(true);
+        e.preventDefault();
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight((h) => Math.min(matches.length - 1, h + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight((h) => Math.max(0, h - 1));
+    } else if (e.key === "Enter") {
+      const m = matches[highlight];
+      if (m) {
+        e.preventDefault();
+        commit(m);
+      }
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  }
+
+  const showCheck = fundId != null && value.trim().length > 0;
+
+  return (
+    <div ref={rootRef} className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => {
+          onChange({ fund: e.target.value, fundId: null });
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={onKeyDown}
+        placeholder="Fund name…"
+        className={`${cellClassName} ${showCheck ? "pr-5" : ""}`}
+        autoComplete="off"
+        spellCheck={false}
+      />
+      {showCheck && (
+        <span
+          aria-hidden
+          title="Matched to platform fund"
+          className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-[12px] leading-none text-[var(--color-positive)]"
+        >
+          ✓
+        </span>
+      )}
+      {open && matches.length > 0 && (
+        <ul
+          role="listbox"
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] py-1 shadow-[0_8px_24px_rgba(0,55,112,0.08),0_2px_6px_rgba(0,55,112,0.04)]"
+        >
+          {matches.map((o, i) => (
+            <li
+              key={o.id}
+              role="option"
+              aria-selected={i === highlight}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                commit(o);
+              }}
+              onMouseEnter={() => setHighlight(i)}
+              className={`cursor-pointer px-3 py-2 ${
+                i === highlight ? "bg-[var(--color-canvas-soft)]" : ""
+              }`}
+            >
+              <p className="t-body-md truncate text-[var(--color-ink)]" title={o.name}>
+                {o.name}
+              </p>
+              <p className="t-micro-cap mt-1 truncate text-[var(--color-ink-mute)]">
+                {[o.fund_house, o.asset_class].filter(Boolean).join(" · ") || "—"}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
