@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import type { ConfirmedPortfolio } from "@/lib/db/queries";
+import type { SwitchMemo } from "@/lib/switch/types";
+import { generateSwitch } from "@/app/(app)/switch/actions";
+import { FundSwitchMemo } from "@/components/FundSwitchMemo";
 
 type Provider = { slug: string; name: string };
 
@@ -83,6 +86,9 @@ export function FundSwitchWorkspace({
   const [activePlatform, setActivePlatform] = useState<string | null>(initialPlatform);
   const [state, setState] = useState<WorkspaceState>({});
   const [hydrated, setHydrated] = useState(false);
+  const [memo, setMemo] = useState<SwitchMemo | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
   useEffect(() => {
     try {
@@ -170,6 +176,28 @@ export function FundSwitchWorkspace({
     });
   }
 
+  function onGenerate() {
+    if (current.selectedModelId == null) return;
+    const payload = {
+      modelId: current.selectedModelId,
+      holdings: holdings.filter(isHoldingValid).map((h) => ({
+        fund: h.fund.trim(),
+        units: h.units || undefined,
+        costBasis: h.costBasis || undefined,
+        currentValue: h.currentValue,
+      })),
+    };
+    setGenerateError(null);
+    startTransition(async () => {
+      const res = await generateSwitch(payload);
+      if (res.ok) {
+        setMemo(res.memo);
+      } else {
+        setGenerateError(res.error);
+      }
+    });
+  }
+
   const platformModels = portfolios.filter((p) => p.provider_slug === platform);
   const validHoldingsCount = holdings.filter(isHoldingValid).length;
   const canGenerate = validHoldingsCount > 0 && current.selectedModelId != null;
@@ -217,6 +245,10 @@ export function FundSwitchWorkspace({
         </div>
       </div>
 
+      {memo ? (
+        <FundSwitchMemo memo={memo} onEdit={() => setMemo(null)} />
+      ) : (
+      <>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
           <div className="mb-4 flex items-baseline justify-between">
@@ -297,24 +329,33 @@ export function FundSwitchWorkspace({
 
       <div className="mt-6 flex items-center justify-between">
         <p className="t-micro-cap text-[var(--color-ink-mute)]">
-          {validHoldingsCount > 0
+          {generateError
+            ? generateError
+            : validHoldingsCount > 0
             ? `${validHoldingsCount} holding${validHoldingsCount === 1 ? "" : "s"} ready · session-only, closing the tab discards it.`
             : "Generated memo is session-only. Closing the tab discards it."}
         </p>
         <button
           type="button"
-          disabled={!canGenerate}
+          disabled={!canGenerate || pending}
+          onClick={onGenerate}
           className={`t-caption rounded-full px-5 py-2.5 font-medium transition-colors ${
-            canGenerate
+            canGenerate && !pending
               ? "bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:bg-[var(--color-primary-deep)]"
               : "cursor-not-allowed bg-[var(--color-canvas-soft)] text-[var(--color-ink-mute)]"
           }`}
         >
-          {canGenerate ? "Generate switch" : "Add holdings and pick a model"}
+          {pending
+            ? "Generating…"
+            : canGenerate
+            ? "Generate switch"
+            : "Add holdings and pick a model"}
         </button>
       </div>
 
       <div className="h-16" />
+      </>
+      )}
     </div>
   );
 }
