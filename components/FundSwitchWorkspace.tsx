@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import type { ConfirmedPortfolio } from "@/lib/db/queries";
 import type { SwitchMemo } from "@/lib/switch/types";
@@ -489,7 +490,15 @@ function FundCombobox({
 }) {
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+  const [mounted, setMounted] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const query = value.trim().toLowerCase();
 
@@ -509,8 +518,25 @@ function FundCombobox({
 
   useEffect(() => {
     if (!open) return;
+    function measure() {
+      if (inputRef.current) setAnchorRect(inputRef.current.getBoundingClientRect());
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     function onDoc(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+      const t = e.target as Node;
+      const inRoot = rootRef.current?.contains(t) ?? false;
+      const inDropdown = dropdownRef.current?.contains(t) ?? false;
+      if (!inRoot && !inDropdown) {
         setOpen(false);
       }
     }
@@ -554,9 +580,50 @@ function FundCombobox({
 
   const showCheck = fundId != null && value.trim().length > 0;
 
+  const dropdown =
+    open && matches.length > 0 && anchorRect ? (
+      <ul
+        ref={dropdownRef}
+        role="listbox"
+        style={{
+          position: "fixed",
+          left: anchorRect.left,
+          top: anchorRect.bottom + 4,
+          width: Math.max(anchorRect.width, 260),
+          maxHeight: 288,
+          zIndex: 50,
+        }}
+        className="overflow-y-auto rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] py-1 shadow-[0_8px_24px_rgba(0,55,112,0.08),0_2px_6px_rgba(0,55,112,0.04)]"
+      >
+        {matches.map((o, i) => (
+          <li
+            key={o.id}
+            role="option"
+            aria-selected={i === highlight}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              commit(o);
+            }}
+            onMouseEnter={() => setHighlight(i)}
+            className={`cursor-pointer px-3 py-2 ${
+              i === highlight ? "bg-[var(--color-canvas-soft)]" : ""
+            }`}
+          >
+            <p className="t-body-md truncate text-[var(--color-ink)]" title={o.name}>
+              {o.name}
+            </p>
+            <p className="t-micro-cap mt-1 truncate text-[var(--color-ink-mute)]">
+              {[o.fund_house, o.asset_class].filter(Boolean).join(" · ") || "—"}
+            </p>
+          </li>
+        ))}
+      </ul>
+    ) : null;
+
   return (
     <div ref={rootRef} className="relative">
       <input
+        ref={inputRef}
         type="text"
         value={value}
         onChange={(e) => {
@@ -579,35 +646,7 @@ function FundCombobox({
           ✓
         </span>
       )}
-      {open && matches.length > 0 && (
-        <ul
-          role="listbox"
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] py-1 shadow-[0_8px_24px_rgba(0,55,112,0.08),0_2px_6px_rgba(0,55,112,0.04)]"
-        >
-          {matches.map((o, i) => (
-            <li
-              key={o.id}
-              role="option"
-              aria-selected={i === highlight}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                commit(o);
-              }}
-              onMouseEnter={() => setHighlight(i)}
-              className={`cursor-pointer px-3 py-2 ${
-                i === highlight ? "bg-[var(--color-canvas-soft)]" : ""
-              }`}
-            >
-              <p className="t-body-md truncate text-[var(--color-ink)]" title={o.name}>
-                {o.name}
-              </p>
-              <p className="t-micro-cap mt-1 truncate text-[var(--color-ink-mute)]">
-                {[o.fund_house, o.asset_class].filter(Boolean).join(" · ") || "—"}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+      {mounted && dropdown ? createPortal(dropdown, document.body) : null}
     </div>
   );
 }
