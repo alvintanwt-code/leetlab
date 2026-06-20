@@ -5,7 +5,11 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import type { ConfirmedPortfolio } from "@/lib/db/queries";
 import type { SwitchMemo } from "@/lib/switch/types";
-import { generateSwitch } from "@/app/(app)/switch/actions";
+import {
+  generateSwitch,
+  parsePastedPortfolio,
+  type ParsedHoldingRow,
+} from "@/app/(app)/switch/actions";
 import { FundSwitchMemo } from "@/components/FundSwitchMemo";
 
 type Provider = { slug: string; name: string };
@@ -101,6 +105,10 @@ export function FundSwitchWorkspace({
   const [memo, setMemo] = useState<SwitchMemo | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [pasting, setPasting] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const [pasteLoading, setPasteLoading] = useState(false);
+  const [pasteError, setPasteError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -195,6 +203,57 @@ export function FundSwitchWorkspace({
     });
   }
 
+  function applyParsedRows(rows: ParsedHoldingRow[]) {
+    if (rows.length === 0) return;
+    const newHoldings: Holding[] = rows.map((r) => ({
+      id:
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : Math.random().toString(36).slice(2),
+      fund: r.fund,
+      fundId: r.fundId ?? null,
+      units: r.units != null ? String(r.units) : "",
+      costBasis: r.costBasis != null ? String(r.costBasis) : "",
+      currentValue: String(r.currentValue),
+    }));
+    setState((s) => {
+      const prev = s[platform] ?? defaultPerPlatform();
+      const allEmpty = prev.holdings.every(
+        (h) => h.fund.trim() === "" && h.units === "" && h.costBasis === "" && h.currentValue === "",
+      );
+      const base = allEmpty ? [] : prev.holdings;
+      return { ...s, [platform]: { ...prev, holdings: [...base, ...newHoldings] } };
+    });
+  }
+
+  async function onParse() {
+    if (pasteText.trim().length < 10) return;
+    setPasteLoading(true);
+    setPasteError(null);
+    try {
+      const result = await parsePastedPortfolio({
+        text: pasteText,
+        platformSlug: platform,
+      });
+      if (result.ok) {
+        applyParsedRows(result.rows);
+        setPasting(false);
+        setPasteText("");
+      } else {
+        setPasteError(result.error);
+      }
+    } catch {
+      setPasteError("Parse request failed. Try again.");
+    } finally {
+      setPasteLoading(false);
+    }
+  }
+
+  function onCancelPaste() {
+    setPasting(false);
+    setPasteError(null);
+  }
+
   function onGenerate() {
     if (current.selectedModelId == null) return;
     const payload = {
@@ -274,8 +333,61 @@ export function FundSwitchWorkspace({
         <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="t-body-md font-medium text-[var(--color-ink)]">Client portfolio</h2>
-            <p className="t-micro-cap">Current holdings</p>
+            {pasting ? (
+              <p className="t-micro-cap">Current holdings</p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setPasting(true)}
+                className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
+              >
+                Paste portfolio →
+              </button>
+            )}
           </div>
+
+          {pasting && (
+            <div className="mb-4 rounded-md border border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] p-4">
+              <p className="t-micro-cap mb-2">PASTE PORTFOLIO</p>
+              <p className="t-caption mb-3 text-[var(--color-ink-mute)]">
+                Paste a portfolio table from a statement, email, or broker portal. We&rsquo;ll match
+                holdings against the {(PROVIDER_SHORT[platform] ?? platform)} fund universe.
+              </p>
+              <textarea
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder="Paste the portfolio text here…"
+                rows={6}
+                disabled={pasteLoading}
+                className="block w-full resize-y rounded-sm border border-[var(--color-hairline-2)] bg-[var(--color-canvas)] p-3 t-body-md text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-mute)] placeholder:opacity-50 focus:border-[var(--color-primary)] disabled:opacity-60"
+              />
+              {pasteError && (
+                <p className="t-caption mt-2 text-[var(--color-negative)]">{pasteError}</p>
+              )}
+              <div className="mt-3 flex items-center justify-end gap-5">
+                <button
+                  type="button"
+                  onClick={onCancelPaste}
+                  disabled={pasteLoading}
+                  className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)] disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={onParse}
+                  disabled={pasteLoading || pasteText.trim().length < 10}
+                  className={`t-caption font-medium transition-colors ${
+                    pasteLoading || pasteText.trim().length < 10
+                      ? "cursor-not-allowed text-[var(--color-ink-mute)]"
+                      : "text-[var(--color-primary)] hover:text-[var(--color-primary-deep)]"
+                  }`}
+                >
+                  {pasteLoading ? "Parsing…" : "Parse with AI →"}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
             <table className="table-pro w-full">

@@ -1,5 +1,7 @@
 "use server";
 
+import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { auth } from "@/auth";
 import {
@@ -186,4 +188,124 @@ export async function generateSwitch(input: unknown): Promise<GenerateSwitchResu
   });
 
   return { ok: true, memo };
+}
+
+const ParseRequestSchema = z.object({
+  text: z.string().min(10).max(20000),
+  platformSlug: z.string().min(1).max(20),
+});
+
+const ParsedHoldingSchema = z.object({
+  fund: z
+    .string()
+    .describe(
+      "Best canonical fund name. Use the exact name from the platform fund universe when matched.",
+    ),
+  fundId: z
+    .number()
+    .nullable()
+    .describe(
+      "Numeric ID from the platform fund universe if confidently matched. Null when uncertain.",
+    ),
+  units: z
+    .number()
+    .nullable()
+    .describe("Holding units / shares as a plain number. Null if not present in the text."),
+  costBasis: z
+    .number()
+    .nullable()
+    .describe(
+      "Cost basis in SGD as a plain number — strip currency prefixes and commas. Null if not present.",
+    ),
+  currentValue: z
+    .number()
+    .describe(
+      "Current market value in SGD as a plain number — strip currency prefixes and commas. Required.",
+    ),
+});
+
+const ParsedPortfolioSchema = z.object({
+  holdings: z
+    .array(ParsedHoldingSchema)
+    .describe(
+      "One entry per client holding. Skip headers, totals, subtotals, footnotes, summary rows.",
+    ),
+});
+
+export type ParsedHoldingRow = z.infer<typeof ParsedHoldingSchema>;
+
+export type ParsePastedPortfolioResult =
+  | { ok: true; rows: ParsedHoldingRow[] }
+  | { ok: false; error: string };
+
+export async function parsePastedPortfolio(
+  input: unknown,
+): Promise<ParsePastedPortfolioResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in required" };
+
+  const parsed = ParseRequestSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid input" };
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return {
+      ok: false,
+      error: "ANTHROPIC_API_KEY is not set on the server. Restart the dev server with the key exported.",
+    };
+  }
+
+  const { text, platformSlug } = parsed.data;
+
+  const funds = await listFundsForPicker(platformSlug);
+  const fundUniverse = funds
+    .map((f) => `${f.id} | ${f.name}${f.asset_class ? ` | ${f.asset_class}` : ""}`)
+    .join("\n");
+
+  const platformLabel = PROVIDER_LABEL[platformSlug] ?? platformSlug;
+
+  const client = new Anthropic();
+
+  try {
+    const response = await client.messages.parse({
+      model: "claude-opus-4-8",
+      max_tokens: 8000,
+      system:
+        "You parse client investment portfolio data from messy pasted text (statements, broker portals, emails) and emit a structured list of holdings.\n\n" +
+        "Rules:\n" +
+        "- One entry per actual holding. Skip headers, totals, subtotals, footnotes, summary rows, balance lines.\n" +
+        "- Strip currency prefixes (SGD, S$, USD, $, etc.) and thousands separators to produce plain numbers.\n" +
+        "- Match each holding against the supplied platform fund universe by name. Set fundId only when you are confident in the match — partial / fuzzy guesses should leave fundId null and the original typed name in `fund`.\n" +
+        "- When a fund matches, use the canonical name from the universe in `fund`.\n" +
+        "- `currentValue` is required. `units` and `costBasis` are optional — set them to null if not present in the text.",
+      messages: [
+        {
+          role: "user",
+          content:
+            `Platform: ${platformLabel}\n\n` +
+            `Fund universe (id | name | asset class):\n${fundUniverse || "(empty)"}\n\n` +
+            `---\n\nPasted portfolio text:\n${text}\n\n` +
+            `Extract each client holding and emit them via the structured response.`,
+        },
+      ],
+      output_config: {
+        format: zodOutputFormat(ParsedPortfolioSchema, "Portfolio"),
+      },
+    });
+
+    const data = response.parsed_output;
+    if (!data || !Array.isArray(data.holdings)) {
+      return { ok: false, error: "Couldn't parse the pasted text into holdings." };
+    }
+    if (data.holdings.length === 0) {
+      return { ok: false, error: "No holdings detected in the pasted text." };
+    }
+
+    return { ok: true, rows: data.holdings };
+  } catch (error) {
+    console.error("parsePastedPortfolio error:", error);
+    if (error instanceof Anthropic.APIError) {
+      return { ok: false, error: `Parse failed (${error.status}): ${error.message}` };
+    }
+    return { ok: false, error: "Parse failed. Try a smaller or cleaner block of text." };
+  }
 }
