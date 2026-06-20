@@ -210,16 +210,14 @@ export default async function ModelPortfoliosIndex({
                 <p className="t-micro-cap mb-1">Advisor workspace</p>
                 <h1 className="t-h-md text-[var(--color-ink)]">Model Portfolio</h1>
               </div>
-              <Link
-                href={buildHref({ view: "all" })}
-                className={`shrink-0 t-caption transition-colors ${
-                  isShowAll
-                    ? "font-medium text-[var(--color-ink)]"
-                    : "text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
-                }`}
-              >
-                Show all →
-              </Link>
+              {!isShowAll && (
+                <Link
+                  href={buildHref({ view: "all" })}
+                  className="shrink-0 t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
+                >
+                  Show all →
+                </Link>
+              )}
             </div>
 
             {/* Row 2: PLATFORM */}
