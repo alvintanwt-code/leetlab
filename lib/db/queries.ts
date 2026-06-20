@@ -1,5 +1,30 @@
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
 import { db } from "./client";
 import { sql, type SQL } from "drizzle-orm";
+
+// In-scope allowlist per provider (e.g. HSBC's 92 funds across the Wealth
+// Voyage product range). Cached on first read; same file is re-checked across
+// requests since Node module-level state persists in the server runtime.
+const ALLOWLIST_CACHE = new Map<string, string[] | null>();
+
+function loadInScopeAllowlist(providerSlug: string): string[] | null {
+  if (ALLOWLIST_CACHE.has(providerSlug)) return ALLOWLIST_CACHE.get(providerSlug) ?? null;
+  const file = join(process.cwd(), "data", "in-scope", `${providerSlug}.json`);
+  if (!existsSync(file)) {
+    ALLOWLIST_CACHE.set(providerSlug, null);
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(file, "utf8")) as { isins?: string[] };
+    const isins = Array.isArray(parsed.isins) ? parsed.isins : null;
+    ALLOWLIST_CACHE.set(providerSlug, isins);
+    return isins;
+  } catch {
+    ALLOWLIST_CACHE.set(providerSlug, null);
+    return null;
+  }
+}
 
 // Drizzle's neon-http `.execute()` returns a pg-style { rows, rowCount, … } object.
 // Wrap it so call-sites get a plain array regardless of underlying driver shape.
@@ -160,6 +185,26 @@ export type FundPickerRow = {
 };
 
 export async function listFundsForPicker(providerSlug: string): Promise<FundPickerRow[]> {
+  const allowlist = loadInScopeAllowlist(providerSlug);
+  if (allowlist && allowlist.length > 0) {
+    // Use string_to_array to feed a parameter-bound text array into ANY()
+    // — passing a JS array directly through Drizzle's sql tag gets boxed as
+    // a record (composite type) and Postgres can't cast it to text[].
+    const joined = allowlist.join("\x1f"); // unit separator — safe vs ISINs
+    return q<FundPickerRow>(sql`
+      SELECT f.id, f.external_id, f.name, f.fund_house, f.currency, f.asset_class, f.risk_rating,
+             f.expense_ratio, s.nav, s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
+      FROM funds f
+      JOIN providers p ON p.id = f.provider_id
+      LEFT JOIN LATERAL (
+        SELECT nav, ann_1y, ann_3y, ann_5y, ann_10y FROM fund_snapshots
+        WHERE fund_id = f.id ORDER BY as_of DESC LIMIT 1
+      ) s ON true
+      WHERE p.slug = ${providerSlug}
+        AND f.isin = ANY(string_to_array(${joined}, E'\x1f'))
+      ORDER BY f.name
+    `);
+  }
   return q<FundPickerRow>(sql`
     SELECT f.id, f.external_id, f.name, f.fund_house, f.currency, f.asset_class, f.risk_rating,
            f.expense_ratio, s.nav, s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
