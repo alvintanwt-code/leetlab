@@ -31,9 +31,8 @@ const PayloadSchema = z.object({
       z.object({
         fund: z.string().min(1).max(200),
         fundId: z.number().int().positive().optional(),
-        units: z.string().max(40).optional(),
-        costBasis: z.string().max(40).optional(),
-        currentValue: z.string().min(1).max(40),
+        units: z.string().min(1).max(40),
+        unitPrice: z.string().min(1).max(40),
       }),
     )
     .min(1)
@@ -120,17 +119,17 @@ export async function generateSwitch(input: unknown): Promise<GenerateSwitchResu
   for (const f of fundLookup) byId.set(f.id, f);
 
   const resolved: ResolvedHolding[] = holdings.map((h) => {
-    const cv = parseNum(h.currentValue) ?? 0;
-    const cb = parseNum(h.costBasis);
     const u = parseNum(h.units);
+    const p = parseNum(h.unitPrice);
+    const cv = u != null && p != null ? u * p : 0;
     const explicit = h.fundId != null ? byId.get(h.fundId) ?? null : null;
     const matched = explicit ?? matchFund(h.fund, fundLookup);
     if (!matched) {
       return {
         inputName: h.fund,
         currentValue: cv,
-        costBasis: cb,
         units: u,
+        unitPrice: p,
         fundId: null,
         matchedName: null,
         assetClass: null,
@@ -142,8 +141,8 @@ export async function generateSwitch(input: unknown): Promise<GenerateSwitchResu
     return {
       inputName: h.fund,
       currentValue: cv,
-      costBasis: cb,
       units: u,
+      unitPrice: p,
       fundId: matched.id,
       matchedName: matched.name,
       assetClass: matched.asset_class,
@@ -209,18 +208,13 @@ const ParsedHoldingSchema = z.object({
     ),
   units: z
     .number()
-    .nullable()
-    .describe("Holding units / shares as a plain number. Null if not present in the text."),
-  costBasis: z
-    .number()
-    .nullable()
     .describe(
-      "Cost basis in SGD as a plain number — strip currency prefixes and commas. Null if not present.",
+      "Number of units / shares the client holds. Required. Plain number, no commas. If the source only shows total value and unit price, divide to compute units.",
     ),
-  currentValue: z
+  unitPrice: z
     .number()
     .describe(
-      "Current market value in SGD as a plain number — strip currency prefixes and commas. Required.",
+      "Unit price / NAV in SGD as a plain number — strip currency prefixes and commas. Required. If the source only shows total value and units, divide value by units to compute unit price.",
     ),
 });
 
@@ -258,7 +252,10 @@ export async function parsePastedPortfolio(
 
   const funds = await listFundsForPicker(platformSlug);
   const fundUniverse = funds
-    .map((f) => `${f.id} | ${f.name}${f.asset_class ? ` | ${f.asset_class}` : ""}`)
+    .map(
+      (f) =>
+        `${f.id} | ${f.name} | ${f.fund_house ?? "—"} | ${f.asset_class ?? "—"}`,
+    )
     .join("\n");
 
   const platformLabel = PROVIDER_LABEL[platformSlug] ?? platformSlug;
@@ -274,15 +271,15 @@ export async function parsePastedPortfolio(
         "Rules:\n" +
         "- One entry per actual holding. Skip headers, totals, subtotals, footnotes, summary rows, balance lines.\n" +
         "- Strip currency prefixes (SGD, S$, USD, $, etc.) and thousands separators to produce plain numbers.\n" +
-        "- Match each holding against the supplied platform fund universe by name. Set fundId only when you are confident in the match — partial / fuzzy guesses should leave fundId null and the original typed name in `fund`.\n" +
-        "- When a fund matches, use the canonical name from the universe in `fund`.\n" +
-        "- `currentValue` is required. `units` and `costBasis` are optional — set them to null if not present in the text.",
+        "- Match each holding against the supplied platform fund universe (sourced from Morningstar). Use fund_house + name + asset class to disambiguate share classes. Prefer a confident match — only leave fundId null if multiple equally-good candidates exist.\n" +
+        "- When matched, use the canonical name from the universe in `fund`.\n" +
+        "- Each emitted row needs `units` (number of units / shares held) AND `unitPrice` (NAV or price per unit). If the source only shows two of {units, unitPrice, total value}, derive the third — they're linked by value = units × unitPrice.",
       messages: [
         {
           role: "user",
           content:
             `Platform: ${platformLabel}\n\n` +
-            `Fund universe (id | name | asset class):\n${fundUniverse || "(empty)"}\n\n` +
+            `Fund universe (id | name | fund house | asset class):\n${fundUniverse || "(empty)"}\n\n` +
             `---\n\nPasted portfolio text:\n${text}\n\n` +
             `Extract each client holding and emit them via the structured response.`,
         },

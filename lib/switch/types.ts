@@ -1,8 +1,8 @@
 export type ResolvedHolding = {
   inputName: string;
   currentValue: number;
-  costBasis: number | null;
   units: number | null;
+  unitPrice: number | null;
   fundId: number | null;
   matchedName: string | null;
   assetClass: string | null;

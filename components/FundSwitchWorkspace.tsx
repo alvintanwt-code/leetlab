@@ -27,8 +27,7 @@ type Holding = {
   fund: string;
   fundId: number | null;
   units: string;
-  costBasis: string;
-  currentValue: string;
+  unitPrice: string;
 };
 
 type PerPlatform = {
@@ -38,7 +37,7 @@ type PerPlatform = {
 
 type WorkspaceState = Record<string, PerPlatform>;
 
-const STORAGE_KEY = "fundswitch:v2";
+const STORAGE_KEY = "fundswitch:v3";
 
 const PROVIDER_SHORT: Record<string, string> = {
   hsbc: "HSBC Life",
@@ -60,7 +59,7 @@ function newRow(): Holding {
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2);
-  return { id, fund: "", fundId: null, units: "", costBasis: "", currentValue: "" };
+  return { id, fund: "", fundId: null, units: "", unitPrice: "" };
 }
 
 function defaultPerPlatform(): PerPlatform {
@@ -72,9 +71,33 @@ function parseNum(v: string): number {
   return Number.isFinite(n) ? n : NaN;
 }
 
+function holdingValue(h: Holding): number {
+  const u = parseNum(h.units);
+  const p = parseNum(h.unitPrice);
+  return Number.isFinite(u) && Number.isFinite(p) && u > 0 && p > 0 ? u * p : 0;
+}
+
 function isHoldingValid(h: Holding): boolean {
-  const cv = parseNum(h.currentValue);
-  return h.fund.trim().length > 0 && cv > 0;
+  return h.fund.trim().length > 0 && holdingValue(h) > 0;
+}
+
+function fmtSGD(v: number): string {
+  if (!Number.isFinite(v) || v <= 0) return "—";
+  return v.toLocaleString("en-SG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function fmtPct(v: number): string {
+  if (!Number.isFinite(v) || v <= 0) return "—";
+  return `${v.toFixed(1)}%`;
+}
+
+function numToInputStr(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "";
+  if (Number.isInteger(n)) return String(n);
+  return String(parseFloat(n.toFixed(6)));
 }
 
 export function FundSwitchWorkspace({
@@ -212,14 +235,13 @@ export function FundSwitchWorkspace({
           : Math.random().toString(36).slice(2),
       fund: r.fund,
       fundId: r.fundId ?? null,
-      units: r.units != null ? String(r.units) : "",
-      costBasis: r.costBasis != null ? String(r.costBasis) : "",
-      currentValue: String(r.currentValue),
+      units: numToInputStr(r.units),
+      unitPrice: numToInputStr(r.unitPrice),
     }));
     setState((s) => {
       const prev = s[platform] ?? defaultPerPlatform();
       const allEmpty = prev.holdings.every(
-        (h) => h.fund.trim() === "" && h.units === "" && h.costBasis === "" && h.currentValue === "",
+        (h) => h.fund.trim() === "" && h.units === "" && h.unitPrice === "",
       );
       const base = allEmpty ? [] : prev.holdings;
       return { ...s, [platform]: { ...prev, holdings: [...base, ...newHoldings] } };
@@ -261,9 +283,8 @@ export function FundSwitchWorkspace({
       holdings: holdings.filter(isHoldingValid).map((h) => ({
         fund: h.fund.trim(),
         fundId: h.fundId ?? undefined,
-        units: h.units || undefined,
-        costBasis: h.costBasis || undefined,
-        currentValue: h.currentValue,
+        units: h.units,
+        unitPrice: h.unitPrice,
       })),
     };
     setGenerateError(null);
@@ -279,6 +300,7 @@ export function FundSwitchWorkspace({
 
   const platformModels = portfolios.filter((p) => p.provider_slug === platform);
   const platformFunds = fundsByPlatform[platform] ?? [];
+  const portfolioTotal = holdings.reduce((s, h) => s + holdingValue(h), 0);
   const validHoldingsCount = holdings.filter(isHoldingValid).length;
   const canGenerate = validHoldingsCount > 0 && current.selectedModelId != null;
 
@@ -393,31 +415,39 @@ export function FundSwitchWorkspace({
             <table className="table-pro w-full">
               <colgroup>
                 <col />
-                <col style={{ width: "110px" }} />
-                <col style={{ width: "150px" }} />
-                <col style={{ width: "150px" }} />
+                <col style={{ width: "100px" }} />
+                <col style={{ width: "120px" }} />
+                <col style={{ width: "130px" }} />
+                <col style={{ width: "70px" }} />
                 <col style={{ width: "36px" }} />
               </colgroup>
               <thead>
                 <tr>
                   <th className="text-left">Fund</th>
                   <th className="text-right">Units</th>
-                  <th className="text-right">Cost basis</th>
-                  <th className="text-right">Current value</th>
+                  <th className="text-right">Unit price</th>
+                  <th className="text-right">Value</th>
+                  <th className="text-right">Weight</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {holdings.map((h, i) => (
-                  <HoldingInputRow
-                    key={h.id}
-                    h={h}
-                    options={platformFunds}
-                    canRemove={holdings.length > 1}
-                    onChange={(patch) => updateHolding(i, patch)}
-                    onRemove={() => removeRow(i)}
-                  />
-                ))}
+                {holdings.map((h, i) => {
+                  const v = holdingValue(h);
+                  const w = portfolioTotal > 0 ? (v / portfolioTotal) * 100 : 0;
+                  return (
+                    <HoldingInputRow
+                      key={h.id}
+                      h={h}
+                      options={platformFunds}
+                      value={v}
+                      weightPct={w}
+                      canRemove={holdings.length > 1}
+                      onChange={(patch) => updateHolding(i, patch)}
+                      onRemove={() => removeRow(i)}
+                    />
+                  );
+                })}
               </tbody>
             </table>
             <button
@@ -429,8 +459,11 @@ export function FundSwitchWorkspace({
             </button>
           </div>
 
-          <p className="t-micro-cap mt-4 text-[var(--color-ink-mute)]">
-            Type or paste holdings. Cost basis and current value in SGD. Units optional.
+          <p className="t-micro-cap mt-4 flex items-center justify-between text-[var(--color-ink-mute)]">
+            <span>Type units &amp; unit price. Value and weight compute automatically.</span>
+            <span>
+              Total <span className="num">SGD {fmtSGD(portfolioTotal)}</span>
+            </span>
           </p>
         </section>
 
@@ -511,12 +544,16 @@ function ChromeTitle() {
 function HoldingInputRow({
   h,
   options,
+  value,
+  weightPct,
   canRemove,
   onChange,
   onRemove,
 }: {
   h: Holding;
   options: FundOption[];
+  value: number;
+  weightPct: number;
   canRemove: boolean;
   onChange: (patch: Partial<Holding>) => void;
   onRemove: () => void;
@@ -551,25 +588,23 @@ function HoldingInputRow({
           <input
             type="text"
             inputMode="decimal"
-            value={h.costBasis}
-            onChange={(e) => onChange({ costBasis: e.target.value })}
+            value={h.unitPrice}
+            onChange={(e) => onChange({ unitPrice: e.target.value })}
             placeholder="—"
-            className={`${numCell} max-w-[100px]`}
+            className={`${numCell} max-w-[80px]`}
           />
         </div>
       </td>
       <td className="nowrap right">
-        <div className="flex items-baseline justify-end gap-1.5">
-          <span className="t-micro-cap text-[var(--color-ink-mute)]">SGD</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={h.currentValue}
-            onChange={(e) => onChange({ currentValue: e.target.value })}
-            placeholder="—"
-            className={`${numCell} max-w-[100px]`}
-          />
-        </div>
+        <p className="num t-body-md text-[var(--color-ink-mute)]" title="Computed: units × unit price">
+          <span className="t-micro-cap mr-1.5">SGD</span>
+          {fmtSGD(value)}
+        </p>
+      </td>
+      <td className="nowrap right">
+        <p className="num t-body-md text-[var(--color-ink-mute)]" title="Computed: value ÷ total">
+          {fmtPct(weightPct)}
+        </p>
       </td>
       <td className="text-right">
         {canRemove && (
