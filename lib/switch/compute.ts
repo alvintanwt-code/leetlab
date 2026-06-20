@@ -39,6 +39,32 @@ function groupBy<T, K extends string>(items: T[], key: (t: T) => K): Map<K, T[]>
 }
 
 type CurrentWeighted = ResolvedHolding & { weightPct: number };
+type CurrentAggregated = CurrentWeighted & { rowCount: number };
+
+function fundKey(h: ResolvedHolding): string {
+  return h.fundId != null
+    ? `id:${h.fundId}`
+    : `name:${(h.matchedName ?? h.inputName).trim().toLowerCase()}`;
+}
+
+function aggregateCurrent(weighted: CurrentWeighted[]): CurrentAggregated[] {
+  const byKey = new Map<string, CurrentAggregated>();
+  for (const h of weighted) {
+    const key = fundKey(h);
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.weightPct += h.weightPct;
+      existing.currentValue += h.currentValue;
+      if (h.units != null) {
+        existing.units = (existing.units ?? 0) + h.units;
+      }
+      existing.rowCount += 1;
+    } else {
+      byKey.set(key, { ...h, rowCount: 1 });
+    }
+  }
+  return Array.from(byKey.values());
+}
 
 export function computeMemo(args: {
   resolved: ResolvedHolding[];
@@ -53,10 +79,14 @@ export function computeMemo(args: {
 
   const totalValue = resolved.reduce((s, h) => s + h.currentValue, 0);
 
-  const currentWeighted: CurrentWeighted[] = resolved.map((h) => ({
+  const currentPerRow: CurrentWeighted[] = resolved.map((h) => ({
     ...h,
     weightPct: totalValue > 0 ? (h.currentValue / totalValue) * 100 : 0,
   }));
+
+  // Same fund held across multiple accounts → one position for drift / why-row math.
+  const currentWeighted = aggregateCurrent(currentPerRow);
+  const mergedRowCount = resolved.length - currentWeighted.length;
 
   const currentExpReturn = weightedAvg(currentWeighted, (h) => h.weightPct, (h) => h.ann3y);
   const currentExpRisk = weightedAvg(currentWeighted, (h) => h.weightPct, (h) => h.risk);
@@ -91,7 +121,7 @@ export function computeMemo(args: {
     if (cur.fundId != null && targetByFundId.has(cur.fundId)) {
       const tgt = targetByFundId.get(cur.fundId)!;
       const delta = tgt.weightPct - cur.weightPct;
-      usedCurrent.add(cur.inputName);
+      usedCurrent.add(fundKey(cur));
       usedTarget.add(cur.fundId);
       if (Math.abs(delta) < WEIGHT_NOISE_THRESHOLD) continue;
       whyRows.push({
@@ -107,7 +137,7 @@ export function computeMemo(args: {
     }
   }
 
-  const unpairedCurrent = currentWeighted.filter((h) => !usedCurrent.has(h.inputName));
+  const unpairedCurrent = currentWeighted.filter((h) => !usedCurrent.has(fundKey(h)));
   for (const cur of unpairedCurrent) {
     const candidates = modelHoldings.filter(
       (t) => !usedTarget.has(t.fundId) && t.assetClass === cur.assetClass && cur.assetClass != null,
@@ -125,12 +155,12 @@ export function computeMemo(args: {
       assetClass: cur.assetClass,
       rationale: "",
     });
-    usedCurrent.add(cur.inputName);
+    usedCurrent.add(fundKey(cur));
     usedTarget.add(tgt.fundId);
   }
 
   for (const cur of currentWeighted) {
-    if (usedCurrent.has(cur.inputName)) continue;
+    if (usedCurrent.has(fundKey(cur))) continue;
     whyRows.push({
       kind: "reduce",
       fromFund: cur.matchedName ?? cur.inputName,
@@ -184,8 +214,9 @@ export function computeMemo(args: {
       expReturn: currentExpReturn,
       expRisk: currentExpRisk,
       ocf: currentOcf,
-      holdingsCount: resolved.length,
+      holdingsCount: currentWeighted.length,
       totalValue,
+      mergedRowCount,
     },
     target: {
       expReturn: targetExpReturn,

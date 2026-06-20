@@ -164,9 +164,16 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
         <div className="mt-6 rounded-md border border-dashed border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] px-4 py-3">
           <p className="t-micro-cap mb-1 text-[var(--color-ink-mute)]">UNMATCHED</p>
           <p className="t-caption text-[var(--color-ink)]">
-            Couldn't match to platform funds: {memo.unmatched.join(" · ")}. These contribute to weights but not to drift / return calcs.
+            Couldn&rsquo;t match to platform funds: {memo.unmatched.join(" · ")}. These contribute to weights but not to drift / return calcs.
           </p>
         </div>
+      )}
+
+      {memo.current.mergedRowCount > 0 && (
+        <p className="t-micro-cap mt-3 text-[var(--color-ink-mute)]">
+          {memo.current.mergedRowCount} duplicate{memo.current.mergedRowCount === 1 ? " row" : " rows"} combined &mdash;
+          same fund held across multiple accounts is treated as one position.
+        </p>
       )}
 
       {/* Asset-class drift */}

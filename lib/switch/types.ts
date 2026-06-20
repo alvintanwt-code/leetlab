@@ -57,6 +57,7 @@ export type SwitchMemo = {
     ocf: number | null;
     holdingsCount: number;
     totalValue: number;
+    mergedRowCount: number;
   };
   target: {
     expReturn: number | null;
