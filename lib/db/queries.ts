@@ -300,6 +300,29 @@ export type FundInspectorData = {
 };
 
 export async function fundsInspectorForProvider(providerSlug: string): Promise<FundInspectorData[]> {
+  const allowlist = loadInScopeAllowlist(providerSlug);
+  if (allowlist && allowlist.length > 0) {
+    const joined = allowlist.join("\x1f");
+    return q<FundInspectorData>(sql`
+      SELECT
+        f.id, f.external_id, f.name, f.isin, f.fund_house, f.currency, f.asset_class,
+        f.distribution_type, f.risk_rating, f.risk_label, f.share_class_inception,
+        f.fund_size, f.fund_size_currency, f.dealing_frequency, f.benchmark,
+        f.sfdr_classification, f.expense_ratio, f.management_fee,
+        f.morningstar_rating, f.investment_objective,
+        s.nav, s.as_of AS nav_as_of, s.change_pct,
+        s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
+      FROM funds f
+      JOIN providers p ON p.id = f.provider_id
+      LEFT JOIN LATERAL (
+        SELECT nav, as_of, change_pct, ann_1y, ann_3y, ann_5y, ann_10y
+        FROM fund_snapshots WHERE fund_id = f.id ORDER BY as_of DESC LIMIT 1
+      ) s ON true
+      WHERE p.slug = ${providerSlug}
+        AND f.isin = ANY(string_to_array(${joined}, E'\x1f'))
+      ORDER BY f.name
+    `);
+  }
   return q<FundInspectorData>(sql`
     SELECT
       f.id, f.external_id, f.name, f.isin, f.fund_house, f.currency, f.asset_class,
