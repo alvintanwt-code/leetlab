@@ -206,7 +206,10 @@ export default async function ModelPortfoliosIndex({
           <div className="sticky top-0 z-20 -mx-10 mb-6 bg-[var(--color-canvas-soft)] px-10">
             {/* Row 1: title + show-all toggle */}
             <div className="flex items-center justify-between gap-3 border-b border-[var(--color-hairline-2)] py-3">
-              <h1 className="t-h-md text-[var(--color-ink)]">Model Portfolio</h1>
+              <div>
+                <p className="t-micro-cap mb-1">Advisor workspace</p>
+                <h1 className="t-h-md text-[var(--color-ink)]">Model Portfolio</h1>
+              </div>
               <Link
                 href={buildHref({ view: "all" })}
                 className={`shrink-0 t-caption transition-colors ${

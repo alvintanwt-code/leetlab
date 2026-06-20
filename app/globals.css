@@ -136,6 +136,8 @@ html, body {
   overflow: hidden;
 }
 .table-pro tbody td.nowrap { white-space: nowrap; text-overflow: ellipsis; }
+.table-pro.table-pro-sm tbody td { font-size: 13px; padding: 11px 14px; }
+.table-pro.table-pro-sm tbody td p.t-body-md { font-size: 13px; }
 .table-pro tbody tr { background: var(--color-canvas); transition: background-color 100ms ease-out; }
 .table-pro tbody tr:hover { background: var(--color-canvas-soft); }
 .table-pro .num { font-variant-numeric: tabular-nums; font-feature-settings: "ss01", "tnum"; }

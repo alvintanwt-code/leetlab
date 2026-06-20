@@ -237,7 +237,7 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
       <section className="mt-10">
         <SectionHeader title="Weight changes" eyebrow="WHY THIS SWITCH" />
         <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
-          <table className="table-pro w-full">
+          <table className="table-pro table-pro-sm w-full">
             <colgroup>
               <col />
               <col style={{ width: "110px" }} />
@@ -315,7 +315,7 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
             <div className="border-b border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] px-4 py-2">
               <p className="t-micro-cap">SWITCH OUT</p>
             </div>
-            <table className="table-pro w-full">
+            <table className="table-pro table-pro-sm w-full">
               <colgroup>
                 <col />
                 <col style={{ width: "110px" }} />
@@ -384,7 +384,7 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
             <div className="border-b border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] px-4 py-2">
               <p className="t-micro-cap">SWITCH IN</p>
             </div>
-            <table className="table-pro w-full">
+            <table className="table-pro table-pro-sm w-full">
               <colgroup>
                 <col />
                 <col style={{ width: "90px" }} />

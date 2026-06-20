@@ -412,7 +412,7 @@ export function FundSwitchWorkspace({
           )}
 
           <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
-            <table className="table-pro w-full">
+            <table className="table-pro table-pro-sm w-full">
               <colgroup>
                 <col />
                 <col style={{ width: "100px" }} />
