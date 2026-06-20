@@ -3,6 +3,37 @@ import { db } from "@/lib/db/client";
 import { modelPortfolios } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
+import { getConfirmedPortfolio, getPortfolioHoldings } from "@/lib/db/queries";
+
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const portfolioId = parseInt(id, 10);
+  if (!Number.isFinite(portfolioId)) {
+    return NextResponse.json({ error: "Invalid portfolio id" }, { status: 400 });
+  }
+
+  const portfolio = await getConfirmedPortfolio(portfolioId);
+  if (!portfolio) {
+    return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
+  }
+  const holdings = await getPortfolioHoldings(portfolioId);
+  return NextResponse.json({
+    id: portfolio.id,
+    name: portfolio.name,
+    category: portfolio.category,
+    version: portfolio.version,
+    providerSlug: portfolio.provider_slug,
+    holdings: holdings.map((h) => ({ fundId: h.fund_id, weightBps: h.weight_bps })),
+  });
+}
 
 export async function DELETE(
   _req: Request,

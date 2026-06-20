@@ -163,6 +163,8 @@ export function StudioShell({
   const [deleteInput, setDeleteInput] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [loadingEditId, setLoadingEditId] = useState<number | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   // Track which weight input is focused so we can show the placeholder
   // (empty field) instead of a literal "0" while the user is typing.
   const [focusedWeightId, setFocusedWeightId] = useState<number | null>(null);
@@ -375,6 +377,34 @@ export function StudioShell({
       setDeleteError((e as Error).message);
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function loadSavedIntoBasket(p: SavedPortfolioRef) {
+    setLoadingEditId(p.id);
+    setEditError(null);
+    try {
+      const res = await fetch(`/api/portfolios/${p.id}`);
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d?.error ?? `HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as {
+        holdings: Array<{ fundId: number; weightBps: number }>;
+        category: string;
+      };
+      // Replace the basket with this portfolio's holdings. Also pre-fill the
+      // mandate selector so the advisor keeps continuity on save.
+      setBasket(data.holdings);
+      if (data.category && CATEGORIES.some((c) => c.key === data.category)) {
+        setConfirmCategory(data.category as CategoryKey);
+      }
+      setShowManage(false);
+      setDeleteTarget(null);
+    } catch (e) {
+      setEditError(`Couldn't load ${p.name}: ${(e as Error).message}`);
+    } finally {
+      setLoadingEditId(null);
     }
   }
 
@@ -812,6 +842,11 @@ export function StudioShell({
             </header>
 
             <div className="flex-1 overflow-y-auto px-6 py-3">
+              {editError && (
+                <div className="mb-3 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft)] px-3 py-2">
+                  <p className="t-caption text-[var(--color-negative)]">{editError}</p>
+                </div>
+              )}
               {savedPortfolios.length === 0 ? (
                 <p className="t-body-md py-8 text-center text-[var(--color-ink-mute)]">
                   No portfolios saved on {providerName} yet.
@@ -837,12 +872,22 @@ export function StudioShell({
                             </p>
                           </div>
                           {!isTarget && (
-                            <button
-                              onClick={() => { setDeleteTarget(p); setDeleteInput(""); setDeleteError(null); }}
-                              className="t-caption shrink-0 px-2 py-1 text-[var(--color-ink-mute)] hover:text-[var(--color-negative)]"
-                            >
-                              Delete
-                            </button>
+                            <div className="flex shrink-0 items-center gap-1">
+                              <button
+                                onClick={() => loadSavedIntoBasket(p)}
+                                disabled={loadingEditId != null}
+                                className="t-caption px-2 py-1 text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)] disabled:opacity-50"
+                              >
+                                {loadingEditId === p.id ? "Loading…" : "Edit"}
+                              </button>
+                              <button
+                                onClick={() => { setDeleteTarget(p); setDeleteInput(""); setDeleteError(null); }}
+                                disabled={loadingEditId != null}
+                                className="t-caption px-2 py-1 text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-negative)] disabled:opacity-50"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           )}
                         </div>
                         {isTarget && (

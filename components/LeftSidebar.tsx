@@ -50,7 +50,7 @@ export function LeftSidebar({
         <ul className="flex flex-col gap-0.5">
           <NavItem href="/write" label="Write" active={isResearchWrite} locked />
           <NavItem href={defaultBuilderHref} label="Build" active={isBuilder} locked />
-          <NavItem href="/portfolios" label="Model portfolio" active={isModels} />
+          <NavItem href="/portfolios?view=all" label="Model portfolio" active={isModels} />
           <NavItem href="/switch" label="Fund switch" active={isSwitch} />
         </ul>
       </nav>
