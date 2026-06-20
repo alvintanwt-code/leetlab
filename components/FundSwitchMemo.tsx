@@ -240,18 +240,18 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
           <table className="table-pro w-full">
             <colgroup>
               <col />
-              <col style={{ width: "90px" }} />
-              <col style={{ width: "90px" }} />
-              <col style={{ width: "90px" }} />
+              <col style={{ width: "110px" }} />
+              <col style={{ width: "120px" }} />
+              <col style={{ width: "70px" }} />
               <col style={{ width: "32%" }} />
             </colgroup>
             <thead>
               <tr>
-                <th className="text-left">Fund</th>
-                <th className="text-right">Current %</th>
-                <th className="text-right">Proposed %</th>
-                <th className="text-right">Δ</th>
-                <th className="text-left">Rationale</th>
+                <th>Fund</th>
+                <th className="right">Current %</th>
+                <th className="right">Proposed %</th>
+                <th className="right">&Delta;</th>
+                <th>Rationale</th>
               </tr>
             </thead>
             <tbody>
@@ -318,16 +318,16 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
             <table className="table-pro w-full">
               <colgroup>
                 <col />
-                <col style={{ width: "84px" }} />
                 <col style={{ width: "110px" }} />
-                <col style={{ width: "74px" }} />
+                <col style={{ width: "120px" }} />
+                <col style={{ width: "90px" }} />
               </colgroup>
               <thead>
                 <tr>
-                  <th className="text-left">Fund</th>
-                  <th className="text-left">Account</th>
-                  <th className="text-right">SGD</th>
-                  <th className="text-right">% fund</th>
+                  <th>Fund</th>
+                  <th>Account</th>
+                  <th className="right">SGD</th>
+                  <th className="right">% fund</th>
                 </tr>
               </thead>
               <tbody>
@@ -387,12 +387,12 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
             <table className="table-pro w-full">
               <colgroup>
                 <col />
-                <col style={{ width: "70px" }} />
+                <col style={{ width: "90px" }} />
               </colgroup>
               <thead>
                 <tr>
-                  <th className="text-left">Fund</th>
-                  <th className="text-right">% new</th>
+                  <th>Fund</th>
+                  <th className="right">% new</th>
                 </tr>
               </thead>
               <tbody>

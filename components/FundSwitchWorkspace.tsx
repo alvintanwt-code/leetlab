@@ -416,18 +416,18 @@ export function FundSwitchWorkspace({
               <colgroup>
                 <col />
                 <col style={{ width: "100px" }} />
-                <col style={{ width: "120px" }} />
                 <col style={{ width: "130px" }} />
-                <col style={{ width: "70px" }} />
+                <col style={{ width: "140px" }} />
+                <col style={{ width: "90px" }} />
                 <col style={{ width: "36px" }} />
               </colgroup>
               <thead>
                 <tr>
-                  <th className="text-left">Fund</th>
-                  <th className="text-right">Units</th>
-                  <th className="text-right">Unit price</th>
-                  <th className="text-right">Value</th>
-                  <th className="text-right">Weight</th>
+                  <th>Fund</th>
+                  <th className="right">Units</th>
+                  <th className="right">Unit price</th>
+                  <th className="right">Value</th>
+                  <th className="right">Weight</th>
                   <th></th>
                 </tr>
               </thead>
