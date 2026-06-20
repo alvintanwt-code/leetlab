@@ -269,11 +269,12 @@ export async function parsePastedPortfolio(
       system:
         "You parse client investment portfolio data from messy pasted text (statements, broker portals, emails) and emit a structured list of holdings.\n\n" +
         "Rules:\n" +
-        "- One entry per actual holding. Skip headers, totals, subtotals, footnotes, summary rows, balance lines.\n" +
+        "- One entry per unique fund — even when the source shows the same fund spread across multiple account sections (Initial Account, Accumulation Account, RSP, SRS, Cash, sub-policies, etc.). Combine them: SUM the units across accounts; the unit price stays the same (a fund's NAV is universal across accounts). The implicit total value equals units_summed × unitPrice.\n" +
+        "- Skip headers, totals, subtotals, footnotes, summary rows, balance lines, account labels.\n" +
         "- Strip currency prefixes (SGD, S$, USD, $, etc.) and thousands separators to produce plain numbers.\n" +
         "- Match each holding against the supplied platform fund universe (sourced from Morningstar). Use fund_house + name + asset class to disambiguate share classes. Prefer a confident match — only leave fundId null if multiple equally-good candidates exist.\n" +
         "- When matched, use the canonical name from the universe in `fund`.\n" +
-        "- Each emitted row needs `units` (number of units / shares held) AND `unitPrice` (NAV or price per unit). If the source only shows two of {units, unitPrice, total value}, derive the third — they're linked by value = units × unitPrice.",
+        "- Each emitted row needs `units` (total number of units / shares held across all accounts) AND `unitPrice` (NAV or price per unit). If the source only shows two of {units, unitPrice, total value}, derive the third — they're linked by value = units × unitPrice.",
       messages: [
         {
           role: "user",
