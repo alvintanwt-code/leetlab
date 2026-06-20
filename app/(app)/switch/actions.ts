@@ -285,7 +285,7 @@ export async function parsePastedPortfolio(
         },
       ],
       output_config: {
-        format: zodOutputFormat(ParsedPortfolioSchema, "Portfolio"),
+        format: zodOutputFormat(ParsedPortfolioSchema),
       },
     });
 
