@@ -307,6 +307,133 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
         )}
       </section>
 
+      {/* Switch order — data the advisor copies into the platform's switch form */}
+      <section className="mt-10">
+        <SectionHeader title="Switch order" eyebrow="EXECUTION FORM" />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
+            <div className="border-b border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] px-4 py-2">
+              <p className="t-micro-cap">SWITCH OUT</p>
+            </div>
+            <table className="table-pro w-full">
+              <colgroup>
+                <col />
+                <col style={{ width: "84px" }} />
+                <col style={{ width: "110px" }} />
+                <col style={{ width: "74px" }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th className="text-left">Fund</th>
+                  <th className="text-left">Account</th>
+                  <th className="text-right">SGD</th>
+                  <th className="text-right">% fund</th>
+                </tr>
+              </thead>
+              <tbody>
+                {memo.switchOrder.switchOut.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-center">
+                      <p className="t-caption text-[var(--color-ink-mute)]">
+                        Nothing to switch out &mdash; current allocation already at or below target.
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  memo.switchOrder.switchOut.map((r, i) => (
+                    <tr key={`out-${i}`}>
+                      <td>
+                        <p className="t-body-md text-[var(--color-ink)]">{r.fund}</p>
+                      </td>
+                      <td>
+                        <p className="t-body-md text-[var(--color-ink-mute)]">&mdash;</p>
+                      </td>
+                      <td className="num nowrap right text-[var(--color-ink)]">
+                        {r.sgdAmount.toLocaleString("en-SG", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </td>
+                      <td className="num nowrap right text-[var(--color-ink)]">
+                        {fmtPctPlain(r.pctOfFund, 1)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+              {memo.switchOrder.switchOut.length > 0 && (
+                <tfoot>
+                  <tr>
+                    <td colSpan={2} className="border-t border-[var(--color-hairline-2)] px-4 py-2">
+                      <p className="t-micro-cap">TOTAL</p>
+                    </td>
+                    <td className="num nowrap right border-t border-[var(--color-hairline-2)] px-4 py-2 text-[var(--color-ink)]">
+                      {memo.switchOrder.totalSwitchOutSgd.toLocaleString("en-SG", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </td>
+                    <td className="border-t border-[var(--color-hairline-2)] px-4 py-2"></td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+
+          <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
+            <div className="border-b border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] px-4 py-2">
+              <p className="t-micro-cap">SWITCH IN</p>
+            </div>
+            <table className="table-pro w-full">
+              <colgroup>
+                <col />
+                <col style={{ width: "70px" }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th className="text-left">Fund</th>
+                  <th className="text-right">% new</th>
+                </tr>
+              </thead>
+              <tbody>
+                {memo.switchOrder.switchIn.length === 0 ? (
+                  <tr>
+                    <td colSpan={2} className="px-4 py-6 text-center">
+                      <p className="t-caption text-[var(--color-ink-mute)]">No target funds.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  memo.switchOrder.switchIn.map((r, i) => (
+                    <tr key={`in-${i}`}>
+                      <td>
+                        <p className="t-body-md text-[var(--color-ink)]">{r.fund}</p>
+                      </td>
+                      <td className="num nowrap right text-[var(--color-ink)]">{r.pct}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+              {memo.switchOrder.switchIn.length > 0 && (
+                <tfoot>
+                  <tr>
+                    <td className="border-t border-[var(--color-hairline-2)] px-4 py-2">
+                      <p className="t-micro-cap">TOTAL</p>
+                    </td>
+                    <td className="num nowrap right border-t border-[var(--color-hairline-2)] px-4 py-2 text-[var(--color-ink)]">
+                      {memo.switchOrder.switchIn.reduce((s, r) => s + r.pct, 0)}
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </div>
+        <p className="t-micro-cap mt-3 text-[var(--color-ink-mute)]">
+          Maps to the platform&rsquo;s fund-switch form (e.g. HSBC Life Form A &middot; Section A).
+          Account column is left blank &mdash; fill per-account splits in the meeting.
+        </p>
+      </section>
+
       {/* Actions */}
       <div className="mt-10 flex items-center justify-between border-t border-[var(--color-hairline)] pt-5">
         <button

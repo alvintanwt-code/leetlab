@@ -41,6 +41,23 @@ export type WhyRow = {
 
 export type XrayBreakdown = { label: string; weight_pct: number }[];
 
+export type SwitchOrderOutRow = {
+  fund: string;
+  sgdAmount: number;
+  pctOfFund: number;
+};
+
+export type SwitchOrderInRow = {
+  fund: string;
+  pct: number;
+};
+
+export type SwitchOrder = {
+  switchOut: SwitchOrderOutRow[];
+  switchIn: SwitchOrderInRow[];
+  totalSwitchOutSgd: number;
+};
+
 export type SwitchMemo = {
   platformLabel: string;
   modelName: string;
@@ -73,4 +90,5 @@ export type SwitchMemo = {
     geo: XrayBreakdown;
     holdings: XrayBreakdown;
   };
+  switchOrder: SwitchOrder;
 };

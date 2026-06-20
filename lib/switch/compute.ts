@@ -3,6 +3,9 @@ import type {
   ModelHolding,
   ResolvedHolding,
   SwitchMemo,
+  SwitchOrder,
+  SwitchOrderInRow,
+  SwitchOrderOutRow,
   WhyRow,
 } from "./types";
 
@@ -196,6 +199,13 @@ export function computeMemo(args: {
 
   const unmatched = resolved.filter((h) => h.fundId == null).map((h) => h.inputName);
 
+  const switchOrder = computeSwitchOrder({
+    currentAggregated: currentWeighted,
+    modelHoldings,
+    totalValue,
+    targetByFundId,
+  });
+
   return {
     platformLabel,
     modelName,
@@ -228,5 +238,50 @@ export function computeMemo(args: {
     whyRows,
     unmatched,
     proposedXray,
+    switchOrder,
   };
+}
+
+function computeSwitchOrder(args: {
+  currentAggregated: CurrentAggregated[];
+  modelHoldings: ModelHolding[];
+  totalValue: number;
+  targetByFundId: Map<number, ModelHolding>;
+}): SwitchOrder {
+  const { currentAggregated, modelHoldings, totalValue, targetByFundId } = args;
+
+  const switchOut: SwitchOrderOutRow[] = [];
+  for (const cur of currentAggregated) {
+    const tgt = cur.fundId != null ? targetByFundId.get(cur.fundId) ?? null : null;
+    const targetValue = tgt ? totalValue * (tgt.weightPct / 100) : 0;
+    const sgdOut = cur.currentValue - targetValue;
+    if (sgdOut <= WEIGHT_NOISE_THRESHOLD) continue;
+    const pctOfFund = cur.currentValue > 0 ? (sgdOut / cur.currentValue) * 100 : 0;
+    switchOut.push({
+      fund: cur.matchedName ?? cur.inputName,
+      sgdAmount: sgdOut,
+      pctOfFund,
+    });
+  }
+  switchOut.sort((a, b) => b.sgdAmount - a.sgdAmount);
+
+  const totalSwitchOutSgd = switchOut.reduce((s, r) => s + r.sgdAmount, 0);
+
+  const switchIn: SwitchOrderInRow[] = modelHoldings
+    .map((tgt) => ({ fund: tgt.name, pct: Math.round(tgt.weightPct) }))
+    .filter((r) => r.pct > 0);
+
+  if (switchIn.length > 0) {
+    const sum = switchIn.reduce((s, r) => s + r.pct, 0);
+    if (sum !== 100) {
+      let maxIdx = 0;
+      for (let i = 1; i < switchIn.length; i++) {
+        if (switchIn[i].pct > switchIn[maxIdx].pct) maxIdx = i;
+      }
+      switchIn[maxIdx].pct += 100 - sum;
+    }
+  }
+  switchIn.sort((a, b) => b.pct - a.pct);
+
+  return { switchOut, switchIn, totalSwitchOutSgd };
 }
