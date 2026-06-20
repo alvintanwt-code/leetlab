@@ -128,7 +128,7 @@ export function computeMemo(args: {
       usedTarget.add(cur.fundId);
       if (Math.abs(delta) < WEIGHT_NOISE_THRESHOLD) continue;
       whyRows.push({
-        kind: delta < 0 ? "reduce" : "add",
+        kind: delta < 0 ? "reduce" : "increase",
         fromFund: cur.matchedName ?? cur.inputName,
         toFund: cur.matchedName ?? cur.inputName,
         fromPct: cur.weightPct,
@@ -165,7 +165,7 @@ export function computeMemo(args: {
   for (const cur of currentWeighted) {
     if (usedCurrent.has(fundKey(cur))) continue;
     whyRows.push({
-      kind: "reduce",
+      kind: "remove",
       fromFund: cur.matchedName ?? cur.inputName,
       toFund: null,
       fromPct: cur.weightPct,
@@ -190,7 +190,13 @@ export function computeMemo(args: {
     });
   }
 
-  const order = { switch: 0, reduce: 1, add: 2 } as const;
+  const order: Record<WhyRow["kind"], number> = {
+    switch: 0,
+    remove: 1,
+    reduce: 2,
+    add: 3,
+    increase: 4,
+  };
   whyRows.sort((a, b) => {
     const o = order[a.kind] - order[b.kind];
     if (o !== 0) return o;

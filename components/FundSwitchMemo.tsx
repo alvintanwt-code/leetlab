@@ -62,42 +62,79 @@ function SectionHeader({ title, eyebrow }: { title: string; eyebrow: string }) {
   );
 }
 
-function WhyGroup({ label, rows }: { label: string; rows: WhyRow[] }) {
+function fmtDeltaPp(v: number): string {
+  if (!Number.isFinite(v)) return "—";
+  const sign = v > 0 ? "+" : v < 0 ? "−" : "";
+  return `${sign}${Math.abs(v).toFixed(1)} pp`;
+}
+
+function deltaArrow(v: number): string {
+  if (v > 0.05) return "↑";
+  if (v < -0.05) return "↓";
+  return "";
+}
+
+function WhyRowSwitch({ row }: { row: WhyRow }) {
+  return (
+    <div className="px-4 py-4">
+      <div className="grid grid-cols-[44px_1fr_90px] items-baseline gap-3">
+        <p className="t-micro-cap text-[var(--color-ink-mute)]">Out</p>
+        <p className="t-body-md text-[var(--color-ink)]">{row.fromFund}</p>
+        <p className="num t-body-md text-right text-[var(--color-ink)]">
+          {fmtPctPlain(row.fromPct, 1)}
+        </p>
+      </div>
+      <div className="mt-2 grid grid-cols-[44px_1fr_90px] items-baseline gap-3">
+        <p className="t-micro-cap text-[var(--color-ink-mute)]">In</p>
+        <p className="t-body-md text-[var(--color-ink)]">{row.toFund}</p>
+        <p className="num t-body-md text-right text-[var(--color-ink)]">
+          {fmtPctPlain(row.toPct, 1)}
+        </p>
+      </div>
+      <div className="mt-2 text-right">
+        <span className={`t-micro-cap ${signCls(row.delta)}`}>
+          Net change: {fmtDeltaPp(row.delta)} {deltaArrow(row.delta)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function WhyRowSingle({ row }: { row: WhyRow }) {
+  const fundName = row.fromFund ?? row.toFund ?? "—";
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-baseline gap-6 px-4 py-4">
+      <div>
+        <p className="t-body-md text-[var(--color-ink)]">{fundName}</p>
+        <p className="num t-caption mt-1 text-[var(--color-ink-mute)]">
+          {fmtPctPlain(row.fromPct, 1)} <span className="mx-1">→</span> {fmtPctPlain(row.toPct, 1)}
+        </p>
+      </div>
+      <p className={`num t-body-md whitespace-nowrap ${signCls(row.delta)}`}>
+        {fmtDeltaPp(row.delta)} {deltaArrow(row.delta)}
+      </p>
+    </div>
+  );
+}
+
+function WhyGroupCard({ label, rows }: { label: string; rows: WhyRow[] }) {
   if (rows.length === 0) return null;
   return (
-    <>
-      <tr>
-        <td colSpan={5} className="border-t border-[var(--color-hairline-2)] pt-4 pb-2 pl-3.5">
-          <p className="t-micro-cap text-[var(--color-ink-mute)]">{label}</p>
-        </td>
-      </tr>
-      {rows.map((r, i) => (
-        <tr key={`${label}-${i}`}>
-          <td className="align-top">
-            {r.kind === "switch" ? (
-              <div>
-                <p className="t-body-md text-[var(--color-ink)]">{r.fromFund}</p>
-                <p className="t-micro-cap mt-1 text-[var(--color-ink-mute)]">↓ {r.toFund}</p>
-              </div>
-            ) : (
-              <p className="t-body-md text-[var(--color-ink)]">{r.fromFund ?? r.toFund}</p>
-            )}
-          </td>
-          <td className="num nowrap right align-top text-[var(--color-ink)]">
-            {fmtPctPlain(r.fromPct, 1)}
-          </td>
-          <td className="num nowrap right align-top text-[var(--color-ink)]">
-            {fmtPctPlain(r.toPct, 1)}
-          </td>
-          <td className={`num nowrap right align-top ${signCls(r.delta)}`}>
-            {fmtSignedPct(r.delta, 1)}
-          </td>
-          <td className="t-body-md align-top text-[var(--color-ink-mute)]">
-            {r.rationale || "—"}
-          </td>
-        </tr>
-      ))}
-    </>
+    <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
+      <div className="flex items-baseline justify-between border-b border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] px-4 py-2">
+        <p className="t-micro-cap">{label}</p>
+        <p className="t-micro-cap text-[var(--color-ink-mute)] num">{rows.length}</p>
+      </div>
+      <div className="divide-y divide-[var(--color-hairline-2)]">
+        {rows.map((r, i) =>
+          r.kind === "switch" ? (
+            <WhyRowSwitch key={i} row={r} />
+          ) : (
+            <WhyRowSingle key={i} row={r} />
+          ),
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -110,8 +147,10 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
 
   const groups = {
     switch: memo.whyRows.filter((r) => r.kind === "switch"),
+    remove: memo.whyRows.filter((r) => r.kind === "remove"),
     reduce: memo.whyRows.filter((r) => r.kind === "reduce"),
     add: memo.whyRows.filter((r) => r.kind === "add"),
+    increase: memo.whyRows.filter((r) => r.kind === "increase"),
   };
 
   const topProposedHoldings = memo.proposedXray.holdings.slice(0, 10);
@@ -233,46 +272,24 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
         </div>
       </section>
 
-      {/* Why-table */}
+      {/* Weight changes — grouped cards by outcome */}
       <section className="mt-10">
         <SectionHeader title="Weight changes" eyebrow="WHY THIS SWITCH" />
-        <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
-          <table className="table-pro table-pro-sm w-full">
-            <colgroup>
-              <col />
-              <col style={{ width: "110px" }} />
-              <col style={{ width: "120px" }} />
-              <col style={{ width: "70px" }} />
-              <col style={{ width: "32%" }} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>Fund</th>
-                <th className="right">Current %</th>
-                <th className="right">Proposed %</th>
-                <th className="right">&Delta;</th>
-                <th>Rationale</th>
-              </tr>
-            </thead>
-            <tbody>
-              <WhyGroup label="SWITCH" rows={groups.switch} />
-              <WhyGroup label="REDUCE" rows={groups.reduce} />
-              <WhyGroup label="ADD" rows={groups.add} />
-              {memo.whyRows.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center">
-                    <p className="t-caption text-[var(--color-ink-mute)]">
-                      No material weight changes detected.
-                    </p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <p className="t-micro-cap mt-3 text-[var(--color-ink-mute)]">
-          Rationale prose is drafted in a follow-up phase.
-        </p>
+        {memo.whyRows.length === 0 ? (
+          <div className="rounded-md border border-dashed border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] px-5 py-8 text-center">
+            <p className="t-caption text-[var(--color-ink-mute)]">
+              No material weight changes detected.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <WhyGroupCard label="SWITCH" rows={groups.switch} />
+            <WhyGroupCard label="REMOVE" rows={groups.remove} />
+            <WhyGroupCard label="REDUCE" rows={groups.reduce} />
+            <WhyGroupCard label="ADD" rows={groups.add} />
+            <WhyGroupCard label="INCREASE" rows={groups.increase} />
+          </div>
+        )}
       </section>
 
       {/* Outlook */}

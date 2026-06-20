@@ -28,8 +28,10 @@ export type AssetClassDriftRow = {
   delta: number;
 };
 
+export type WhyRowKind = "switch" | "remove" | "reduce" | "add" | "increase";
+
 export type WhyRow = {
-  kind: "reduce" | "add" | "switch";
+  kind: WhyRowKind;
   fromFund: string | null;
   toFund: string | null;
   fromPct: number;
