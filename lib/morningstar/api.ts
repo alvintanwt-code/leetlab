@@ -13,6 +13,18 @@ export type UniverseFund = {
   Currency?: string;
   CategoryName?: string;
   InceptionDate?: string;
+  // Extended fields — populated by the extended screener call, used as a
+  // fallback for SG/MAS-coded funds where MFsnapshot returns empty.
+  BrandingCompanyName?: string;
+  FundCompanyName?: string;
+  OngoingCharge?: number;
+  ManagementFee?: number;
+  ReturnM12?: number;
+  ReturnM36?: number;
+  ReturnM60?: number;
+  ReturnM120?: number;
+  CalculatedSRRI?: number;
+  CollectedSRRI?: number;
 };
 
 export type MorningstarSnapshot = Record<string, unknown>;
@@ -43,7 +55,10 @@ export async function fetchUniverse(universeId: string): Promise<UniverseFund[]>
     universeIds: universeId,
     languageId: "en-GB",
     outputType: "json",
-    securityDataPoints: "secId,Name,Isin,LegalName,Currency,CategoryName,InceptionDate",
+    securityDataPoints:
+      "secId,Name,Isin,LegalName,Currency,CategoryName,InceptionDate," +
+      "BrandingCompanyName,FundCompanyName,OngoingCharge,ManagementFee," +
+      "ReturnM12,ReturnM36,ReturnM60,ReturnM120,CalculatedSRRI,CollectedSRRI",
     top: "500",
     pageSize: "500",
   });
@@ -85,7 +100,7 @@ export async function fetchFundSnapshot(
  * ISIN at Morningstar — they need msid).
  */
 export async function fetchFundSnapshotByAny(
-  isin: string,
+  isin: string | null,
   secId: string | null,
 ): Promise<MorningstarSnapshot> {
   if (isin) {
@@ -95,5 +110,5 @@ export async function fetchFundSnapshotByAny(
   if (secId) {
     return fetchFundSnapshot(secId, "msid");
   }
-  throw new Error(`No usable identifier (isin=${isin}, secId=${secId})`);
+  throw new Error(`No usable identifier (isin=${isin ?? "null"}, secId=${secId ?? "null"})`);
 }

@@ -3,8 +3,12 @@ import { join } from "node:path";
 config({ path: join(process.cwd(), ".env.local") });
 
 import { readFileSync } from "node:fs";
-import { fetchUniverse, fetchFundSnapshotByAny } from "../lib/morningstar/api";
-import { parseMorningstarSnapshot } from "../lib/morningstar/parse";
+import {
+  fetchUniverse,
+  fetchFundSnapshotByAny,
+  type UniverseFund,
+} from "../lib/morningstar/api";
+import { parseMorningstarSnapshot, parseScreenerRow } from "../lib/morningstar/parse";
 import {
   getProviderId,
   upsertFund,
@@ -60,19 +64,31 @@ const PROVIDERS: Provider[] = [
 
 type SeedFund = { name: string; isin: string; status: string };
 
-type FundListEntry = { secId: string | null; isin: string; name: string };
+type FundListEntry = {
+  secId: string | null;
+  isin: string | null;
+  name: string;
+  // Original screener row when available — used as a fallback when MFsnapshot
+  // returns empty (notably MAS-coded SG funds).
+  screenerRow: UniverseFund | null;
+};
 
 async function discoverFunds(p: Provider): Promise<FundListEntry[]> {
   if (p.source.kind === "universe") {
     const rows = await fetchUniverse(p.source.universeId);
     return rows
-      .filter((r) => r.Isin)
-      .map((r) => ({ secId: r.secId, isin: r.Isin, name: r.Name ?? r.LegalName ?? r.Isin }));
+      .filter((r) => r.Isin || r.secId)
+      .map((r) => ({
+        secId: r.secId,
+        isin: r.Isin || null,
+        name: r.Name ?? r.LegalName ?? r.Isin ?? r.secId ?? "(unnamed fund)",
+        screenerRow: r,
+      }));
   }
   // seed file — read deduped ISIN list from disk
   const raw = readFileSync(join(process.cwd(), p.source.file), "utf8");
   const seeds = JSON.parse(raw) as SeedFund[];
-  return seeds.map((s) => ({ secId: null, isin: s.isin, name: s.name }));
+  return seeds.map((s) => ({ secId: null, isin: s.isin, name: s.name, screenerRow: null }));
 }
 
 function parseArgs(): { only: string | null; sample: number | null } {
@@ -96,33 +112,64 @@ async function syncProvider(p: Provider, sample: number | null): Promise<void> {
   if (sample) console.log(`  sample mode → fetching first ${targets.length}`);
 
   let ok = 0;
+  let okScreener = 0;
   let failed = 0;
   // 400ms throttle keeps us under Morningstar's free-tier ~3 req/s ceiling.
   const THROTTLE_MS = 400;
   for (const [i, entry] of targets.entries()) {
     if (i > 0) await new Promise((r) => setTimeout(r, THROTTLE_MS));
+    const tag = entry.isin ?? entry.secId ?? "?";
     try {
-      const json = await fetchFundSnapshotByAny(entry.isin, entry.secId);
-      // The API returns {} for unknown ISINs — treat that as a soft failure.
-      if (!json || Object.keys(json).length <= 2) {
-        throw new Error("empty snapshot from Morningstar");
+      // Try MFsnapshot first — gives us NAV + allocations + per-fund detail.
+      let snapshotJson: Record<string, unknown> = {};
+      try {
+        snapshotJson = await fetchFundSnapshotByAny(entry.isin, entry.secId);
+      } catch {
+        snapshotJson = {};
       }
-      const externalId = (json as { Id?: string }).Id ?? entry.secId ?? entry.isin;
-      const url = p.detailUrl(externalId, entry.isin);
-      const { fund, snapshot, allocations } = parseMorningstarSnapshot(json, externalId, url);
-      const fundId = await upsertFund(providerId, fund);
-      if (snapshot.nav != null) await upsertSnapshot(fundId, snapshot);
-      await replaceAllocations(fundId, allocations);
-      ok++;
+      const hasSnapshot = snapshotJson && Object.keys(snapshotJson).length > 2;
+
+      let parsed;
+      let viaScreener = false;
+      if (hasSnapshot) {
+        const externalId =
+          (snapshotJson as { Id?: string }).Id ?? entry.secId ?? entry.isin ?? "";
+        const url = p.detailUrl(externalId, entry.isin ?? "");
+        parsed = parseMorningstarSnapshot(snapshotJson, externalId, url);
+      } else if (entry.screenerRow) {
+        // Fallback path: MAS-coded SG funds whose MFsnapshot returns []. Use
+        // the extended screener row directly — gives us identity + returns +
+        // risk + fund house. NAV and allocations stay null.
+        const externalId = entry.secId ?? entry.isin ?? "";
+        const url = p.detailUrl(externalId, entry.isin ?? "");
+        parsed = parseScreenerRow(entry.screenerRow, externalId, url);
+        viaScreener = true;
+      } else {
+        throw new Error("empty MFsnapshot and no screener fallback available");
+      }
+
+      const fundId = await upsertFund(providerId, parsed.fund);
+      const s = parsed.snapshot;
+      if (s.nav != null || s.ann1y != null || s.ann3y != null) {
+        await upsertSnapshot(fundId, s);
+      }
+      await replaceAllocations(fundId, parsed.allocations);
+
+      if (viaScreener) okScreener++;
+      else ok++;
+      const navStr = s.nav != null ? `NAV ${s.currency ?? "?"} ${s.nav}` : "no NAV";
+      const via = viaScreener ? "[screener]" : "          ";
       console.log(
-        `  [${i + 1}/${targets.length}] ${entry.isin} · ${fund.name.slice(0, 55)} · NAV ${snapshot.currency ?? "?"} ${snapshot.nav ?? "-"}`,
+        `  [${i + 1}/${targets.length}] ${via} ${tag} · ${parsed.fund.name.slice(0, 50)} · ${navStr}`,
       );
     } catch (e) {
       failed++;
-      console.error(`  [${i + 1}/${targets.length}] ${entry.isin} FAILED: ${(e as Error).message}`);
+      console.error(`  [${i + 1}/${targets.length}] ${tag} FAILED: ${(e as Error).message}`);
     }
   }
-  console.log(`✓ ${p.slug}: ${ok}/${targets.length} succeeded (${failed} failed)`);
+  console.log(
+    `✓ ${p.slug}: ${ok + okScreener}/${targets.length} succeeded (${ok} MFsnapshot, ${okScreener} screener-only, ${failed} failed)`,
+  );
 }
 
 async function main() {

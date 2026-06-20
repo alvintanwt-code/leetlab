@@ -5,6 +5,7 @@ import type {
   NormalizedDocument,
   ScrapedFund,
 } from "../scrapers/types";
+import type { UniverseFund } from "./api";
 
 // Morningstar BreakdownValues use coded Types that need lookup tables.
 // Verified against the rendered HSBC/FWD/TM widget output we already scraped.
@@ -149,6 +150,71 @@ function pushBreakdown(
     if (!label || !Number.isFinite(val) || val === 0) continue;
     out.push({ kind, label, weightPct: val, asOf });
   }
+}
+
+/**
+ * Build a ScrapedFund from a screener row only — no MFsnapshot needed.
+ *
+ * Used as a fallback for funds where the full MFsnapshot endpoint returns
+ * empty (notably MAS-coded Singapore funds in the FWD universe). The screener
+ * gives us name / asset class / risk / fund house / 1Y-10Y annualised returns
+ * directly; what's missing is NAV (no LastPrice in screener), allocations
+ * (sector/geo/holdings), and OCF for SG funds specifically.
+ */
+export function parseScreenerRow(
+  row: UniverseFund,
+  fallbackExternalId: string,
+  sourceUrl: string,
+): ScrapedFund {
+  const externalId = row.secId || fallbackExternalId;
+  const srri = row.CollectedSRRI ?? row.CalculatedSRRI ?? null;
+  const riskRating = srri ? Math.min(5, Math.max(1, srri)) : null;
+  const ocf =
+    typeof row.OngoingCharge === "number" && Number.isFinite(row.OngoingCharge)
+      ? row.OngoingCharge
+      : null;
+
+  const fund: NormalizedFund = {
+    externalId,
+    name: row.Name || row.LegalName || `(unknown — ${externalId})`,
+    isin: row.Isin || null,
+    fundHouse: row.BrandingCompanyName ?? row.FundCompanyName ?? null,
+    currency: row.Currency ?? null,
+    assetClass: row.CategoryName ?? null,
+    distributionType: inferDistribution(row.Name),
+    riskRating,
+    riskLabel: srri ? SRRI_LABELS[srri] ?? null : null,
+    shareClassInception: row.InceptionDate ? row.InceptionDate.slice(0, 10) : null,
+    fundSize: null,
+    fundSizeCurrency: null,
+    fundSizeAsOf: null,
+    dealingFrequency: null,
+    benchmark: null,
+    sfdrClassification: null,
+    expenseRatio: ocf,
+    managementFee: typeof row.ManagementFee === "number" ? row.ManagementFee : null,
+    morningstarRating: null,
+    investmentObjective: null,
+    sourceUrl,
+  };
+
+  const snapshot: NormalizedSnapshot = {
+    asOf: new Date().toISOString().slice(0, 10),
+    nav: null,
+    currency: row.Currency ?? null,
+    changePct: null,
+    ann1y: row.ReturnM12 ?? null,
+    ann3y: row.ReturnM36 ?? null,
+    ann5y: row.ReturnM60 ?? null,
+    ann10y: row.ReturnM120 ?? null,
+    annSince: null,
+    alpha3y: null,
+    beta3y: null,
+    sharpe3y: null,
+    stddev3y: null,
+  };
+
+  return { fund, snapshot, allocations: [], documents: [], rawMarkdown: "" };
 }
 
 export function parseMorningstarSnapshot(
