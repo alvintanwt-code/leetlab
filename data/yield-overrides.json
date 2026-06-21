@@ -1,0 +1,19 @@
+{
+  "_comment": "Trailing 12-month yield overrides for funds where Morningstar's MFsnapshot YieldHistory is empty (notably MAS-coded SG funds). Keyed by ISIN. source='fwd' rows are auto-refreshed by scripts/scrape-platform-yields.ts; source='manual' rows are edited by hand. Runtime in lib/portfolio-performance.ts consults this file when the Morningstar snapshot returns null yield.",
+  "overrides": {
+    "SG9999002083": {
+      "yieldPct": 3.37,
+      "source": "fwd",
+      "msid": "F0HKG062MZ",
+      "asOf": "2026-04-01",
+      "note": "FSSA Dividend Advantage Fund SGD Dis — scraped from FWD fund-report Dividends section ('12 mo Yield')."
+    },
+    "SG9999003826": {
+      "yieldPct": null,
+      "source": "manual",
+      "msid": "F0HKG062LS",
+      "asOf": null,
+      "note": "Amova Singapore Dividend Equity Fund Dis SGD — TMLS fund-report shows only individual distributions, no aggregated 12-month yield. Enter manually after summing TTM payouts ÷ current NAV. Latest seen: SGD 0.008 ex-dividend 2 Jun 2026 (NAV 1.9284)."
+    }
+  }
+}

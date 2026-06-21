@@ -6,8 +6,33 @@
 // Mirrors the math in app/api/performance/route.ts on the series side but adds
 // yield extraction. The /api route still has its own copy so the API contract
 // is unchanged; this module is dedicated to server-side page rendering.
+//
+// For ISINs Morningstar's snapshot leaves blank (notably MAS-coded SG funds),
+// data/yield-overrides.json supplies a fallback figure scraped from the platform
+// fund-centre (see scripts/scrape-platform-yields.ts).
+
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 type SeriesPoint = { d: string; v: number };
+
+type YieldOverride = { yieldPct: number | null; source: string; msid?: string; asOf?: string | null; note?: string };
+let OVERRIDES_CACHE: Record<string, YieldOverride> | null = null;
+function loadYieldOverrides(): Record<string, YieldOverride> {
+  if (OVERRIDES_CACHE) return OVERRIDES_CACHE;
+  const file = join(process.cwd(), "data", "yield-overrides.json");
+  if (!existsSync(file)) {
+    OVERRIDES_CACHE = {};
+    return OVERRIDES_CACHE;
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(file, "utf8")) as { overrides?: Record<string, YieldOverride> };
+    OVERRIDES_CACHE = parsed.overrides ?? {};
+  } catch {
+    OVERRIDES_CACHE = {};
+  }
+  return OVERRIDES_CACHE;
+}
 
 type Snapshot = {
   points: SeriesPoint[];       // GrowthOf10K, monthly
@@ -56,6 +81,11 @@ async function fetchSnapshot(isin: string): Promise<Snapshot> {
     const yhList = Array.isArray(yh) ? yh : yh ? [yh] : [];
     const t52 = yhList.find((p) => String(p.Type) === "52" && typeof p.Value === "number");
     if (t52?.Value != null) yield12m = t52.Value;
+    // Fall back to the override file (platform-scraped) when Morningstar is blank.
+    if (yield12m == null) {
+      const ov = loadYieldOverrides()[isin];
+      if (ov && typeof ov.yieldPct === "number") yield12m = ov.yieldPct;
+    }
 
     const snap: Snapshot = {
       points,
