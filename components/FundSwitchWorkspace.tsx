@@ -39,10 +39,12 @@ type WorkspaceState = Record<string, PerPlatform>;
 
 const STORAGE_KEY = "fundswitch:v3";
 
+// Canonical order + short labels shared with the build page and /portfolios.
+const PROVIDER_ORDER = ["hsbc", "fwd", "tmls", "gwm"];
 const PROVIDER_SHORT: Record<string, string> = {
-  hsbc: "HSBC Life",
-  tmls: "Tokio Marine",
+  hsbc: "HSBC",
   fwd: "FWD",
+  tmls: "TM",
   gwm: "GWM",
 };
 
@@ -311,7 +313,9 @@ export function FundSwitchWorkspace({
         <div className="flex items-center gap-6 border-b border-[var(--color-hairline)]">
           <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
           <nav aria-label="Platform" className="flex items-center gap-3 overflow-x-auto">
-            {providers.map((p) => {
+            {[...providers]
+              .sort((a, b) => PROVIDER_ORDER.indexOf(a.slug) - PROVIDER_ORDER.indexOf(b.slug))
+              .map((p) => {
               const n = providerCounts.get(p.slug) ?? 0;
               const active = platform === p.slug;
               const disabled = n === 0;

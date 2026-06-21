@@ -414,7 +414,7 @@ export function StudioShell({
       <section className="flex w-[20vw] min-w-[240px] shrink-0 flex-col border-r border-[var(--color-hairline)] bg-[var(--color-canvas)]">
       <nav
         aria-label="Provider"
-        className="flex h-[52px] shrink-0 items-center gap-1 overflow-x-auto border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3"
+        className="flex h-[52px] shrink-0 items-center justify-center gap-1.5 overflow-x-auto border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4"
       >
         {providerTabs.map((t) => {
           const active = t.slug === providerSlug;
