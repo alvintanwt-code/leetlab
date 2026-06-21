@@ -48,6 +48,7 @@ function parseNum(v: string | undefined): number | null {
 type FundMeta = {
   id: number;
   name: string;
+  isin: string | null;
   asset_class: string | null;
   risk_rating: number | null;
   expense_ratio: number | null;
@@ -109,6 +110,7 @@ export async function generateSwitch(input: unknown): Promise<GenerateSwitchResu
   const fundLookup: FundMeta[] = providerFunds.map((f) => ({
     id: f.id,
     name: f.name,
+    isin: f.isin,
     asset_class: f.asset_class,
     risk_rating: f.risk_rating,
     expense_ratio: f.expense_ratio,
@@ -136,6 +138,7 @@ export async function generateSwitch(input: unknown): Promise<GenerateSwitchResu
         risk: null,
         expenseRatio: null,
         ann3y: null,
+        isin: null,
       };
     }
     return {
@@ -149,6 +152,7 @@ export async function generateSwitch(input: unknown): Promise<GenerateSwitchResu
       risk: matched.risk_rating,
       expenseRatio: matched.expense_ratio,
       ann3y: matched.ann_3y,
+      isin: matched.isin,
     };
   });
 
@@ -160,16 +164,35 @@ export async function generateSwitch(input: unknown): Promise<GenerateSwitchResu
     expenseRatio: m.expense_ratio,
     ann3y: m.ann_3y,
     weightPct: m.weight_bps / 100,
+    isin: m.isin,
   }));
 
-  let proposedXray: SwitchMemo["proposedXray"] = { sector: [], geo: [], holdings: [] };
+  let proposedXray: SwitchMemo["proposedXray"] = {
+    sector: [],
+    geo: [],
+    holdings: [],
+    r1y: null,
+    r3y: null,
+    r5y: null,
+    r10y: null,
+    expense: null,
+    risk: null,
+  };
   try {
     if (portfolio.xray_json) {
       const x = JSON.parse(portfolio.xray_json) as Record<string, unknown>;
+      const num = (v: unknown): number | null =>
+        typeof v === "number" && Number.isFinite(v) ? v : null;
       proposedXray = {
         sector: safeXrayBreakdown(x.sector),
         geo: safeXrayBreakdown(x.geo),
         holdings: safeXrayBreakdown(x.holdings),
+        r1y: num(x.r1y),
+        r3y: num(x.r3y),
+        r5y: num(x.r5y),
+        r10y: num(x.r10y),
+        expense: num(x.expense),
+        risk: num(x.risk),
       };
     }
   } catch {

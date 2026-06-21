@@ -9,6 +9,7 @@ export type ResolvedHolding = {
   risk: number | null;
   expenseRatio: number | null;
   ann3y: number | null;
+  isin: string | null;
 };
 
 export type ModelHolding = {
@@ -19,6 +20,7 @@ export type ModelHolding = {
   expenseRatio: number | null;
   ann3y: number | null;
   weightPct: number;
+  isin: string | null;
 };
 
 export type AssetClassDriftRow = {
@@ -60,6 +62,29 @@ export type SwitchOrder = {
   totalSwitchOutSgd: number;
 };
 
+// One row in the current or target fund table — same shape on both sides so
+// the comparison reads cleanly. ISIN is for the chart blend on the target side
+// and to key change rows on either side.
+export type SwitchFundRow = {
+  fundId: number | null;
+  name: string;
+  weightPct: number;
+  valueSgd: number;
+  assetClass: string | null;
+  isin: string | null;
+};
+
+export type ChangeKind = "new" | "added" | "reduced" | "no_change";
+
+export type SwitchChangeRow = {
+  fundId: number | null;
+  name: string;
+  currentPct: number;
+  targetPct: number;
+  delta: number;
+  kind: ChangeKind;
+};
+
 export type SwitchMemo = {
   platformLabel: string;
   modelName: string;
@@ -91,6 +116,23 @@ export type SwitchMemo = {
     sector: XrayBreakdown;
     geo: XrayBreakdown;
     holdings: XrayBreakdown;
+    // Headline trailing returns lifted from the model's stored xray_json. Used
+    // by the SwitchResult's new-portfolio Performance section.
+    r1y: number | null;
+    r3y: number | null;
+    r5y: number | null;
+    r10y: number | null;
+    expense: number | null;
+    risk: number | null;
   };
   switchOrder: SwitchOrder;
+  // Side-by-side raw tables for the new result view. `currentFunds` is the
+  // client's aggregated holdings (one row per fund, accounts merged);
+  // `targetFunds` is the model holdings in weight-desc order.
+  currentFunds: SwitchFundRow[];
+  targetFunds: SwitchFundRow[];
+  // Union of funds across current + target, classified into one of four
+  // states for the changes table. Includes no-change rows (unlike `whyRows`,
+  // which filters them out for the advisor memo).
+  changes: SwitchChangeRow[];
 };

@@ -9,7 +9,7 @@ import {
   parsePastedPortfolio,
   type ParsedHoldingRow,
 } from "@/app/(app)/switch/actions";
-import { FundSwitchMemo } from "@/components/FundSwitchMemo";
+import { SwitchResult } from "@/components/SwitchResult";
 import {
   AssetChips,
   Kpi,
@@ -389,7 +389,7 @@ export function FundSwitchWorkspace({
       </div>
 
       {memo ? (
-        <FundSwitchMemo memo={memo} onEdit={() => setMemo(null)} />
+        <SwitchResult memo={memo} onEdit={() => setMemo(null)} />
       ) : (
       <>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">

@@ -1,7 +1,10 @@
 import type {
   AssetClassDriftRow,
+  ChangeKind,
   ModelHolding,
   ResolvedHolding,
+  SwitchChangeRow,
+  SwitchFundRow,
   SwitchMemo,
   SwitchOrder,
   SwitchOrderInRow,
@@ -212,6 +215,79 @@ export function computeMemo(args: {
     targetByFundId,
   });
 
+  // Side-by-side raw tables for the SwitchResult view.
+  const currentFunds: SwitchFundRow[] = currentWeighted
+    .map((h) => ({
+      fundId: h.fundId,
+      name: h.matchedName ?? h.inputName,
+      weightPct: h.weightPct,
+      valueSgd: h.currentValue,
+      assetClass: h.assetClass,
+      isin: h.isin,
+    }))
+    .sort((a, b) => b.weightPct - a.weightPct);
+  const targetFunds: SwitchFundRow[] = modelHoldings
+    .map((m) => ({
+      fundId: m.fundId,
+      name: m.name,
+      weightPct: m.weightPct,
+      valueSgd: totalValue * (m.weightPct / 100),
+      assetClass: m.assetClass,
+      isin: m.isin,
+    }))
+    .sort((a, b) => b.weightPct - a.weightPct);
+
+  // Union changes table — include no-change rows so the advisor can show the
+  // client every fund's status, not just the trades.
+  const NO_CHANGE_THRESHOLD = 0.5;
+  const currentByFundId = new Map<number, (typeof currentFunds)[number]>();
+  for (const c of currentFunds) if (c.fundId != null) currentByFundId.set(c.fundId, c);
+  const targetByFundId2 = new Map<number, (typeof targetFunds)[number]>();
+  for (const t of targetFunds) targetByFundId2.set(t.fundId as number, t);
+
+  const seen = new Set<number>();
+  const changes: SwitchChangeRow[] = [];
+  for (const c of currentFunds) {
+    if (c.fundId == null) continue;
+    seen.add(c.fundId);
+    const t = targetByFundId2.get(c.fundId);
+    const targetPct = t?.weightPct ?? 0;
+    const delta = targetPct - c.weightPct;
+    let kind: ChangeKind;
+    if (Math.abs(delta) < NO_CHANGE_THRESHOLD) kind = "no_change";
+    else if (delta > 0) kind = "added";
+    else kind = "reduced";
+    changes.push({
+      fundId: c.fundId,
+      name: c.name,
+      currentPct: c.weightPct,
+      targetPct,
+      delta,
+      kind,
+    });
+  }
+  for (const t of targetFunds) {
+    if (seen.has(t.fundId as number)) continue;
+    changes.push({
+      fundId: t.fundId,
+      name: t.name,
+      currentPct: 0,
+      targetPct: t.weightPct,
+      delta: t.weightPct,
+      kind: "new",
+    });
+  }
+  // Sort: new first, then added (largest delta first), reduced (largest drop
+  // first), no-change last. Inside no-change, weight-desc so the largest
+  // positions sit at the top.
+  const changeOrder: Record<ChangeKind, number> = { new: 0, added: 1, reduced: 2, no_change: 3 };
+  changes.sort((a, b) => {
+    const o = changeOrder[a.kind] - changeOrder[b.kind];
+    if (o !== 0) return o;
+    if (a.kind === "no_change") return b.targetPct - a.targetPct;
+    return Math.abs(b.delta) - Math.abs(a.delta);
+  });
+
   return {
     platformLabel,
     modelName,
@@ -245,6 +321,9 @@ export function computeMemo(args: {
     unmatched,
     proposedXray,
     switchOrder,
+    currentFunds,
+    targetFunds,
+    changes,
   };
 }
 
