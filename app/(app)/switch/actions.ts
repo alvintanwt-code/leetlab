@@ -263,25 +263,44 @@ export async function parsePastedPortfolio(
   const client = new Anthropic();
 
   try {
+    // System prompt is split into two blocks: stable rules (cacheable across
+    // every paste) + per-platform fund universe (cacheable per-platform for
+    // ~5 min). Pasted text lives in the user message — the only volatile
+    // portion. Net effect: repeat pastes within the cache window pay ~0.1x
+    // input cost on the universe (typically the largest chunk of input).
     const response = await client.messages.parse({
       model: "claude-opus-4-8",
-      max_tokens: 8000,
-      system:
-        "You parse client investment portfolio data from messy pasted text (statements, broker portals, emails) and emit a structured list of holdings.\n\n" +
-        "Rules:\n" +
-        "- One entry per unique fund — even when the source shows the same fund spread across multiple account sections (Initial Account, Accumulation Account, RSP, SRS, Cash, sub-policies, etc.). Combine them: SUM the units across accounts; the unit price stays the same (a fund's NAV is universal across accounts). The implicit total value equals units_summed × unitPrice.\n" +
-        "- Skip headers, totals, subtotals, footnotes, summary rows, balance lines, account labels.\n" +
-        "- Strip currency prefixes (SGD, S$, USD, $, etc.) and thousands separators to produce plain numbers.\n" +
-        "- Match each holding against the supplied platform fund universe (sourced from Morningstar). Use fund_house + name + asset class to disambiguate share classes. Prefer a confident match — only leave fundId null if multiple equally-good candidates exist.\n" +
-        "- When matched, use the canonical name from the universe in `fund`.\n" +
-        "- Each emitted row needs `units` (total number of units / shares held across all accounts) AND `unitPrice` (NAV or price per unit). If the source only shows two of {units, unitPrice, total value}, derive the third — they're linked by value = units × unitPrice.",
+      max_tokens: 16000,
+      // Adaptive thinking lets the model reason through messy share-class
+      // disambiguation (Acc vs Dist, SGDH vs SGD, fund-house overlap) before
+      // emitting a row — material accuracy lift on the fundId binding step.
+      thinking: { type: "adaptive" },
+      system: [
+        {
+          type: "text",
+          text:
+            "You parse client investment portfolio data from messy pasted text (statements, broker portals, emails) and emit a structured list of holdings.\n\n" +
+            "Rules:\n" +
+            "- One entry per unique fund — even when the source shows the same fund spread across multiple account sections (Initial Account, Accumulation Account, RSP, SRS, Cash, sub-policies, etc.). Combine them: SUM the units across accounts; the unit price stays the same (a fund's NAV is universal across accounts). The implicit total value equals units_summed × unitPrice.\n" +
+            "- Skip headers, totals, subtotals, footnotes, summary rows, balance lines, account labels.\n" +
+            "- Strip currency prefixes (SGD, S$, USD, $, etc.) and thousands separators to produce plain numbers.\n" +
+            "- Match each holding against the supplied platform fund universe (sourced from Morningstar). Use fund_house + name + asset class to disambiguate share classes. Prefer a confident match — only leave fundId null if multiple equally-good candidates exist.\n" +
+            "- When matched, use the canonical name from the universe in `fund`.\n" +
+            "- Each emitted row needs `units` (total number of units / shares held across all accounts) AND `unitPrice` (NAV or price per unit). If the source only shows two of {units, unitPrice, total value}, derive the third — they're linked by value = units × unitPrice.",
+        },
+        {
+          type: "text",
+          text:
+            `Platform: ${platformLabel}\n\n` +
+            `Fund universe (id | name | fund house | asset class):\n${fundUniverse || "(empty)"}`,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
       messages: [
         {
           role: "user",
           content:
-            `Platform: ${platformLabel}\n\n` +
-            `Fund universe (id | name | fund house | asset class):\n${fundUniverse || "(empty)"}\n\n` +
-            `---\n\nPasted portfolio text:\n${text}\n\n` +
+            `Pasted portfolio text:\n${text}\n\n` +
             `Extract each client holding and emit them via the structured response.`,
         },
       ],
@@ -289,6 +308,16 @@ export async function parsePastedPortfolio(
         format: zodOutputFormat(ParsedPortfolioSchema),
       },
     });
+
+    // Safety classifiers may decline a paste (rare; usually triggers on text
+    // that looks like a credential/PII dump). The structured response is empty
+    // in that case — surface a distinct error instead of the generic one.
+    if (response.stop_reason === "refusal") {
+      return {
+        ok: false,
+        error: "Anthropic safety classifiers declined this paste. Strip sensitive identifiers (account numbers, NRIC) and retry.",
+      };
+    }
 
     const data = response.parsed_output;
     if (!data || !Array.isArray(data.holdings)) {
