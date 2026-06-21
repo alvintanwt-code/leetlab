@@ -26,6 +26,15 @@ type ChartData = {
   skipped: number;
 };
 
+const CATEGORIES = [
+  { key: "conservative", label: "Conservative" },
+  { key: "balanced", label: "Balanced" },
+  { key: "growth", label: "Growth" },
+  { key: "aggressive", label: "Aggressive" },
+  { key: "dividend_income", label: "Dividend income" },
+] as const;
+type CategoryKey = (typeof CATEGORIES)[number]["key"];
+
 type ClassKey = "E" | "F" | "A" | "L" | "C" | "M";
 const CLASS_LABEL: Record<ClassKey, string> = {
   E: "Equity",
@@ -96,6 +105,14 @@ export function BuildReview({
   const [basket, setBasket] = useState<Holding[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [focusedWeightId, setFocusedWeightId] = useState<number | null>(null);
+
+  // Save-build modal state — same fields as the StudioShell wizard.
+  const [showSave, setShowSave] = useState(false);
+  const [saveCategory, setSaveCategory] = useState<CategoryKey>("balanced");
+  const [saveName, setSaveName] = useState("");
+  const [saveNotes, setSaveNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Seed from the picker's sessionStorage drop. Equal-weights on mount; we
   // keep the storage key so Edit-inputs preserves the staged selection.
@@ -271,6 +288,39 @@ export function BuildReview({
     router.push(`/construction/${providerSlug}/picker`);
   }
 
+  const canSave = basket.length > 0 && Math.abs(totalPct - 100) < 0.05;
+
+  async function saveBuild() {
+    if (!canSave) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch("/api/portfolios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          providerSlug,
+          category: saveCategory,
+          name:
+            saveName.trim() ||
+            `${providerName} ${saveCategory} ${new Date().toISOString().slice(0, 10)}`,
+          notes: saveNotes.trim() || null,
+          holdings: basket,
+          xray,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error((d as { error?: string })?.error ?? `HTTP ${res.status}`);
+      }
+      router.push(`/portfolios`);
+    } catch (e) {
+      setSaveError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-[1280px] px-20 pb-16">
       {/* Sticky chrome — anchor + Edit-inputs back link (mirrors /switch result) */}
@@ -284,13 +334,26 @@ export function BuildReview({
             {providerName} · {basket.length} {basket.length === 1 ? "fund" : "funds"}
           </p>
         </header>
-        <div className="flex items-center justify-end border-b border-[var(--color-hairline-2)] py-2">
+        <div className="flex items-center justify-between border-b border-[var(--color-hairline-2)] py-2">
           <button
             type="button"
             onClick={goEditInputs}
             className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
           >
             ← Edit inputs
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowSave(true)}
+            disabled={!canSave}
+            className={`btn-pill ${canSave ? "btn-primary" : "btn-ghost opacity-50"}`}
+            title={
+              !canSave
+                ? "Weights must total 100% before you can save"
+                : "Save this basket as a confirmed model portfolio"
+            }
+          >
+            Save build →
           </button>
         </div>
       </div>
@@ -475,6 +538,73 @@ export function BuildReview({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Save build modal — same wizard as the StudioShell save flow */}
+      {showSave && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(13,37,61,0.45)]"
+          onClick={() => (saving ? null : setShowSave(false))}
+        >
+          <div
+            className="w-[480px] max-w-[92vw] rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="t-micro-cap mb-2">Save build</p>
+            <h2 className="t-h-lg text-[var(--color-ink)]">Save this as a model portfolio.</h2>
+            <p className="t-body-md mt-1 text-[var(--color-ink-mute)]">
+              {providerName} &middot; {basket.length} funds &middot; weights total 100%.
+            </p>
+            <div className="mt-5 flex flex-col gap-4">
+              <label className="flex flex-col gap-1">
+                <span className="t-caption text-[var(--color-ink-mute)]">Category</span>
+                <select
+                  value={saveCategory}
+                  onChange={(e) => setSaveCategory(e.target.value as CategoryKey)}
+                  className="t-body-md rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-2 outline-none focus:border-[var(--color-primary)]"
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="t-caption text-[var(--color-ink-mute)]">Name (optional)</span>
+                <input
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder={`${providerName} ${CATEGORIES.find((c) => c.key === saveCategory)?.label} v1`}
+                  className="t-body-md rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-2 outline-none focus:border-[var(--color-primary)]"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="t-caption text-[var(--color-ink-mute)]">Notes (optional)</span>
+                <textarea
+                  value={saveNotes}
+                  onChange={(e) => setSaveNotes(e.target.value)}
+                  rows={2}
+                  placeholder="Rationale for this construction…"
+                  className="t-body-md rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-2 outline-none focus:border-[var(--color-primary)]"
+                />
+              </label>
+            </div>
+            {saveError && <p className="mt-3 t-caption text-[var(--color-negative)]">{saveError}</p>}
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setShowSave(false)}
+                disabled={saving}
+                className="btn-pill btn-ghost disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button onClick={saveBuild} disabled={saving} className="btn-pill btn-primary">
+                {saving ? "Saving…" : "Save model portfolio"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
