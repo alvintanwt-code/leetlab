@@ -259,7 +259,7 @@ export type ProviderRow = {
 };
 
 export async function listProvidersWithCounts(): Promise<ProviderRow[]> {
-  return q<ProviderRow>(sql`
+  const rows = await q<ProviderRow>(sql`
     SELECT
       p.slug,
       p.name,
@@ -268,6 +268,26 @@ export async function listProvidersWithCounts(): Promise<ProviderRow[]> {
     FROM providers p
     ORDER BY p.id
   `);
+  // Re-count for providers with an in-scope allowlist so the platform tab
+  // shows the in-scope universe (e.g. HSBC's 92 funds), not the full sync.
+  const out: ProviderRow[] = [];
+  for (const r of rows) {
+    const allowlist = loadInScopeAllowlist(r.slug);
+    if (allowlist && allowlist.length > 0) {
+      const joined = allowlist.join("\x1f");
+      const scoped = await q<{ n: number }>(sql`
+        SELECT COUNT(*)::int AS n
+        FROM funds f
+        JOIN providers p ON p.id = f.provider_id
+        WHERE p.slug = ${r.slug}
+          AND f.isin = ANY(string_to_array(${joined}, E'\x1f'))
+      `);
+      out.push({ ...r, fund_count: scoped[0]?.n ?? 0 });
+    } else {
+      out.push(r);
+    }
+  }
+  return out;
 }
 
 export type FundInspectorData = {
