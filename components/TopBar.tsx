@@ -1,8 +1,17 @@
+import Image from "next/image";
+
 export function TopBar() {
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-5">
       <div className="flex items-center gap-2">
-        <span className="block h-2 w-2 rounded-full bg-[var(--color-primary)]" aria-hidden />
+        <Image
+          src="/leet-logo.png"
+          alt=""
+          width={18}
+          height={18}
+          priority
+          className="shrink-0"
+        />
         <span className="t-body-md font-medium tracking-tight text-[var(--color-ink)]">
           lab.leet
         </span>
