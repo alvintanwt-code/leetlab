@@ -442,18 +442,18 @@ export function PortfolioDetail({
             <p className="t-body-lg font-medium text-[var(--color-ink)]">Instruments</p>
             <p className="t-micro-cap">Mandate constituents</p>
           </div>
-          <table className="table-pro" style={{ tableLayout: "fixed" }}>
+          <table className="table-pro table-pro-sm" style={{ tableLayout: "fixed" }}>
             <colgroup>
-              <col style={{ width: "48%" }} />
-              <col style={{ width: "13%" }} />
-              <col style={{ width: "13%" }} />
-              <col style={{ width: "13%" }} />
-              <col style={{ width: "13%" }} />
+              <col style={{ width: "52%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "11%" }} />
+              <col style={{ width: "11%" }} />
             </colgroup>
             <thead>
               <tr>
                 <th>Instrument</th>
-                <th className="right">Weight %</th>
+                <th className="right">Weight</th>
                 <th className="right">1Y</th>
                 <th className="right">3Y</th>
                 <th className="right">5Y</th>
@@ -467,7 +467,20 @@ export function PortfolioDetail({
                 return (
                   <tr key={h.fund_id}>
                     <td className="cell-fund">
-                      <span className="name text-[var(--color-ink)]" title={h.name}>{h.name}</span>
+                      <span
+                        className="name text-[var(--color-ink)]"
+                        title={h.name}
+                        style={{
+                          whiteSpace: "normal",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          fontSize: "13px",
+                        }}
+                      >
+                        {h.name}
+                      </span>
                       <span className="meta">{h.isin ?? h.external_id}</span>
                     </td>
                     <td className="nowrap right">

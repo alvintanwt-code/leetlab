@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 type SeriesPoint = { d: string; v: number };
 type FundOut = { isin: string; name: string; weight: number; points: SeriesPoint[]; terminal: number };
 type ModelOut = { points: SeriesPoint[]; terminal: number };
@@ -26,6 +28,8 @@ export function TrailingChart({
   commonEnd: string;
   skipped: number;
 }) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+
   const W = 1200, H = 360, L = 56, R = 16, T = 16, B = 32;
   const drawn = funds.slice(0, 12);
   const all = drawn.flatMap((f) => f.points.map((p) => p.v)).concat(model.points.map((p) => p.v));
@@ -57,6 +61,20 @@ export function TrailingChart({
     }
   });
 
+  function onMove(e: React.MouseEvent<SVGSVGElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const xPx = e.clientX - rect.left;
+    const xRatio = (xPx / rect.width) * W;
+    const closest = Math.max(
+      0,
+      Math.min(
+        dates.length - 1,
+        Math.round(((xRatio - L) / (W - L - R)) * (dates.length - 1)),
+      ),
+    );
+    setHoverIdx(closest);
+  }
+
   return (
     <div className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
       <div className="mb-4 flex items-baseline justify-between gap-4 flex-wrap">
@@ -67,9 +85,22 @@ export function TrailingChart({
             monthly, fund-ccy total return
           </p>
         </div>
+        {hoverIdx != null && (
+          <p className="t-caption num text-[var(--color-ink)]">
+            <span className="t-micro-cap mr-2">Hover</span>
+            {fmtMonth(dates[hoverIdx])}
+          </p>
+        )}
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="block w-full h-auto" role="img" aria-label="Trailing performance chart">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="block w-full h-auto"
+        role="img"
+        aria-label="Trailing performance chart"
+        onMouseMove={onMove}
+        onMouseLeave={() => setHoverIdx(null)}
+      >
         {/* gridlines + y labels */}
         {gridLines.map(({ v, y }) => (
           <g key={v.toFixed(2)}>
@@ -98,7 +129,7 @@ export function TrailingChart({
             fill="none"
             stroke={PAL[i % PAL.length]}
             strokeWidth="1.2"
-            opacity="0.6"
+            opacity={hoverIdx != null ? "0.45" : "0.6"}
           />
         ))}
 
@@ -107,18 +138,57 @@ export function TrailingChart({
 
         {/* baseline */}
         <line x1={L} y1={Y(100)} x2={W - R} y2={Y(100)} stroke="rgba(13,37,61,0.20)" strokeDasharray="3 3" />
+
+        {/* hover crosshair + dots */}
+        {hoverIdx != null && (
+          <g pointerEvents="none">
+            <line
+              x1={X(hoverIdx)}
+              x2={X(hoverIdx)}
+              y1={T}
+              y2={H - B}
+              stroke="var(--color-ink-mute)"
+              strokeWidth="0.8"
+              strokeDasharray="3 3"
+            />
+            {drawn.map((f, i) => (
+              <circle
+                key={f.isin}
+                cx={X(hoverIdx)}
+                cy={Y(f.points[hoverIdx].v)}
+                r="2.6"
+                fill="var(--color-canvas)"
+                stroke={PAL[i % PAL.length]}
+                strokeWidth="1.4"
+              />
+            ))}
+            <circle
+              cx={X(hoverIdx)}
+              cy={Y(model.points[hoverIdx].v)}
+              r="3.6"
+              fill="var(--color-canvas)"
+              stroke="#0d253d"
+              strokeWidth="1.8"
+            />
+          </g>
+        )}
       </svg>
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
         <span className="flex items-center gap-2 t-caption text-[var(--color-ink-2)]">
           <span className="inline-block h-[3px] w-3.5 rounded bg-[#0d253d]" />
-          Model portfolio <b className="num font-medium">{model.terminal.toFixed(1)}</b>
+          Model portfolio{" "}
+          <b className="num font-medium">
+            {(hoverIdx != null ? model.points[hoverIdx].v : model.terminal).toFixed(1)}
+          </b>
         </span>
         {drawn.map((f, i) => (
           <span key={f.isin} className="flex items-center gap-2 t-caption text-[var(--color-ink-mute)]">
             <span className="inline-block h-[3px] w-3.5 rounded" style={{ background: PAL[i % PAL.length] }} />
             {f.name.length > 30 ? f.name.slice(0, 28) + "…" : f.name}{" "}
-            <b className="num font-medium">{f.terminal.toFixed(1)}</b>
+            <b className="num font-medium">
+              {(hoverIdx != null ? f.points[hoverIdx].v : f.terminal).toFixed(1)}
+            </b>
           </span>
         ))}
       </div>
