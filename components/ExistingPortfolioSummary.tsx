@@ -298,12 +298,17 @@ export function ExistingPortfolioSummary({
   // a flex column for spacing — no border or bg of its own.
   return (
     <div className="flex flex-col gap-4">
-      {/* Header card — total · count · plain-English profile */}
+      {/* Header + Performance — combined into one card with a clear visual
+          hierarchy. Identity block (total · holdings · profile) sits on top;
+          a hairline + extra spacing separates it from the performance table
+          below. Reads as: who this portfolio is, then how it has performed. */}
       <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
         <div className="mb-4 flex items-baseline justify-between border-b border-[var(--color-hairline-2)] pb-3">
           <h2 className="t-body-md font-medium text-[var(--color-ink)]">Existing portfolio</h2>
           <p className="t-micro-cap">Snapshot as parsed</p>
         </div>
+
+        {/* Identity block */}
         <div className="grid grid-cols-1 gap-y-3 gap-x-8 sm:grid-cols-[auto_auto_1fr] sm:items-baseline">
           <Stat label="Total value" value={`SGD ${totalValue.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
           <Stat label="Holdings" value={String(enrichedHoldings.length)} />
@@ -312,21 +317,21 @@ export function ExistingPortfolioSummary({
             <p className="t-body-md mt-1.5 text-[var(--color-ink-2)]">{description}</p>
           </div>
         </div>
-      </section>
 
-      {/* Performance card — moved up so the numbers are the headline */}
-      <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-        <div className="mb-3 flex items-baseline justify-between">
-          <p className="t-body-md font-medium text-[var(--color-ink)]">Performance</p>
-          <p className="t-micro-cap">% per year &middot; geometric annualisation</p>
+        {/* Performance block — divided from identity by a hairline + breathing room */}
+        <div className="mt-6 border-t border-[var(--color-hairline-2)] pt-5">
+          <div className="mb-3 flex items-baseline justify-between">
+            <p className="t-body-md font-medium text-[var(--color-ink)]">Performance</p>
+            <p className="t-micro-cap">% per year &middot; geometric annualisation</p>
+          </div>
+          <PerformanceTable
+            enrichedHoldings={enrichedHoldings}
+            fundLines={fundLines}
+            calendarReturns={calendarReturns}
+            portfolioTrailing={trailingPortfolio}
+            loading={chartLoading}
+          />
         </div>
-        <PerformanceTable
-          enrichedHoldings={enrichedHoldings}
-          fundLines={fundLines}
-          calendarReturns={calendarReturns}
-          portfolioTrailing={trailingPortfolio}
-          loading={chartLoading}
-        />
       </section>
 
       {/* Trailing 3Y chart — already wraps itself in a card */}
