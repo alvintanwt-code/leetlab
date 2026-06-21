@@ -6,8 +6,8 @@ import {
   type ConfirmedPortfolio,
 } from "@/lib/db/queries";
 import { PortfolioCard, PortfolioRow, type PortfolioCardData } from "@/components/PortfolioCard";
-import { computeAssetMix, computeRiskRating, computeYieldPct, parseXray } from "@/lib/portfolio-derive";
-import { blendPortfolioSeries } from "@/lib/portfolio-performance";
+import { computeAssetMix, computeRiskRating, parseXray } from "@/lib/portfolio-derive";
+import { blendPortfolioSeries, blendPortfolioYield } from "@/lib/portfolio-performance";
 import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/portfolio-mandates";
 
 export const dynamic = "force-dynamic";
@@ -127,14 +127,18 @@ export default async function ModelPortfoliosIndex({
       const components = holdings
         .filter((h) => !!h.isin)
         .map((h) => ({ isin: h.isin as string, weight: h.weight_bps / totalBps }));
-      const series = await blendPortfolioSeries(components, 36);
+      const isIncome = portfolio.category === "dividend_income";
+      const [series, yieldBlend] = await Promise.all([
+        blendPortfolioSeries(components, 36),
+        isIncome ? blendPortfolioYield(components) : Promise.resolve(null),
+      ]);
       return {
         portfolio,
         assetMix: computeAssetMix(holdings),
         xray,
         risk: computeRiskRating(holdings, xray),
         series,
-        yieldPct: portfolio.category === "dividend_income" ? computeYieldPct(holdings) : null,
+        yieldPct: yieldBlend ? yieldBlend.yieldPct : null,
       };
     }),
   );

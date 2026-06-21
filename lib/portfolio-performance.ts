@@ -1,64 +1,87 @@
-// Server-side blended-performance helper for the /portfolios index. Calls
-// Morningstar GrowthOf10K per ISIN, intersects on common dates, rebases each
-// component to 100 at the common start, and returns a weight-blended series
-// for the model. Mirrors the math in app/api/performance/route.ts but runs
-// during the server render so cards ship with their sparklines pre-drawn.
+// Server-side helpers for the /portfolios index. Each ISIN's Morningstar
+// MFsnapshot is fetched once and cached for 6h; from that single response we
+// expose both the GrowthOf10K series (for the sparkline) and the trailing
+// 12-month yield (for income-portfolio yield aggregation).
 //
-// Process-local cache (6h TTL) — same lifetime as the API route. Run on the
-// node runtime; no fetch budget guard beyond a per-call timeout.
+// Mirrors the math in app/api/performance/route.ts on the series side but adds
+// yield extraction. The /api route still has its own copy so the API contract
+// is unchanged; this module is dedicated to server-side page rendering.
 
 type SeriesPoint = { d: string; v: number };
 
-const CACHE = new Map<string, { ts: number; points: SeriesPoint[] }>();
+type Snapshot = {
+  points: SeriesPoint[];       // GrowthOf10K, monthly
+  yield12m: number | null;     // YieldHistory.Value where Type == "52"
+  distFreq: string | null;     // e.g. "M$" (Monthly), "Q" (Quarterly), "A" (Annual)
+};
+
+const CACHE = new Map<string, { ts: number; snap: Snapshot }>();
 const TTL_MS = 6 * 60 * 60 * 1000;
 
-async function fetchSeries(isin: string): Promise<SeriesPoint[]> {
+async function fetchSnapshot(isin: string): Promise<Snapshot> {
   const cached = CACHE.get(isin);
-  if (cached && Date.now() - cached.ts < TTL_MS) return cached.points;
+  if (cached && Date.now() - cached.ts < TTL_MS) return cached.snap;
+  const empty: Snapshot = { points: [], yield12m: null, distFreq: null };
   const url = `https://tools.morningstar.co.uk/api/rest.svc/klr5zyak8x/security_details/${encodeURIComponent(
     isin,
   )}?idtype=isin&languageId=en-GB&responseViewFormat=json&viewId=MFsnapshot`;
   try {
     const r = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8_000) });
-    if (!r.ok) return [];
+    if (!r.ok) return empty;
     const j = (await r.json()) as unknown;
-    const arr = (Array.isArray(j) ? j[0] : j) as {
+    const arr = Array.isArray(j) ? j[0] : j;
+    if (!arr || typeof arr !== "object") return empty;
+    const obj = arr as {
       GrowthOf10K?: Array<{ HistoryDetails?: Array<{ EndDate: string; Value: number }> }>;
+      YieldHistory?: { Type?: string; Value?: number } | Array<{ Type?: string; Value?: number }>;
+      DividendDistributionFrequency?: string;
     };
-    const g = arr?.GrowthOf10K;
-    if (!Array.isArray(g) || g.length === 0) return [];
-    const series = g.reduce((a, b) =>
-      (b.HistoryDetails?.length ?? 0) > (a.HistoryDetails?.length ?? 0) ? b : a,
-    );
-    const points: SeriesPoint[] = (series.HistoryDetails ?? [])
-      .map((h) => ({ d: String(h.EndDate).slice(0, 7), v: h.Value }))
-      .filter((p) => p.v > 0);
-    if (points.length < 2) return [];
-    CACHE.set(isin, { ts: Date.now(), points });
-    return points;
+
+    // -------- series --------
+    const g = obj.GrowthOf10K;
+    let points: SeriesPoint[] = [];
+    if (Array.isArray(g) && g.length > 0) {
+      const series = g.reduce((a, b) =>
+        (b.HistoryDetails?.length ?? 0) > (a.HistoryDetails?.length ?? 0) ? b : a,
+      );
+      points = (series.HistoryDetails ?? [])
+        .map((h) => ({ d: String(h.EndDate).slice(0, 7), v: h.Value }))
+        .filter((p) => p.v > 0);
+      if (points.length < 2) points = [];
+    }
+
+    // -------- yield (trailing 12m, Type code "52") --------
+    let yield12m: number | null = null;
+    const yh = obj.YieldHistory;
+    const yhList = Array.isArray(yh) ? yh : yh ? [yh] : [];
+    const t52 = yhList.find((p) => String(p.Type) === "52" && typeof p.Value === "number");
+    if (t52?.Value != null) yield12m = t52.Value;
+
+    const snap: Snapshot = {
+      points,
+      yield12m,
+      distFreq: obj.DividendDistributionFrequency ?? null,
+    };
+    CACHE.set(isin, { ts: Date.now(), snap });
+    return snap;
   } catch {
-    return [];
+    return empty;
   }
 }
 
 export type Component = { isin: string; weight: number };
+
 export type BlendedSeries = {
-  points: SeriesPoint[]; // model line, rebased to 100 at the trimmed start
+  points: SeriesPoint[];
   start: string;
   end: string;
   terminal: number;
 } | null;
 
-// Trim a date string ("YYYY-MM") to the earliest point >= cutoff.
-function trimStart(points: SeriesPoint[], cutoff: string): SeriesPoint[] {
-  const idx = points.findIndex((p) => p.d >= cutoff);
-  return idx < 0 ? [] : points.slice(idx);
-}
-
 /**
- * Build the weight-blended series for a portfolio. `windowMonths` defaults
- * to 36 (3 years) — anything older is trimmed before rebasing so the card
- * sparkline really shows 3Y, not the full available history.
+ * Build the weight-blended 3Y series for the card sparkline. Intersects dates
+ * across components, trims to the last `windowMonths`, rebases each to 100
+ * at the trimmed start, then weight-blends.
  */
 export async function blendPortfolioSeries(
   components: Component[],
@@ -68,12 +91,14 @@ export async function blendPortfolioSeries(
   if (valid.length === 0) return null;
 
   const fetched = await Promise.all(
-    valid.map(async (c) => ({ isin: c.isin, weight: c.weight, points: await fetchSeries(c.isin) })),
+    valid.map(async (c) => {
+      const snap = await fetchSnapshot(c.isin);
+      return { weight: c.weight, points: snap.points };
+    }),
   );
   const usable = fetched.filter((f) => f.points.length >= 3);
   if (usable.length === 0) return null;
 
-  // Intersect dates first, THEN trim to last `windowMonths`.
   let start = "0000-00";
   let end = "9999-99";
   for (const f of usable) {
@@ -83,14 +108,11 @@ export async function blendPortfolioSeries(
   const allDates = [...new Set(usable.flatMap((f) => f.points.map((p) => p.d)))].sort();
   let common = allDates.filter((d) => d >= start && d <= end);
   if (common.length < 3) return null;
-
-  // Trim to the last N months of the common period.
   if (common.length > windowMonths) common = common.slice(-windowMonths);
 
-  // Rebase each component to 100 at common[0], blend by weight.
   const maps = usable.map((f) => Object.fromEntries(f.points.map((p) => [p.d, p.v])));
   const totalWeight = usable.reduce((s, f) => s + f.weight, 0) || 1;
-  const blended: SeriesPoint[] = common.map((d, j) => {
+  const blended: SeriesPoint[] = common.map((d) => {
     let v = 0;
     for (let i = 0; i < usable.length; i++) {
       const base = maps[i][common[0]];
@@ -104,5 +126,41 @@ export async function blendPortfolioSeries(
     start: blended[0].d,
     end: blended[blended.length - 1].d,
     terminal: blended[blended.length - 1].v,
+  };
+}
+
+export type BlendedYield = {
+  yieldPct: number;       // weighted across funds with data, renormalised
+  coverageWeight: number; // fraction of original portfolio weight that contributed (0..1)
+} | null;
+
+/**
+ * Weight-blended trailing 12-month yield for an income portfolio. Morningstar's
+ * Type-52 yield is already an annualised TTM figure based on each fund's own
+ * cashflow history, so we just weight-average across funds we have data for.
+ *
+ * Renormalises across covered funds: if 20% of the portfolio is in a fund with
+ * no yield datapoint, the remaining 80% drives the blended figure. The caller
+ * gets `coverageWeight` so it can warn when coverage is thin.
+ */
+export async function blendPortfolioYield(components: Component[]): Promise<BlendedYield> {
+  const valid = components.filter((c) => c.isin && c.weight > 0);
+  if (valid.length === 0) return null;
+
+  const fetched = await Promise.all(
+    valid.map(async (c) => {
+      const snap = await fetchSnapshot(c.isin);
+      return { weight: c.weight, yieldPct: snap.yield12m };
+    }),
+  );
+  const covered = fetched.filter((f): f is { weight: number; yieldPct: number } => f.yieldPct != null);
+  const coveredWeight = covered.reduce((s, f) => s + f.weight, 0);
+  if (coveredWeight === 0) return null;
+
+  const weightedYield = covered.reduce((s, f) => s + f.weight * f.yieldPct, 0) / coveredWeight;
+  const totalWeight = valid.reduce((s, f) => s + f.weight, 0) || 1;
+  return {
+    yieldPct: weightedYield,
+    coverageWeight: coveredWeight / totalWeight,
   };
 }

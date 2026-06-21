@@ -68,14 +68,6 @@ export function computeRiskRating(
   return Math.round(weighted * 10) / 10;
 }
 
-// Weighted income yield across distribution-bearing holdings. Only used for the
-// Income card slot. Returns null if no fund exposes a yield (we don't store one
-// per fund yet — so for now this always returns null and the card shows "—").
-export function computeYieldPct(_holdings: ConfirmedPortfolioHolding[]): number | null {
-  // TODO: when fund_snapshots gains a yield_pct column, sum it here.
-  return null;
-}
-
 export type PortfolioXray = {
   expense?: number | null;
   risk?: number | null;
