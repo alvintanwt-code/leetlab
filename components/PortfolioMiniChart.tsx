@@ -26,11 +26,15 @@ function niceTicks(min: number, max: number, target = 3): number[] {
 
 /**
  * Editorial sparkline for /portfolios cards. Reads as a scaled-down growth-of-100
- * panel: dashed gridlines at nice round values, baseline (100) emphasised, terminal
- * dot with value label, hover crosshair + tooltip.
+ * panel: a reserved header strip at the top of the SVG carries the terminal value
+ * (right) and hover info (left); the chart body below holds the line, dashed
+ * gridlines at nice round values, baseline-100 hairline, and hover crosshair.
  *
- * `compact` strips the Y-axis labels and terminal value for the row view, where
- * width is tight (~140px).
+ * Labels live OUTSIDE the chart body, never overlap the line, never clip at the
+ * viewBox edge regardless of value width.
+ *
+ * `compact` strips the header + Y-axis labels for the row view (~140px wide),
+ * keeping just the line and hover dot.
  */
 export function PortfolioMiniChart({
   points,
@@ -66,10 +70,14 @@ export function PortfolioMiniChart({
   if (mn > 100 - 1) mn = 100 - 1;
   if (mx < 100 + 1) mx = 100 + 1;
 
+  // Header strip at the TOP of the SVG carries the terminal value + hover info.
+  // Keeps text labels inside the viewBox — they never clip on wide values or
+  // edge-aligned hover positions the way an end-of-line label can.
+  const HEADER = compact ? 0 : 18;
   const PAD_L = compact ? 4 : 26;
-  const PAD_R = compact ? 4 : 32;
-  const PAD_T = 6;
-  const PAD_B = compact ? 6 : 14;
+  const PAD_R = compact ? 4 : 8;
+  const PAD_T = HEADER + 4;
+  const PAD_B = compact ? 6 : 8;
 
   const X = (i: number) =>
     PAD_L + ((width - PAD_L - PAD_R) * i) / Math.max(1, points.length - 1);
@@ -102,17 +110,6 @@ export function PortfolioMiniChart({
     setHoverIdx(closest);
   }
 
-  // Place the terminal label so it stays readable when up vs down.
-  const termLabelY = Y(terminal.v) + 3;
-  const hoverLabelX = hoverIdx != null ? X(hoverIdx) : 0;
-  // Keep hover label inside the SVG bounds.
-  const hoverLabelAnchor =
-    hoverIdx != null && hoverLabelX < PAD_L + 36
-      ? "start"
-      : hoverIdx != null && hoverLabelX > width - PAD_R - 36
-        ? "end"
-        : "middle";
-
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
@@ -122,6 +119,50 @@ export function PortfolioMiniChart({
       role="img"
       aria-label="3-year blended performance"
     >
+      {/* Top header strip — hover info on left, terminal value on right.
+          Skipped in compact mode (row view stays label-less). */}
+      {!compact && (
+        <g>
+          {hoverPoint ? (
+            <text
+              x={PAD_L + 2}
+              y={13}
+              textAnchor="start"
+              fontSize="10"
+              fontFamily="var(--font-mono)"
+              fill="var(--color-ink)"
+            >
+              <tspan>{fmtMonth(hoverPoint.d)}</tspan>
+              <tspan fill="var(--color-ink-mute)"> · </tspan>
+              <tspan fontWeight="600">{hoverPoint.v.toFixed(1)}</tspan>
+            </text>
+          ) : (
+            <text
+              x={PAD_L + 2}
+              y={13}
+              textAnchor="start"
+              fontSize="9"
+              fontFamily="var(--font-mono)"
+              fill="var(--color-ink-mute)"
+              style={{ letterSpacing: "0.08em" }}
+            >
+              TRAILING 3Y
+            </text>
+          )}
+          <text
+            x={width - 4}
+            y={13}
+            textAnchor="end"
+            fontSize="10"
+            fontWeight="600"
+            fontFamily="var(--font-mono)"
+            fill={termColor}
+          >
+            {terminal.v.toFixed(1)}
+          </text>
+        </g>
+      )}
+
       {/* gridlines + Y-axis labels */}
       {finalTicks.map((t) => {
         const isBase = Math.abs(t - 100) < 0.5;
@@ -161,31 +202,19 @@ export function PortfolioMiniChart({
         strokeLinecap="square"
       />
 
-      {/* terminal dot + value label */}
+      {/* terminal dot — value label now lives in the header strip */}
       {!compact && (
-        <>
-          <circle
-            cx={X(points.length - 1)}
-            cy={Y(terminal.v)}
-            r="2.4"
-            fill="var(--color-canvas)"
-            stroke="var(--color-ink)"
-            strokeWidth="1.4"
-          />
-          <text
-            x={X(points.length - 1) + 5}
-            y={termLabelY}
-            fontSize="9.5"
-            fontWeight="600"
-            fontFamily="var(--font-mono)"
-            fill={termColor}
-          >
-            {terminal.v.toFixed(1)}
-          </text>
-        </>
+        <circle
+          cx={X(points.length - 1)}
+          cy={Y(terminal.v)}
+          r="2.4"
+          fill="var(--color-canvas)"
+          stroke="var(--color-ink)"
+          strokeWidth="1.4"
+        />
       )}
 
-      {/* hover crosshair + tooltip */}
+      {/* hover crosshair + dot */}
       {hoverPoint && hoverIdx != null && (
         <>
           <line
@@ -205,20 +234,6 @@ export function PortfolioMiniChart({
             stroke="var(--color-ink)"
             strokeWidth="1.4"
           />
-          {!compact && (
-            <text
-              x={hoverLabelX}
-              y={height - 3}
-              textAnchor={hoverLabelAnchor}
-              fontSize="8.5"
-              fontFamily="var(--font-mono)"
-              fill="var(--color-ink)"
-            >
-              <tspan>{fmtMonth(hoverPoint.d)}</tspan>
-              <tspan fill="var(--color-ink-mute)"> · </tspan>
-              <tspan fontWeight="600">{hoverPoint.v.toFixed(1)}</tspan>
-            </text>
-          )}
         </>
       )}
     </svg>
