@@ -111,11 +111,20 @@ export function TrailingChart({
           </g>
         ))}
 
-        {/* year ticks */}
+        {/* year ticks. The leftmost tick lands right at the plot edge, so
+            a centred label would overlap the y-axis numbers — anchor it to
+            the start (text reads rightward from the tick) instead. */}
         {xTicks.map((t, i) => (
           <g key={i}>
             <line x1={t.x} y1={T} x2={t.x} y2={H - B} stroke="rgba(13,37,61,0.03)" />
-            <text x={t.x} y={H - B + 16} textAnchor="middle" fontSize="10" fill="var(--color-ink-mute)" fontFamily="var(--font-mono)">
+            <text
+              x={i === 0 ? t.x + 2 : t.x}
+              y={H - B + 16}
+              textAnchor={i === 0 ? "start" : "middle"}
+              fontSize="10"
+              fill="var(--color-ink-mute)"
+              fontFamily="var(--font-mono)"
+            >
               {t.year}
             </text>
           </g>

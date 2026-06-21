@@ -513,7 +513,6 @@ function PerformanceTable({
                       >
                         {opt?.name ?? "—"}
                       </span>
-                      <span className="meta">{opt?.isin ?? ""}</span>
                     </td>
                     <td className="nowrap right">
                       <span className="num">
@@ -538,26 +537,28 @@ function PerformanceTable({
                   </tr>
                 );
               })}
-              {/* Portfolio total row — sits at the bottom of the table as
-                  the headline summary across all funds. Bigger font and
-                  heavier weight than fund rows; emphasised top border
-                  separates it from the constituents. */}
+              {/* Portfolio total row — sits at the bottom as the headline
+                  summary across all funds. Same body font size as the
+                  constituent rows; medium weight + canvas-soft fill +
+                  ink-hairline top border read as emphasis without
+                  visually dominating. Slightly more vertical padding for
+                  breathing room. */}
               <tr style={{ borderTop: "1px solid var(--color-hairline)", background: "var(--color-canvas-soft)" }}>
-                <td style={{ fontSize: "13.5px", fontWeight: 600, paddingTop: 10, paddingBottom: 10 }}>
+                <td style={{ fontWeight: 500, paddingTop: 9, paddingBottom: 9 }}>
                   <span className="text-[var(--color-ink)]">Portfolio total</span>
                 </td>
-                <td className="nowrap right" style={{ fontSize: "13.5px", fontWeight: 600, paddingTop: 10, paddingBottom: 10 }}>
+                <td className="nowrap right" style={{ fontWeight: 500, paddingTop: 9, paddingBottom: 9 }}>
                   <span className="num">
                     <ReturnText value={portfolioTrailing.ann1y} />
                   </span>
                 </td>
-                <td className="nowrap right" style={{ fontSize: "13.5px", fontWeight: 600, paddingTop: 10, paddingBottom: 10 }}>
+                <td className="nowrap right" style={{ fontWeight: 500, paddingTop: 9, paddingBottom: 9 }}>
                   <span className="num">
                     <ReturnText value={portfolioTrailing.ann3y} />
                   </span>
                 </td>
                 {calendarReturns.map((c) => (
-                  <td key={c.year} className="nowrap right" style={{ fontSize: "13.5px", fontWeight: 600, paddingTop: 10, paddingBottom: 10 }}>
+                  <td key={c.year} className="nowrap right" style={{ fontWeight: 500, paddingTop: 9, paddingBottom: 9 }}>
                     <span className="num">
                       <ReturnText value={c.returnPct} />
                     </span>
