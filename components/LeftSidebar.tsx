@@ -130,7 +130,7 @@ export function LeftSidebar({
         collapsed ? "w-[56px]" : "w-[10vw] min-w-[152px]",
       ].join(" ")}
     >
-      <div className={`flex ${collapsed ? "justify-center" : "justify-end"} px-2 pt-3`}>
+      <div className={`flex ${collapsed ? "justify-center" : "justify-end"} px-2 pt-3 pb-3`}>
         <button
           onClick={toggleCollapsed}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -140,6 +140,8 @@ export function LeftSidebar({
           <CollapseIcon collapsed={collapsed} />
         </button>
       </div>
+
+      <div className="hairline mx-3 h-px" />
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <ul className="flex flex-col gap-0.5">
