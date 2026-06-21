@@ -153,7 +153,8 @@ export function BuildReview({
       .sort((a, b) => b.pct - a.pct);
   }, [basket, fundsById]);
 
-  // Portfolio x-ray — equity coverage, weighted returns, sector + geo + risk.
+  // Portfolio x-ray — equity coverage, weighted returns, sector + geo + risk
+  // + look-through top holdings.
   const xray = useMemo(() => {
     if (basket.length === 0) return null;
     let expense = 0, r1y = 0, r3y = 0, r5y = 0, r10y = 0, risk = 0;
@@ -161,6 +162,7 @@ export function BuildReview({
     let equityCoverage = 0;
     const aggGeo: Record<string, number> = {};
     const aggSector: Record<string, number> = {};
+    const aggHoldings: Record<string, number> = {};
 
     for (const h of basket) {
       const w = h.weightBps / 10000;
@@ -183,6 +185,16 @@ export function BuildReview({
           aggGeo[a.label] = (aggGeo[a.label] ?? 0) + w * equityShare * a.weight_pct;
         } else if (a.kind === "sector") {
           aggSector[a.label] = (aggSector[a.label] ?? 0) + w * equityShare * a.weight_pct;
+        } else if (a.kind === "holding") {
+          // Filter garbled bond-fund holdings (impossible weight, or label is
+          // a date fragment like "11/15/" from a parser split on a coupon %).
+          if (
+            a.weight_pct > 100 ||
+            a.weight_pct < 0 ||
+            /^\d+\/\d*\/?$/.test(a.label) ||
+            a.label.length < 3
+          ) continue;
+          aggHoldings[a.label] = (aggHoldings[a.label] ?? 0) + w * a.weight_pct;
         }
       }
     }
@@ -202,6 +214,10 @@ export function BuildReview({
       equityCoverage,
       geo: sortedNorm(aggGeo, sGeo),
       sector: sortedNorm(aggSector, sSec),
+      holdings: Object.entries(aggHoldings)
+        .map(([label, w]) => ({ label, weight_pct: w }))
+        .sort((a, b) => b.weight_pct - a.weight_pct)
+        .slice(0, 10),
     };
   }, [basket, fundsById, allocsByFund]);
 
@@ -380,22 +396,68 @@ export function BuildReview({
             )}
           </section>
 
-          {/* Annual Total Returns */}
-          <section className="flex flex-col rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-            <div className="mb-5 flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] pb-3">
-              <p className="t-body-lg font-medium text-[var(--color-ink)]">Annual Total Returns</p>
-              <p className="t-micro-cap">% per annum</p>
-            </div>
-            {annualReturns.length >= 2 ? (
-              <AnnualReturnsBars data={annualReturns} />
-            ) : (
-              <div className="flex min-h-[260px] flex-1 items-center justify-center">
-                <p className="t-caption text-[var(--color-ink-mute)]">
-                  {chartLoading ? "Computing annual returns…" : chartError ? "Unavailable" : "—"}
-                </p>
+          {/* Annual Total Returns + Top 10 look-through holdings, equal-width */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <section className="flex flex-col rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+              <div className="mb-5 flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] pb-3">
+                <p className="t-body-lg font-medium text-[var(--color-ink)]">Annual Total Returns</p>
+                <p className="t-micro-cap">% per annum</p>
               </div>
-            )}
-          </section>
+              {annualReturns.length >= 2 ? (
+                <AnnualReturnsBars data={annualReturns} />
+              ) : (
+                <div className="flex min-h-[260px] flex-1 items-center justify-center">
+                  <p className="t-caption text-[var(--color-ink-mute)]">
+                    {chartLoading ? "Computing annual returns…" : chartError ? "Unavailable" : "—"}
+                  </p>
+                </div>
+              )}
+            </section>
+
+            <section className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+              <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3 flex-wrap">
+                <p className="t-body-lg font-medium text-[var(--color-ink)]">Top 10 look-through holdings</p>
+                <p className="t-micro-cap">Sleeve-weighted</p>
+              </div>
+              {xray && xray.holdings.length > 0 ? (
+                <table className="table-pro table-pro-sm" style={{ tableLayout: "fixed" }}>
+                  <colgroup>
+                    <col style={{ width: "8%" }} />
+                    <col style={{ width: "70%" }} />
+                    <col style={{ width: "22%" }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Holding</th>
+                      <th className="right">Portfolio weight</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {xray.holdings.map((h, i) => (
+                      <tr key={h.label}>
+                        <td className="nowrap">
+                          <span className="num text-[var(--color-ink-mute)]">{i + 1}</span>
+                        </td>
+                        <td className="cell-fund">
+                          <span className="name text-[var(--color-ink)]" title={h.label}>{h.label}</span>
+                        </td>
+                        <td className="nowrap right">
+                          <span className="num text-[var(--color-ink)]">{h.weight_pct.toFixed(2)}%</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="flex min-h-[260px] flex-1 items-center justify-center px-5">
+                  <p className="t-caption text-[var(--color-ink-mute)]">
+                    No look-through holdings available for this basket.
+                  </p>
+                </div>
+              )}
+            </section>
+          </div>
 
           {/* Sector + Geographic allocation */}
           {xray && (xray.sector.length > 0 || xray.geo.length > 0) && (
