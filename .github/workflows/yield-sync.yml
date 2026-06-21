@@ -1,0 +1,32 @@
+name: Sync platform-scraped yields
+
+on:
+  schedule:
+    - cron: "0 10 1 1,4,7,10 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+        run: npx tsx scripts/scrape-platform-yields.ts
+      - run: |
+          if [ -n "$(git status --porcelain data/yield-overrides.json)" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -f data/yield-overrides.json
+            git commit -m "chore(yields): quarterly refresh of platform-scraped overrides"
+            git push
+          fi
