@@ -130,18 +130,18 @@ export function LeftSidebar({
         collapsed ? "w-[56px]" : "w-[10vw] min-w-[152px]",
       ].join(" ")}
     >
-      <div className={`flex ${collapsed ? "justify-center" : "justify-end"} px-2 pt-3 pb-3`}>
+      <div className={`flex ${collapsed ? "justify-center" : "justify-end"} px-2 pt-1.5 pb-1.5`}>
         <button
           onClick={toggleCollapsed}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]"
+          className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-canvas-soft)] hover:text-[var(--color-ink)]"
         >
           <CollapseIcon collapsed={collapsed} />
         </button>
       </div>
 
-      <div className="hairline mx-3 h-px" />
+      <div className="mx-3 h-px bg-[var(--color-hairline-2)]" />
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <ul className="flex flex-col gap-0.5">
@@ -152,7 +152,7 @@ export function LeftSidebar({
         </ul>
       </nav>
 
-      <div className="hairline mx-3 h-px" />
+      <div className="mx-3 h-px bg-[var(--color-hairline-2)]" />
       <div className="relative px-2 py-2.5">
         <button
           onClick={() => setMenuOpen((v) => !v)}
