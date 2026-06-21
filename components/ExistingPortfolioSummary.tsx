@@ -292,36 +292,30 @@ export function ExistingPortfolioSummary({
 
   if (validHoldings.length === 0) return null;
 
+  // X-ray-style multi-card layout: each section is its own white card,
+  // referencing the PortfolioDetail.tsx pattern (rounded-lg + hairline +
+  // canvas + p-5 + title-left/eyebrow-right header). Outer wrapper is just
+  // a flex column for spacing — no border or bg of its own.
   return (
-    <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-      <div className="mb-5 flex items-baseline justify-between border-b border-[var(--color-hairline-2)] pb-3">
-        <h2 className="t-body-md font-medium text-[var(--color-ink)]">Existing Portfolio Summary</h2>
-        <p className="t-micro-cap">Snapshot of the client&rsquo;s holdings as parsed</p>
-      </div>
-
-      {/* Header band — total · count · plain-English profile */}
-      <div className="grid grid-cols-1 gap-y-3 gap-x-8 sm:grid-cols-[auto_auto_1fr] sm:items-baseline">
-        <Stat label="Total value" value={`SGD ${totalValue.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <Stat label="Holdings" value={String(enrichedHoldings.length)} />
-        <div>
-          <p className="t-micro-cap">Profile</p>
-          <p className="t-body-md mt-1.5 text-[var(--color-ink-2)]">{description}</p>
+    <div className="flex flex-col gap-4">
+      {/* Header card — total · count · plain-English profile */}
+      <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+        <div className="mb-4 flex items-baseline justify-between border-b border-[var(--color-hairline-2)] pb-3">
+          <h2 className="t-body-md font-medium text-[var(--color-ink)]">Existing portfolio</h2>
+          <p className="t-micro-cap">Snapshot as parsed</p>
         </div>
-      </div>
-
-      {/* Allocation row — sector + geo, each in its own bordered container
-          so the two breakdowns read as discrete cards inside the summary. */}
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="rounded-md border border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] p-4">
-          <AllocationPanel title="Sector exposure" items={sectorAgg} kind="sector" />
+        <div className="grid grid-cols-1 gap-y-3 gap-x-8 sm:grid-cols-[auto_auto_1fr] sm:items-baseline">
+          <Stat label="Total value" value={`SGD ${totalValue.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+          <Stat label="Holdings" value={String(enrichedHoldings.length)} />
+          <div>
+            <p className="t-micro-cap">Profile</p>
+            <p className="t-body-md mt-1.5 text-[var(--color-ink-2)]">{description}</p>
+          </div>
         </div>
-        <div className="rounded-md border border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] p-4">
-          <AllocationPanel title="Geographic exposure" items={geoAgg} kind="geo" />
-        </div>
-      </div>
+      </section>
 
-      {/* Performance table — trailing + calendar years */}
-      <div className="mt-6">
+      {/* Performance card — moved up so the numbers are the headline */}
+      <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
         <div className="mb-3 flex items-baseline justify-between">
           <p className="t-body-md font-medium text-[var(--color-ink)]">Performance</p>
           <p className="t-micro-cap">% per year &middot; geometric annualisation</p>
@@ -333,29 +327,37 @@ export function ExistingPortfolioSummary({
           portfolioTrailing={trailingPortfolio}
           loading={chartLoading}
         />
+      </section>
+
+      {/* Trailing 3Y chart — already wraps itself in a card */}
+      {chart ? (
+        <TrailingChart {...chart} />
+      ) : chartError ? (
+        <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+          <p className="t-caption text-center text-[var(--color-negative)]">{chartError}</p>
+        </section>
+      ) : chartLoading ? (
+        <section className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+          <p className="t-caption text-center text-[var(--color-ink-mute)]">Fetching Morningstar series…</p>
+        </section>
+      ) : null}
+
+      {/* Sector + Geography — each in its own white card, side by side */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+          <AllocationPanel title="Sector exposure" items={sectorAgg} kind="sector" />
+        </section>
+        <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+          <AllocationPanel title="Geographic exposure" items={geoAgg} kind="geo" />
+        </section>
       </div>
 
-      {/* Trailing 3Y chart */}
-      <div className="mt-6">
-        {chart ? (
-          <TrailingChart {...chart} />
-        ) : chartError ? (
-          <div className="rounded-md border border-dashed border-[var(--color-hairline)] p-6 text-center">
-            <p className="t-caption text-[var(--color-negative)]">{chartError}</p>
-          </div>
-        ) : chartLoading ? (
-          <div className="rounded-md border border-dashed border-[var(--color-hairline)] p-6 text-center">
-            <p className="t-caption text-[var(--color-ink-mute)]">Fetching Morningstar series…</p>
-          </div>
-        ) : null}
-      </div>
-
-      {/* Plain-English summary line */}
-      <div className="mt-6 border-t border-[var(--color-hairline-2)] pt-4">
-        <p className="t-micro-cap mb-1.5">Summary</p>
+      {/* Plain-English summary card */}
+      <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+        <p className="t-micro-cap mb-2">Summary</p>
         <p className="t-body-md leading-[1.6] text-[var(--color-ink-2)]">{summary}</p>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
 
@@ -434,10 +436,10 @@ function PerformanceTable({
   return (
     <div className="overflow-x-auto">
       {/* width: auto overrides .table-pro's width:100% so the table shrinks
-          to content when fewer calendar years are available — no awkward
-          stretched cells on sparse data. */}
+          to content when fewer calendar years are available. table-pro-xs
+          tightens font + padding vs table-pro-sm for the dense numeric grid. */}
       <table
-        className="table-pro table-pro-sm"
+        className="table-pro table-pro-xs"
         style={{ tableLayout: "auto", width: "auto" }}
       >
         <thead>

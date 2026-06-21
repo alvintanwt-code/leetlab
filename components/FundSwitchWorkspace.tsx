@@ -165,6 +165,10 @@ export function FundSwitchWorkspace({
   const [pasteText, setPasteText] = useState("");
   const [pasteLoading, setPasteLoading] = useState(false);
   const [pasteError, setPasteError] = useState<string | null>(null);
+  // Collapse toggle for the Client portfolio holdings input. Once the
+  // advisor has entered holdings + the summary renders below, this lets
+  // them tuck the input away to focus on the summary.
+  const [holdingsCollapsed, setHoldingsCollapsed] = useState(false);
 
   useEffect(() => {
     try {
@@ -395,22 +399,33 @@ export function FundSwitchWorkspace({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-6">
         <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-          <div className="mb-4 flex items-baseline justify-between">
+          <div className={`flex items-baseline justify-between ${holdingsCollapsed ? "" : "mb-4"}`}>
             <h2 className="t-body-md font-medium text-[var(--color-ink)]">Client portfolio</h2>
-            {pasting ? (
-              <p className="t-micro-cap">Current holdings</p>
-            ) : (
+            <div className="flex items-baseline gap-5">
+              {!holdingsCollapsed && !pasting && (
+                <button
+                  type="button"
+                  onClick={() => setPasting(true)}
+                  className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
+                >
+                  Paste portfolio →
+                </button>
+              )}
+              {!holdingsCollapsed && pasting && (
+                <p className="t-micro-cap">Current holdings</p>
+              )}
               <button
                 type="button"
-                onClick={() => setPasting(true)}
+                onClick={() => setHoldingsCollapsed((v) => !v)}
                 className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
+                aria-expanded={!holdingsCollapsed}
               >
-                Paste portfolio →
+                {holdingsCollapsed ? "Expand current holdings →" : "Collapse current holdings ↑"}
               </button>
-            )}
+            </div>
           </div>
 
-          {pasting && (
+          {!holdingsCollapsed && pasting && (
             <div className="mb-4 rounded-md border border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] p-4">
               <p className="t-micro-cap mb-2">PASTE PORTFOLIO</p>
               <p className="t-caption mb-3 text-[var(--color-ink-mute)]">
@@ -453,6 +468,7 @@ export function FundSwitchWorkspace({
             </div>
           )}
 
+          {!holdingsCollapsed && (
           <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
             <table className="table-pro table-pro-sm w-full">
               <colgroup>
@@ -500,13 +516,25 @@ export function FundSwitchWorkspace({
               + Add holding
             </button>
           </div>
+          )}
 
-          <p className="t-micro-cap mt-4 flex items-center justify-between text-[var(--color-ink-mute)]">
-            <span>Type units &amp; unit price. Value and weight compute automatically.</span>
-            <span>
-              Total <span className="num">SGD {fmtSGD(portfolioTotal)}</span>
-            </span>
-          </p>
+          {!holdingsCollapsed ? (
+            <p className="t-micro-cap mt-4 flex items-center justify-between text-[var(--color-ink-mute)]">
+              <span>Type units &amp; unit price. Value and weight compute automatically.</span>
+              <span>
+                Total <span className="num">SGD {fmtSGD(portfolioTotal)}</span>
+              </span>
+            </p>
+          ) : (
+            <p className="t-micro-cap flex items-center justify-between text-[var(--color-ink-mute)]">
+              <span>
+                <span className="num">{validHoldingsCount}</span> {validHoldingsCount === 1 ? "holding" : "holdings"} parsed
+              </span>
+              <span>
+                Total <span className="num">SGD {fmtSGD(portfolioTotal)}</span>
+              </span>
+            </p>
+          )}
         </section>
 
         {/* Existing Portfolio Summary — appears in the same column as the
