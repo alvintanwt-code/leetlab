@@ -50,16 +50,18 @@ export function TrailingChart({
     return { v, y: Y(v) };
   });
 
-  // year ticks
+  // year ticks — drop the first (partial) year so its label can't crash into
+  // the next year's tick at the left edge.
   let lastYr = "";
-  const xTicks: { x: number; year: string }[] = [];
+  const rawTicks: { x: number; year: string }[] = [];
   dates.forEach((d, j) => {
     const yr = d.slice(0, 4);
     if (yr !== lastYr) {
       lastYr = yr;
-      xTicks.push({ x: X(j), year: yr });
+      rawTicks.push({ x: X(j), year: yr });
     }
   });
+  const xTicks = rawTicks.slice(1);
 
   function onMove(e: React.MouseEvent<SVGSVGElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -77,22 +79,15 @@ export function TrailingChart({
 
   return (
     <div className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-      <div className="mb-4 flex items-baseline justify-between gap-4 flex-wrap">
-        <div>
-          <p className="t-micro-cap">Trailing performance &middot; growth of 100</p>
-          <p className="t-caption mt-0.5 text-[var(--color-ink-mute)]">
-            common period <span className="num">{fmtMonth(commonStart)}</span> – <span className="num">{fmtMonth(commonEnd)}</span>,
-            monthly, fund-ccy total return
-          </p>
-        </div>
-        {hoverIdx != null && (
-          <p className="t-caption num text-[var(--color-ink)]">
-            <span className="t-micro-cap mr-2">Hover</span>
-            {fmtMonth(dates[hoverIdx])}
-          </p>
-        )}
+      <div className="mb-4">
+        <p className="t-micro-cap">Trailing performance &middot; growth of 100</p>
+        <p className="t-caption mt-0.5 text-[var(--color-ink-mute)]">
+          common period <span className="num">{fmtMonth(commonStart)}</span> – <span className="num">{fmtMonth(commonEnd)}</span>,
+          monthly, fund-ccy total return
+        </p>
       </div>
 
+      <div className="relative">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="block w-full h-auto"
@@ -182,6 +177,37 @@ export function TrailingChart({
           </g>
         )}
       </svg>
+
+      {/* Floating tooltip — date · S$ value · % return vs. the rebased 100 base */}
+      {hoverIdx != null && (() => {
+        const v = model.points[hoverIdx].v;
+        const r = v - 100;
+        const sign = r > 0 ? "+" : r < 0 ? "−" : "";
+        const rCls = r > 0
+          ? "text-[var(--color-positive)]"
+          : r < 0
+            ? "text-[var(--color-negative)]"
+            : "text-[var(--color-ink)]";
+        const flip = hoverIdx > dates.length * 0.65;
+        return (
+          <div
+            className="pointer-events-none absolute top-2 z-10 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 shadow-sm"
+            style={{
+              left: `${(X(hoverIdx) / W) * 100}%`,
+              transform: flip ? "translateX(calc(-100% - 10px))" : "translateX(10px)",
+            }}
+          >
+            <p className="t-micro-cap leading-none">{fmtMonth(dates[hoverIdx])}</p>
+            <p className="num mt-1.5 text-[14px] font-medium leading-none text-[var(--color-ink)]">
+              S${v.toFixed(2)}
+            </p>
+            <p className={`num mt-1 t-caption leading-none ${rCls}`}>
+              {sign}{Math.abs(r).toFixed(2)}%
+            </p>
+          </div>
+        );
+      })()}
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
         <span className="flex items-center gap-2 t-caption text-[var(--color-ink-2)]">

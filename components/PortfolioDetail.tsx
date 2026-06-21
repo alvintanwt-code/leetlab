@@ -77,25 +77,24 @@ function pctCls(v: number | null | undefined): string {
 }
 
 // Year-end / prior-year-end annual returns from the chart's daily/weekly
-// model.points series. First year uses the very first point as its start, so
-// a partial first year still surfaces as a return number rather than dropping.
+// model.points series. The first year is always a partial year (anchored to
+// the series' very first point), so we drop it — annual bars only show full
+// calendar years.
 function computeAnnualReturns(
   points: { d: string; v: number }[],
 ): { year: number; return_pct: number }[] {
   if (points.length < 2) return [];
   const yearEnd = new Map<number, number>();
-  const firstYear = parseInt(points[0].d.slice(0, 4), 10);
-  const firstVal = points[0].v;
   for (const p of points) {
     const y = parseInt(p.d.slice(0, 4), 10);
     yearEnd.set(y, p.v); // last point per year wins
   }
   const years = Array.from(yearEnd.keys()).sort((a, b) => a - b);
   const out: { year: number; return_pct: number }[] = [];
-  for (let i = 0; i < years.length; i++) {
+  for (let i = 1; i < years.length; i++) {
     const y = years[i];
     const endV = yearEnd.get(y)!;
-    const startV = i === 0 || y === firstYear ? firstVal : yearEnd.get(years[i - 1])!;
+    const startV = yearEnd.get(years[i - 1])!;
     out.push({ year: y, return_pct: (endV / startV - 1) * 100 });
   }
   return out;

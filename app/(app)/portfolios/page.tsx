@@ -39,30 +39,6 @@ function buildHref(params: {
   return q ? `/portfolios?${q}` : "/portfolios";
 }
 
-function median(xs: number[]): number | null {
-  if (xs.length === 0) return null;
-  const s = [...xs].sort((a, b) => a - b);
-  const mid = Math.floor(s.length / 2);
-  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
-}
-
-function HeaderStat({ label, value, tone = "ink" }: { label: string; value: string; tone?: "ink" | "mute" | "pos" | "neg" }) {
-  const color =
-    tone === "mute"
-      ? "text-[var(--color-ink-mute)]"
-      : tone === "pos"
-        ? "text-[var(--color-positive)]"
-        : tone === "neg"
-          ? "text-[var(--color-negative)]"
-          : "text-[var(--color-ink)]";
-  return (
-    <div className="text-right">
-      <p className={`num text-[24px] font-medium leading-none tabular-nums ${color}`}>{value}</p>
-      <p className="t-micro-cap mt-2">{label}</p>
-    </div>
-  );
-}
-
 export default async function ModelPortfoliosIndex({
   searchParams,
 }: {
@@ -143,12 +119,6 @@ export default async function ModelPortfoliosIndex({
     }),
   );
 
-  // Header stat aggregates across the *currently filtered* set.
-  const r3yValues = cardData.map((d) => d.xray?.r3y).filter((v): v is number => v != null);
-  const ocfValues = cardData.map((d) => d.xray?.expense).filter((v): v is number => v != null);
-  const medianR3y = median(r3yValues);
-  const medianOcf = median(ocfValues);
-
   return (
     <div className="mx-auto w-full max-w-[1180px] px-10 pb-16">
       {sp.confirmed && (
@@ -162,29 +132,22 @@ export default async function ModelPortfoliosIndex({
         </div>
       )}
 
-      {/* Hero — eyebrow + title left, aggregate stats right */}
+      {/* Hero — eyebrow + title */}
       <header className="pt-8 pb-7">
-        <div className="flex items-start justify-between gap-10">
-          <div className="min-w-0">
-            <p className="t-micro-cap mb-2 flex items-center gap-2">
-              <span className="inline-block h-[8px] w-[8px] bg-[var(--color-primary)]" />
-              Advisor workspace
-              <span className="text-[var(--color-hairline)]">·</span>
-              Portfolio library
-            </p>
-            <h1 className="text-[44px] font-medium leading-[1.05] tracking-[-0.025em] text-[var(--color-ink)]">
-              Model portfolio
-            </h1>
-            <p className="t-body-md mt-3 max-w-[44ch] text-[var(--color-ink-mute)]">
-              Confirmed model portfolios across our connected platforms. Each card distils mandate,
-              composition and trailing performance into a single editorial sheet.
-            </p>
-          </div>
-          <div className="flex shrink-0 items-end gap-10 pt-2">
-            <HeaderStat label="Portfolios" value={String(cardData.length)} />
-            <HeaderStat label="Median 3Y" value={medianR3y != null ? `${medianR3y > 0 ? "+" : ""}${medianR3y.toFixed(1)}%` : "—"} tone={medianR3y != null && medianR3y > 0 ? "pos" : medianR3y != null && medianR3y < 0 ? "neg" : "ink"} />
-            <HeaderStat label="Median OCF" value={medianOcf != null ? `${medianOcf.toFixed(2)}%` : "—"} />
-          </div>
+        <div className="min-w-0">
+          <p className="t-micro-cap mb-2 flex items-center gap-2">
+            <span className="inline-block h-[8px] w-[8px] bg-[var(--color-primary)]" />
+            Advisor workspace
+            <span className="text-[var(--color-hairline)]">·</span>
+            Portfolio library
+          </p>
+          <h1 className="text-[44px] font-medium leading-[1.05] tracking-[-0.025em] text-[var(--color-ink)]">
+            Model portfolio
+          </h1>
+          <p className="t-body-md mt-3 max-w-[44ch] text-[var(--color-ink-mute)]">
+            Confirmed model portfolios across our connected platforms. Each card distils mandate,
+            composition and trailing performance into a single editorial sheet.
+          </p>
         </div>
       </header>
 
