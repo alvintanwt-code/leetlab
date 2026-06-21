@@ -57,13 +57,6 @@ function classKey(assetClass: string | null): ClassKey {
   return "M";
 }
 
-function fmtPct(v: number | null | undefined, places = 2): { text: string; cls: string } {
-  if (v == null || !Number.isFinite(v)) return { text: "—", cls: "text-[var(--color-ink-mute)]" };
-  if (Math.abs(v) < 0.005) return { text: `0.${"0".repeat(places)}%`, cls: "text-[var(--color-ink)]" };
-  const sign = v > 0 ? "+" : "−";
-  const cls = v > 0 ? "text-[var(--color-positive)]" : "text-[var(--color-negative)]";
-  return { text: `${sign}${Math.abs(v).toFixed(places)}%`, cls };
-}
 function fmtSignedPct(v: number | null | undefined, places = 1): string {
   if (v == null) return "—";
   const sign = v > 0 ? "+" : v < 0 ? "−" : "";
@@ -528,25 +521,19 @@ function ModelPortfolioBuilder({
       </div>
       <table className="table-pro table-pro-sm" style={{ tableLayout: "fixed" }}>
         <colgroup>
-          <col style={{ width: "62%" }} />
-          <col style={{ width: "18%" }} />
-          <col style={{ width: "10%" }} />
-          <col style={{ width: "10%" }} />
+          <col style={{ width: "72%" }} />
+          <col style={{ width: "28%" }} />
         </colgroup>
         <thead>
           <tr>
             <th>Instrument</th>
             <th className="right">Weight %</th>
-            <th className="right">1Y</th>
-            <th className="right">3Y</th>
           </tr>
         </thead>
         <tbody>
           {basket.map((h) => {
             const f = fundsById.get(h.fundId);
             if (!f) return null;
-            const r1 = fmtPct(f.ann_1y);
-            const r3 = fmtPct(f.ann_3y);
             const value =
               focusedWeightId === h.fundId && h.weightBps === 0 ? "" : h.weightBps / 100;
             return (
@@ -572,8 +559,6 @@ function ModelPortfolioBuilder({
                     className="num w-20 rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-2 py-1 text-right text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-mute)] focus:border-[var(--color-primary)]"
                   />
                 </td>
-                <td className="nowrap right"><span className={`num ${r1.cls}`}>{r1.text}</span></td>
-                <td className="nowrap right"><span className={`num ${r3.cls}`}>{r3.text}</span></td>
               </tr>
             );
           })}
@@ -584,8 +569,6 @@ function ModelPortfolioBuilder({
             <td className="right">
               <span className={`num font-medium ${totalCls}`}>{totalPct.toFixed(2)}%</span>
             </td>
-            <td />
-            <td />
           </tr>
         </tfoot>
       </table>
