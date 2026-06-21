@@ -244,8 +244,11 @@ export function ExistingPortfolioSummary({
     };
   }, [enrichedHoldings]);
 
+  // Cap at the 5 most-recent calendar years — earlier years add columns but
+  // little decision-relevant signal, and 5 keeps the table within a 13" MacBook
+  // viewport without horizontal scroll once 1Y/3Y trailing columns are added.
   const calendarReturns = useMemo(
-    () => (chart?.model ? computeCalendarReturns(chart.model.points) : []),
+    () => (chart?.model ? computeCalendarReturns(chart.model.points).slice(0, 5) : []),
     [chart],
   );
 
@@ -306,10 +309,15 @@ export function ExistingPortfolioSummary({
         </div>
       </div>
 
-      {/* Allocation row — sector + geo side by side */}
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <AllocationPanel title="Sector exposure" items={sectorAgg} kind="sector" />
-        <AllocationPanel title="Geographic exposure" items={geoAgg} kind="geo" />
+      {/* Allocation row — sector + geo, each in its own bordered container
+          so the two breakdowns read as discrete cards inside the summary. */}
+      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="rounded-md border border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] p-4">
+          <AllocationPanel title="Sector exposure" items={sectorAgg} kind="sector" />
+        </div>
+        <div className="rounded-md border border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] p-4">
+          <AllocationPanel title="Geographic exposure" items={geoAgg} kind="geo" />
+        </div>
       </div>
 
       {/* Performance table — trailing + calendar years */}
@@ -425,7 +433,13 @@ function PerformanceTable({
   const years = calendarReturns.map((c) => c.year);
   return (
     <div className="overflow-x-auto">
-      <table className="table-pro table-pro-sm w-full" style={{ tableLayout: "auto" }}>
+      {/* width: auto overrides .table-pro's width:100% so the table shrinks
+          to content when fewer calendar years are available — no awkward
+          stretched cells on sparse data. */}
+      <table
+        className="table-pro table-pro-sm"
+        style={{ tableLayout: "auto", width: "auto" }}
+      >
         <thead>
           <tr>
             <th>Holding</th>
