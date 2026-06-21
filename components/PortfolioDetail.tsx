@@ -80,7 +80,7 @@ function pctCls(v: number | null | undefined): string {
 // model.points series. The first year is always a partial year (anchored to
 // the series' very first point), so we drop it — annual bars only show full
 // calendar years.
-function computeAnnualReturns(
+export function computeAnnualReturns(
   points: { d: string; v: number }[],
 ): { year: number; return_pct: number }[] {
   if (points.length < 2) return [];
@@ -103,7 +103,7 @@ function computeAnnualReturns(
 // Annual-return bar chart — editorial. Central baseline, ink bars up for
 // positive, negative-red down for losses. Square ends, value labels outside
 // each bar, '15 / '16 / … tick labels on the x-axis.
-function AnnualReturnsBars({ data }: { data: { year: number; return_pct: number }[] }) {
+export function AnnualReturnsBars({ data }: { data: { year: number; return_pct: number }[] }) {
   if (data.length === 0) {
     return <p className="t-caption text-[var(--color-ink-mute)]">Not enough data to compute annual returns yet.</p>;
   }
