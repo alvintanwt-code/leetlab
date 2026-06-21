@@ -438,17 +438,17 @@ export function PortfolioDetail({
         </section>
 
         <section className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
-          <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3">
+          <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3 flex-wrap">
             <p className="t-body-lg font-medium text-[var(--color-ink)]">Instruments</p>
             <p className="t-micro-cap">Mandate constituents</p>
           </div>
           <table className="table-pro table-pro-sm" style={{ tableLayout: "fixed" }}>
             <colgroup>
-              <col style={{ width: "52%" }} />
+              <col style={{ width: "36%" }} />
               <col style={{ width: "16%" }} />
-              <col style={{ width: "10%" }} />
-              <col style={{ width: "11%" }} />
-              <col style={{ width: "11%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "16%" }} />
             </colgroup>
             <thead>
               <tr>
