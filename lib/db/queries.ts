@@ -172,6 +172,7 @@ export type FundPickerRow = {
   id: number;
   external_id: string;
   name: string;
+  isin: string | null;
   fund_house: string | null;
   currency: string | null;
   asset_class: string | null;
@@ -192,7 +193,7 @@ export async function listFundsForPicker(providerSlug: string): Promise<FundPick
     // a record (composite type) and Postgres can't cast it to text[].
     const joined = allowlist.join("\x1f"); // unit separator — safe vs ISINs
     return q<FundPickerRow>(sql`
-      SELECT f.id, f.external_id, f.name, f.fund_house, f.currency, f.asset_class, f.risk_rating,
+      SELECT f.id, f.external_id, f.name, f.isin, f.fund_house, f.currency, f.asset_class, f.risk_rating,
              f.expense_ratio, s.nav, s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
       FROM funds f
       JOIN providers p ON p.id = f.provider_id
@@ -206,7 +207,7 @@ export async function listFundsForPicker(providerSlug: string): Promise<FundPick
     `);
   }
   return q<FundPickerRow>(sql`
-    SELECT f.id, f.external_id, f.name, f.fund_house, f.currency, f.asset_class, f.risk_rating,
+    SELECT f.id, f.external_id, f.name, f.isin, f.fund_house, f.currency, f.asset_class, f.risk_rating,
            f.expense_ratio, s.nav, s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
     FROM funds f
     JOIN providers p ON p.id = f.provider_id

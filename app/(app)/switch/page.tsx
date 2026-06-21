@@ -1,5 +1,10 @@
-import { FundSwitchWorkspace, type FundOption } from "@/components/FundSwitchWorkspace";
 import {
+  FundSwitchWorkspace,
+  type FundAllocations,
+  type FundOption,
+} from "@/components/FundSwitchWorkspace";
+import {
+  allocationsForProviderFunds,
   getPortfolioHoldings,
   listConfirmedPortfolios,
   listFundsForPicker,
@@ -46,26 +51,52 @@ export default async function FundSwitchPage() {
     }),
   );
 
-  const fundsBySlug = await Promise.all(
+  // Per-platform fund options + sector/geo allocations. The summary on the
+  // /switch Client Portfolio side needs both — picker for the typeahead and
+  // allocations to compute aggregated sector + geo exposure.
+  const platformDataPairs = await Promise.all(
     providers.map(async (p) => {
-      const rows = await listFundsForPicker(p.slug);
+      const [rows, allocs] = await Promise.all([
+        listFundsForPicker(p.slug),
+        allocationsForProviderFunds(p.slug),
+      ]);
       const options: FundOption[] = rows.map((r) => ({
         id: r.id,
         name: r.name,
+        isin: r.isin,
         fund_house: r.fund_house,
         asset_class: r.asset_class,
         risk_rating: r.risk_rating,
+        expense_ratio: r.expense_ratio,
+        ann_1y: r.ann_1y,
+        ann_3y: r.ann_3y,
+        ann_5y: r.ann_5y,
+        ann_10y: r.ann_10y,
       }));
-      return [p.slug, options] as const;
+      const allocationsForPlatform: Record<number, FundAllocations> = {};
+      for (const fundId of Object.keys(allocs)) {
+        const id = Number(fundId);
+        const sectorRaw = allocs[id].sector ?? [];
+        const geoRaw = allocs[id].geography ?? [];
+        allocationsForPlatform[id] = {
+          sector: [...sectorRaw].sort((a, b) => b.weight_pct - a.weight_pct),
+          geography: [...geoRaw].sort((a, b) => b.weight_pct - a.weight_pct),
+        };
+      }
+      return [p.slug, options, allocationsForPlatform] as const;
     }),
   );
-  const fundsByPlatform = Object.fromEntries(fundsBySlug);
+  const fundsByPlatform = Object.fromEntries(platformDataPairs.map(([slug, options]) => [slug, options]));
+  const allocationsByPlatform = Object.fromEntries(
+    platformDataPairs.map(([slug, , allocations]) => [slug, allocations]),
+  );
 
   return (
     <FundSwitchWorkspace
       portfolios={enrichedPortfolios}
       providers={providers}
       fundsByPlatform={fundsByPlatform}
+      allocationsByPlatform={allocationsByPlatform}
     />
   );
 }

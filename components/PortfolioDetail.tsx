@@ -157,8 +157,9 @@ function AnnualReturnsBars({ data }: { data: { year: number; return_pct: number 
 }
 
 // Editorial bar — 2px hairline-thin, monochrome ink fill on hairline-2 track,
-// no rounding. Reads as a sparkline, not a chart.
-function BarsRow({
+// no rounding. Reads as a sparkline, not a chart. Exported so the /switch
+// portfolio summary can reuse it.
+export function BarsRow({
   items,
 }: {
   items: { label: string; weight_pct: number }[];

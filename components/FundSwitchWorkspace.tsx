@@ -19,6 +19,10 @@ import {
   type PortfolioCardData,
 } from "@/components/PortfolioCard";
 import { CATEGORY_LABELS, PORTFOLIO_MANDATES } from "@/lib/portfolio-mandates";
+import {
+  ExistingPortfolioSummary,
+  type ValidHolding,
+} from "@/components/ExistingPortfolioSummary";
 
 // Editorial provider names for the target-model row title — distinct from
 // the compact nav labels in PROVIDER_SHORT above.
@@ -34,12 +38,25 @@ type Provider = { slug: string; name: string };
 export type FundOption = {
   id: number;
   name: string;
+  isin: string | null;
   fund_house: string | null;
   asset_class: string | null;
   risk_rating: number | null;
+  expense_ratio: number | null;
+  ann_1y: number | null;
+  ann_3y: number | null;
+  ann_5y: number | null;
+  ann_10y: number | null;
 };
 
-type Holding = {
+// Per-fund sector + geo allocations from fund_allocations table. Keyed by
+// fund_id. Used by ExistingPortfolioSummary to compute weighted exposure.
+export type FundAllocations = {
+  sector: { label: string; weight_pct: number }[];
+  geography: { label: string; weight_pct: number }[];
+};
+
+export type Holding = {
   id: string;
   fund: string;
   fundId: number | null;
@@ -115,10 +132,12 @@ export function FundSwitchWorkspace({
   portfolios,
   providers,
   fundsByPlatform,
+  allocationsByPlatform,
 }: {
   portfolios: PortfolioCardData[];
   providers: Provider[];
   fundsByPlatform: Record<string, FundOption[]>;
+  allocationsByPlatform: Record<string, Record<number, FundAllocations>>;
 }) {
   const providerCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -318,6 +337,12 @@ export function FundSwitchWorkspace({
   const validHoldingsCount = holdings.filter(isHoldingValid).length;
   const canGenerate = validHoldingsCount > 0 && current.selectedModelId != null;
 
+  // Holdings ready for the summary: valid value AND bound to a fundId so the
+  // summary can resolve sector/geo/series data from the platform metadata.
+  const validSummaryHoldings: ValidHolding[] = holdings
+    .filter((h) => isHoldingValid(h) && h.fundId != null)
+    .map((h) => ({ fundId: h.fundId as number, value: holdingValue(h) }));
+
   return (
     <div className="mx-auto w-full max-w-[1280px] px-10">
       <div className="sticky top-0 z-20 -mx-10 mb-6 bg-[var(--color-canvas-soft)] px-10">
@@ -368,6 +393,7 @@ export function FundSwitchWorkspace({
       ) : (
       <>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
+        <div className="flex flex-col gap-6">
         <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="t-body-md font-medium text-[var(--color-ink)]">Client portfolio</h2>
@@ -482,6 +508,18 @@ export function FundSwitchWorkspace({
             </span>
           </p>
         </section>
+
+        {/* Existing Portfolio Summary — appears in the same column as the
+            holdings input, immediately below it, once at least one holding
+            has parsed to a fundId + value. Width matches the holdings card. */}
+        <ExistingPortfolioSummary
+          validHoldings={validSummaryHoldings}
+          fundsByPlatform={fundsByPlatform}
+          allocationsByPlatform={allocationsByPlatform}
+          platform={platform}
+          totalValue={portfolioTotal}
+        />
+        </div>
 
         {/* Target Model — right column. Slim row variant: chips + title +
             mandate + risk + 3-up KPI strip. No chart, no funds count —
