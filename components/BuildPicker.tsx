@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FundInspectorData, AllocationDetail } from "@/lib/db/queries";
 
@@ -292,22 +292,8 @@ export function BuildPicker({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[200px_minmax(0,1fr)_320px] lg:items-stretch">
-        {/* LEFT — filter panel (40% slimmer, flush with the table + cart) */}
-        <FilterPanel
-          classOn={classOn}
-          regionOn={regionOn}
-          dividendOnly={dividendOnly}
-          onToggleClass={toggleClass}
-          onToggleRegion={toggleRegion}
-          onToggleDividend={() => setDividendOnly((v) => !v)}
-          onAllClasses={() => setClassOn(new Set(["E", "F", "A", "L", "C", "M"]))}
-          onNoClasses={() => setClassOn(new Set())}
-          onAllRegions={() => setRegionOn(new Set(["US", "Europe", "Asia", "EM", "Global", "Commodities", "Cash", "Unknown"]))}
-          onNoRegions={() => setRegionOn(new Set())}
-        />
-
-        {/* MIDDLE — search + fund table */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+        {/* LEFT — search + fund table */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2">
             <input
@@ -324,13 +310,27 @@ export function BuildPicker({
           <FundTable rows={filteredRows} onPick={pick} sortKey={sortKey} onToggleSort={toggleSort} />
         </div>
 
-        {/* RIGHT — selected cart, full row height so the Confirm CTA pins flush */}
-        <SelectedCart
-          rows={selectedRows}
-          onRemove={unpick}
-          onConfirm={confirmBuild}
-          providerSlug={providerSlug}
-        />
+        {/* RIGHT — filter panel + selected cart, both natural-height */}
+        <aside className="flex flex-col gap-4">
+          <FilterPanel
+            classOn={classOn}
+            regionOn={regionOn}
+            dividendOnly={dividendOnly}
+            onToggleClass={toggleClass}
+            onToggleRegion={toggleRegion}
+            onToggleDividend={() => setDividendOnly((v) => !v)}
+            onAllClasses={() => setClassOn(new Set(["E", "F", "A", "L", "C", "M"]))}
+            onNoClasses={() => setClassOn(new Set())}
+            onAllRegions={() => setRegionOn(new Set(["US", "Europe", "Asia", "EM", "Global", "Commodities", "Cash", "Unknown"]))}
+            onNoRegions={() => setRegionOn(new Set())}
+          />
+          <SelectedCart
+            rows={selectedRows}
+            onRemove={unpick}
+            onConfirm={confirmBuild}
+            providerSlug={providerSlug}
+          />
+        </aside>
       </div>
     </div>
   );
@@ -500,30 +500,33 @@ function FilterPanel({
         <p className="t-micro-cap">{open ? "Hide" : "Show"}</p>
       </button>
       {open && (
-        <div className="flex flex-col gap-5 px-5 py-4">
-          <FilterGroup
-            title="Asset class"
-            onAll={onAllClasses}
-            onNone={onNoClasses}
-            items={(["E", "F", "A", "L", "C", "M"] as ClassKey[]).map((k) => ({
-              key: k,
-              label: CLASS_LABEL[k],
-              checked: classOn.has(k),
-              onToggle: () => onToggleClass(k),
-            }))}
-          />
-          <FilterGroup
-            title="Region"
-            onAll={onAllRegions}
-            onNone={onNoRegions}
-            items={(["US", "Europe", "Asia", "EM", "Global", "Commodities", "Cash"] as RegionKey[]).map((k) => ({
-              key: k,
-              label: REGION_LABEL[k],
-              checked: regionOn.has(k),
-              onToggle: () => onToggleRegion(k),
-            }))}
-          />
-          <div className="flex items-center justify-between border-t border-[var(--color-hairline-2)] pt-4">
+        <div className="flex flex-col gap-4 px-5 py-4">
+          {/* Asset class + Region side-by-side so the panel stays short */}
+          <div className="grid grid-cols-2 gap-4">
+            <FilterGroup
+              title="Asset class"
+              onAll={onAllClasses}
+              onNone={onNoClasses}
+              items={(["E", "F", "A", "L", "C", "M"] as ClassKey[]).map((k) => ({
+                key: k,
+                label: CLASS_LABEL[k],
+                checked: classOn.has(k),
+                onToggle: () => onToggleClass(k),
+              }))}
+            />
+            <FilterGroup
+              title="Region"
+              onAll={onAllRegions}
+              onNone={onNoRegions}
+              items={(["US", "Europe", "Asia", "EM", "Global", "Commodities", "Cash"] as RegionKey[]).map((k) => ({
+                key: k,
+                label: REGION_LABEL[k],
+                checked: regionOn.has(k),
+                onToggle: () => onToggleRegion(k),
+              }))}
+            />
+          </div>
+          <div className="border-t border-[var(--color-hairline-2)] pt-3">
             <label className="flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
@@ -540,6 +543,9 @@ function FilterPanel({
   );
 }
 
+// Each FilterGroup leads with an "All" checkbox that toggles every item in the
+// group on / off, and renders indeterminate when the group is partially on —
+// replaces the separate "All · None" button row from the older revision.
 function FilterGroup<K extends string>({
   title,
   items,
@@ -551,17 +557,27 @@ function FilterGroup<K extends string>({
   onAll: () => void;
   onNone: () => void;
 }) {
+  const allChecked = items.length > 0 && items.every((it) => it.checked);
+  const anyChecked = items.some((it) => it.checked);
+  const indeterminate = anyChecked && !allChecked;
+  const allRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (allRef.current) allRef.current.indeterminate = indeterminate;
+  }, [indeterminate]);
   return (
     <div>
-      <div className="mb-2 flex items-baseline justify-between">
-        <p className="t-micro-cap">{title}</p>
-        <p className="t-micro-cap">
-          <button type="button" onClick={onAll} className="hover:text-[var(--color-ink)]">All</button>
-          <span className="mx-1 text-[var(--color-hairline)]">·</span>
-          <button type="button" onClick={onNone} className="hover:text-[var(--color-ink)]">None</button>
-        </p>
-      </div>
+      <p className="t-micro-cap mb-2">{title}</p>
       <div className="flex flex-col gap-1.5">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            ref={allRef}
+            type="checkbox"
+            checked={allChecked}
+            onChange={() => (anyChecked ? onNone() : onAll())}
+            className="h-3.5 w-3.5 accent-[var(--color-ink)]"
+          />
+          <span className="t-caption font-medium text-[var(--color-ink)]">All</span>
+        </label>
         {items.map((it) => (
           <label key={it.key} className="flex cursor-pointer items-center gap-2">
             <input
@@ -593,19 +609,19 @@ function SelectedCart({
 }) {
   const empty = rows.length === 0;
   return (
-    <section className="flex h-full flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
-      <div className="flex shrink-0 items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3">
+    <section className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+      <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3">
         <p className="t-body-md font-medium text-[var(--color-ink)]">Selected</p>
         <p className="t-micro-cap">{rows.length} {rows.length === 1 ? "fund" : "funds"}</p>
       </div>
       {empty ? (
-        <div className="flex flex-1 items-center justify-center px-5 py-8 text-center">
+        <div className="px-5 py-8 text-center">
           <p className="t-body-md text-[var(--color-ink-mute)]">
             Use the <span className="num">+</span> button on each row to stage funds for the build.
           </p>
         </div>
       ) : (
-        <ul className="flex flex-1 flex-col overflow-y-auto">
+        <ul className="flex flex-col pb-3">
           {rows.map((f) => (
             <li
               key={f.id}
@@ -641,7 +657,7 @@ function SelectedCart({
           ))}
         </ul>
       )}
-      <div className="shrink-0 border-t border-[var(--color-hairline-2)] px-5 py-3">
+      <div className="border-t border-[var(--color-hairline-2)] px-5 py-3">
         <button
           type="button"
           onClick={onConfirm}
