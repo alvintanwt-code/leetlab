@@ -817,11 +817,10 @@ function FundCombobox({
   );
 }
 
-// Slim variant of the /portfolios row, sized for the 360px sidebar column:
-// asset chips + title + mandate tagline + risk meta on top, a 3-up KPI strip
-// (3Y ann · OCF · Dividends/Yield) below. No sparkline, no funds count.
-// Hover + selected states match the rest of the app's editorial chrome —
-// canvas-soft fill plus a 2px ink accent bar on the left edge when picked.
+// Flat 2-line row sized for the 360px sidebar column. Line 1: portfolio
+// name on the left, 3Y annualised return + tiny label stacked on the right.
+// Line 2: asset chips + risk meta. No mandate, no OCF/Dividends, no sparkline.
+// Hover + selected chrome — canvas-soft fill + 2px ink accent bar.
 function SwitchModelRow({
   data,
   selected,
@@ -831,17 +830,16 @@ function SwitchModelRow({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const { portfolio, assetMix, xray, risk, yieldPct } = data;
-  const mandate = PORTFOLIO_MANDATES[portfolio.category];
+  const { portfolio, assetMix, xray, risk } = data;
   const title = `${PROVIDER_FULL[portfolio.provider_slug] ?? portfolio.provider_name} ${CATEGORY_LABELS[portfolio.category] ?? portfolio.category}`;
-  const isIncome = portfolio.category === "dividend_income";
+  const r3y = xray?.r3y ?? null;
 
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`relative block w-full border-b border-[var(--color-hairline-2)] px-5 py-3.5 text-left transition-colors last:border-b-0 ${
+      className={`relative block w-full border-b border-[var(--color-hairline-2)] px-5 py-2.5 text-left transition-colors last:border-b-0 ${
         selected
           ? "bg-[var(--color-canvas-soft)]"
           : "hover:bg-[var(--color-canvas-soft)]"
@@ -854,24 +852,28 @@ function SwitchModelRow({
         />
       )}
 
-      <AssetChips chips={assetMix} />
-
-      <p className="mt-2 text-[14px] font-medium leading-tight tracking-[-0.005em] text-[var(--color-ink)]">
-        {title}
-      </p>
-      {mandate && (
-        <p className="t-caption mt-1 truncate text-[var(--color-ink-mute)]">{mandate.tagline}</p>
-      )}
-      <p className="t-micro-cap mt-1.5">
-        Risk <RiskText value={risk} />
-      </p>
-
-      <div className="mt-3 grid grid-cols-3 gap-x-3 border-t border-[var(--color-hairline-2)] pt-2.5">
-        <Kpi label="3Y ann."><ReturnText value={xray?.r3y ?? null} /></Kpi>
-        <Kpi label="OCF p.a."><PctText value={xray?.expense ?? null} /></Kpi>
-        <Kpi label={isIncome ? "Yield p.a." : "Dividends"}>
-          {isIncome ? <PctText value={yieldPct} /> : <span className="text-[var(--color-ink-mute)]">—</span>}
-        </Kpi>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3">
+        <div className="min-w-0">
+          <p
+            className="truncate text-[13px] font-medium leading-tight tracking-[-0.005em] text-[var(--color-ink)]"
+            title={title}
+          >
+            {title}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <AssetChips chips={assetMix} />
+            <span className="t-micro-cap">
+              <span className="text-[var(--color-ink-mute)]">RISK</span>{" "}
+              <RiskText value={risk} />
+            </span>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="num text-[13px] font-medium leading-none tabular-nums">
+            <ReturnText value={r3y} />
+          </p>
+          <p className="t-micro-cap mt-1">3Y ANN.</p>
+        </div>
       </div>
     </button>
   );
