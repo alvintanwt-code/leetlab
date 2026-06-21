@@ -1,184 +1,152 @@
 import Link from "next/link";
-import { PortfolioDetail } from "@/components/PortfolioDetail";
 import {
   listConfirmedPortfolios,
   listProvidersWithCounts,
   getPortfolioHoldings,
   type ConfirmedPortfolio,
 } from "@/lib/db/queries";
+import { PortfolioCard, PortfolioRow, type PortfolioCardData } from "@/components/PortfolioCard";
+import { computeAssetMix, computeRiskRating, computeYieldPct, parseXray } from "@/lib/portfolio-derive";
+import { blendPortfolioSeries } from "@/lib/portfolio-performance";
+import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/portfolio-mandates";
 
 export const dynamic = "force-dynamic";
 
-const CATEGORIES: { key: string; label: string }[] = [
-  { key: "conservative", label: "Conservative" },
-  { key: "balanced", label: "Balanced" },
-  { key: "growth", label: "Growth" },
-  { key: "aggressive", label: "Aggressive" },
-  { key: "dividend_income", label: "Income" },
+const PLATFORM_TABS: { slug: string; short: string; disabled?: boolean }[] = [
+  { slug: "hsbc", short: "HSBC" },
+  { slug: "fwd", short: "FWD" },
+  { slug: "tmls", short: "TM" },
+  { slug: "gwm", short: "GWM", disabled: true },
 ];
 
-const PROVIDER_SHORT: Record<string, string> = {
-  hsbc: "HSBC Life",
-  tmls: "Tokio Marine",
-  fwd: "FWD",
-  gwm: "GWM",
-};
+const STRATEGY_CHIPS: { key: string; label: string }[] = [
+  { key: "all", label: "All" },
+  ...CATEGORY_ORDER.map((k) => ({ key: k, label: CATEGORY_LABELS[k] })),
+];
 
-function buildHref(params: { provider?: string | null; category?: string | null; view?: string | null }): string {
+function buildHref(params: {
+  platform?: string;
+  strategy?: string;
+  view?: string;
+  confirmed?: string | null;
+}): string {
   const sp = new URLSearchParams();
-  if (params.view) sp.set("view", params.view);
-  if (params.provider) sp.set("provider", params.provider);
-  if (params.category) sp.set("category", params.category);
+  if (params.platform) sp.set("platform", params.platform);
+  if (params.strategy && params.strategy !== "all") sp.set("strategy", params.strategy);
+  if (params.view && params.view !== "card") sp.set("view", params.view);
+  if (params.confirmed) sp.set("confirmed", params.confirmed);
   const q = sp.toString();
   return q ? `/portfolios?${q}` : "/portfolios";
 }
 
-function TabLink({
-  href,
-  label,
-  count,
-  active,
-  disabled,
-}: {
-  href: string;
-  label: string;
-  count?: number | null;
-  active: boolean;
-  disabled?: boolean;
-}) {
-  // Underline-style: active = ink + 2px ink underline aligned with row border; inactive = ink-mute.
-  const base =
-    "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 pt-2 pb-2 -mb-px t-caption transition-colors";
-  if (disabled) {
-    return (
-      <span
-        aria-disabled="true"
-        className={`${base} border-transparent text-[var(--color-ink-mute)] opacity-50`}
-        title={`${label} · none saved`}
-      >
-        {label}
-      </span>
-    );
-  }
-  return (
-    <Link
-      href={href}
-      className={`${base} ${
-        active
-          ? "border-[var(--color-ink)] text-[var(--color-ink)] font-medium"
-          : "border-transparent text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
-      }`}
-    >
-      {label}
-      {count != null && (
-        <span className="num text-[10px] text-[var(--color-ink-mute)]">{count}</span>
-      )}
-    </Link>
-  );
+function median(xs: number[]): number | null {
+  if (xs.length === 0) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
-function GridCell({ p }: { p: ConfirmedPortfolio | null }) {
-  if (!p) {
-    return (
-      <div className="flex h-full flex-col items-start justify-center rounded-md border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3.5">
-        <p className="num text-[18px] font-medium leading-none text-[var(--color-ink-mute)]">—</p>
-        <p className="t-micro-cap mt-1.5">Not built</p>
-      </div>
-    );
-  }
-  let xray: { expense?: number | null; risk?: number | null; r3y?: number | null } = {};
-  try {
-    xray = p.xray_json ? JSON.parse(p.xray_json) : {};
-  } catch {}
-  const r3y = xray.r3y;
-  const r3yCls =
-    r3y == null
+function HeaderStat({ label, value, tone = "ink" }: { label: string; value: string; tone?: "ink" | "mute" | "pos" | "neg" }) {
+  const color =
+    tone === "mute"
       ? "text-[var(--color-ink-mute)]"
-      : r3y > 0
+      : tone === "pos"
         ? "text-[var(--color-positive)]"
-        : r3y < 0
+        : tone === "neg"
           ? "text-[var(--color-negative)]"
           : "text-[var(--color-ink)]";
   return (
-    <Link
-      href={buildHref({ provider: p.provider_slug, category: p.category })}
-      className="block h-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3.5 transition-colors hover:border-[var(--color-ink)]"
-    >
-      <p className="t-body-md truncate font-medium text-[var(--color-ink)]" title={p.name}>{p.name}</p>
-      <p className="t-micro-cap mt-1">
-        v<span className="num">{p.version}</span> &middot; <span className="num">{p.holding_count}</span>{" "}
-        {p.holding_count === 1 ? "fund" : "funds"}
-      </p>
-      <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[var(--color-hairline-2)] pt-3">
-        <div>
-          <p className={`num text-[15px] font-medium leading-none ${r3yCls}`}>
-            {r3y != null ? `${r3y > 0 ? "+" : ""}${r3y.toFixed(1)}%` : "—"}
-          </p>
-          <p className="t-micro-cap mt-1.5">3Y CAGR</p>
-        </div>
-        <div>
-          <p className="num text-[15px] font-medium leading-none text-[var(--color-ink)]">
-            {xray.risk != null ? xray.risk.toFixed(1) : "—"}
-          </p>
-          <p className="t-micro-cap mt-1.5">Risk</p>
-        </div>
-      </div>
-    </Link>
+    <div className="text-right">
+      <p className={`num text-[24px] font-medium leading-none tabular-nums ${color}`}>{value}</p>
+      <p className="t-micro-cap mt-2">{label}</p>
+    </div>
   );
 }
 
 export default async function ModelPortfoliosIndex({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; provider?: string; category?: string; confirmed?: string }>;
+  searchParams: Promise<{
+    platform?: string;
+    strategy?: string;
+    view?: string;
+    confirmed?: string;
+    provider?: string; // legacy
+    category?: string; // legacy
+  }>;
 }) {
   const sp = await searchParams;
-  const isShowAll = sp.view === "all";
 
-  const [portfolios, providers] = await Promise.all([
+  const [allPortfolios, providers] = await Promise.all([
     listConfirmedPortfolios(),
     listProvidersWithCounts(),
   ]);
 
-  // Latest version per (provider, category) — the list is ordered by confirmed_at DESC
-  // so the first occurrence wins.
-  const latestByKey = new Map<string, ConfirmedPortfolio>();
-  const providerCounts = new Map<string, number>();
-  for (const p of portfolios) {
-    const key = `${p.provider_slug}::${p.category}`;
-    if (!latestByKey.has(key)) latestByKey.set(key, p);
-    providerCounts.set(p.provider_slug, (providerCounts.get(p.provider_slug) ?? 0) + 1);
+  // Per-platform saved counts (drives default platform selection).
+  const platformCounts = new Map<string, number>();
+  for (const p of allPortfolios) {
+    platformCounts.set(p.provider_slug, (platformCounts.get(p.provider_slug) ?? 0) + 1);
   }
 
-  // Resolve the active provider — explicit param wins, else first provider that has any saved portfolio.
-  const providersWithSaved = providers.filter((p) => (providerCounts.get(p.slug) ?? 0) > 0);
-  const activeProvider =
-    sp.provider && providersWithSaved.some((p) => p.slug === sp.provider)
-      ? sp.provider
-      : providersWithSaved[0]?.slug ?? null;
+  // Resolve active platform — explicit param (incl. legacy ?provider=) wins,
+  // else first enabled tab that has saved portfolios.
+  const requested = sp.platform ?? sp.provider;
+  const isValid = (slug?: string) =>
+    !!slug && PLATFORM_TABS.some((t) => t.slug === slug && !t.disabled);
+  const fallback = PLATFORM_TABS.find((t) => !t.disabled && (platformCounts.get(t.slug) ?? 0) > 0)?.slug
+    ?? PLATFORM_TABS.find((t) => !t.disabled)!.slug;
+  const activePlatform = isValid(requested) ? requested! : fallback;
 
-  // Categories saved on the active provider.
-  const savedCategoriesForProvider = activeProvider
-    ? new Set(portfolios.filter((p) => p.provider_slug === activeProvider).map((p) => p.category))
-    : new Set<string>();
+  // Resolve active strategy — supports legacy ?category=.
+  const requestedStrategy = sp.strategy ?? sp.category ?? "all";
+  const activeStrategy =
+    requestedStrategy === "all" || CATEGORY_ORDER.includes(requestedStrategy) ? requestedStrategy : "all";
 
-  // Resolve the active category — explicit param if saved on this provider, else first saved category.
-  const activeCategory =
-    !isShowAll && sp.category && savedCategoriesForProvider.has(sp.category)
-      ? sp.category
-      : !isShowAll && activeProvider
-      ? CATEGORIES.find((c) => savedCategoriesForProvider.has(c.key))?.key ?? null
-      : null;
+  const activeView = sp.view === "row" ? "row" : "card";
 
-  const activePortfolio =
-    !isShowAll && activeProvider && activeCategory
-      ? latestByKey.get(`${activeProvider}::${activeCategory}`) ?? null
-      : null;
+  // Filter portfolios — latest version per (platform, category).
+  const platformPortfolios = allPortfolios.filter((p) => p.provider_slug === activePlatform);
+  const latestByCategory = new Map<string, ConfirmedPortfolio>();
+  for (const p of platformPortfolios) {
+    if (!latestByCategory.has(p.category)) latestByCategory.set(p.category, p);
+  }
+  const filtered: ConfirmedPortfolio[] = (() => {
+    const list = [...latestByCategory.values()];
+    const inOrder = CATEGORY_ORDER.map((k) => list.find((p) => p.category === k)).filter(
+      (p): p is ConfirmedPortfolio => p != null,
+    );
+    return activeStrategy === "all" ? inOrder : inOrder.filter((p) => p.category === activeStrategy);
+  })();
 
-  const holdings = activePortfolio ? await getPortfolioHoldings(activePortfolio.id) : [];
+  // Build the per-card data: holdings → asset mix, xray, series.
+  const cardData: PortfolioCardData[] = await Promise.all(
+    filtered.map(async (portfolio) => {
+      const holdings = await getPortfolioHoldings(portfolio.id);
+      const xray = parseXray(portfolio);
+      const totalBps = holdings.reduce((s, h) => s + h.weight_bps, 0) || 1;
+      const components = holdings
+        .filter((h) => !!h.isin)
+        .map((h) => ({ isin: h.isin as string, weight: h.weight_bps / totalBps }));
+      const series = await blendPortfolioSeries(components, 36);
+      return {
+        portfolio,
+        assetMix: computeAssetMix(holdings),
+        xray,
+        risk: computeRiskRating(holdings, xray),
+        series,
+        yieldPct: portfolio.category === "dividend_income" ? computeYieldPct(holdings) : null,
+      };
+    }),
+  );
+
+  // Header stat aggregates across the *currently filtered* set.
+  const r3yValues = cardData.map((d) => d.xray?.r3y).filter((v): v is number => v != null);
+  const ocfValues = cardData.map((d) => d.xray?.expense).filter((v): v is number => v != null);
+  const medianR3y = median(r3yValues);
+  const medianOcf = median(ocfValues);
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-10">
+    <div className="mx-auto w-full max-w-[1180px] px-10 pb-16">
       {sp.confirmed && (
         <div className="mt-4 flex items-center justify-between rounded-md border border-[#cfd7e1] bg-[#eef3fb] px-4 py-2.5">
           <p className="t-caption text-[var(--color-ink)]">
@@ -190,138 +158,158 @@ export default async function ModelPortfoliosIndex({
         </div>
       )}
 
-      {portfolios.length === 0 ? (
-        <div className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-10 py-16 text-center">
-          <p className="t-micro-cap mb-4">No portfolios yet</p>
+      {/* Hero — eyebrow + title left, aggregate stats right */}
+      <header className="pt-8 pb-7">
+        <div className="flex items-start justify-between gap-10">
+          <div className="min-w-0">
+            <p className="t-micro-cap mb-2 flex items-center gap-2">
+              <span className="inline-block h-[8px] w-[8px] bg-[var(--color-primary)]" />
+              Advisor workspace
+              <span className="text-[var(--color-hairline)]">·</span>
+              Portfolio library
+            </p>
+            <h1 className="text-[44px] font-medium leading-[1.05] tracking-[-0.025em] text-[var(--color-ink)]">
+              Model portfolio
+            </h1>
+            <p className="t-body-md mt-3 max-w-[44ch] text-[var(--color-ink-mute)]">
+              Confirmed model portfolios across our connected platforms. Each card distils mandate,
+              composition and trailing performance into a single editorial sheet.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-end gap-10 pt-2">
+            <HeaderStat label="Portfolios" value={String(cardData.length)} />
+            <HeaderStat label="Median 3Y" value={medianR3y != null ? `${medianR3y > 0 ? "+" : ""}${medianR3y.toFixed(1)}%` : "—"} tone={medianR3y != null && medianR3y > 0 ? "pos" : medianR3y != null && medianR3y < 0 ? "neg" : "ink"} />
+            <HeaderStat label="Median OCF" value={medianOcf != null ? `${medianOcf.toFixed(2)}%` : "—"} />
+          </div>
+        </div>
+      </header>
+
+      {/* Filter bar — platform row + strategy row + view toggle */}
+      <nav
+        aria-label="Filters"
+        className="sticky top-0 z-20 -mx-10 mb-8 border-y border-[var(--color-hairline)] bg-[var(--color-canvas-soft)]/95 px-10 backdrop-blur"
+      >
+        <div className="flex items-center gap-6 border-b border-[var(--color-hairline-2)]">
+          <p className="t-micro-cap w-20 shrink-0 py-3">Platform</p>
+          <div className="flex flex-1 items-center gap-1 overflow-x-auto">
+            {PLATFORM_TABS.map((t) => {
+              const active = !t.disabled && t.slug === activePlatform;
+              const cls = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-3 -mb-px t-caption transition-colors";
+              if (t.disabled) {
+                return (
+                  <span
+                    key={t.slug}
+                    aria-disabled="true"
+                    className={`${cls} cursor-not-allowed border-transparent text-[var(--color-ink-mute)] opacity-40`}
+                    title="GWM — coming soon"
+                  >
+                    {t.short}
+                  </span>
+                );
+              }
+              return (
+                <Link
+                  key={t.slug}
+                  href={buildHref({ platform: t.slug, strategy: "all", view: activeView })}
+                  className={`${cls} ${
+                    active
+                      ? "border-[var(--color-ink)] font-medium text-[var(--color-ink)]"
+                      : "border-transparent text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
+                  }`}
+                >
+                  {t.short}
+                  <span className="num text-[10px] text-[var(--color-ink-mute)]">
+                    {platformCounts.get(t.slug) ?? 0}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <p className="t-micro-cap w-20 shrink-0 py-3">Strategy</p>
+          <div className="flex flex-1 items-center gap-1 overflow-x-auto">
+            {STRATEGY_CHIPS.map((c) => {
+              const active = c.key === activeStrategy;
+              return (
+                <Link
+                  key={c.key}
+                  href={buildHref({ platform: activePlatform, strategy: c.key, view: activeView })}
+                  className={`inline-flex shrink-0 items-center whitespace-nowrap border-b-2 px-3 py-3 -mb-px t-caption transition-colors ${
+                    active
+                      ? "border-[var(--color-ink)] font-medium text-[var(--color-ink)]"
+                      : "border-transparent text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
+                  }`}
+                >
+                  {c.label}
+                </Link>
+              );
+            })}
+          </div>
+          <div className="flex shrink-0 items-center gap-0.5 py-2">
+            <Link
+              href={buildHref({ platform: activePlatform, strategy: activeStrategy, view: "card" })}
+              aria-label="Card view"
+              className={`flex h-7 w-7 items-center justify-center border ${
+                activeView === "card"
+                  ? "border-[var(--color-ink)] text-[var(--color-ink)]"
+                  : "border-[var(--color-hairline)] text-[var(--color-ink-mute)] hover:border-[var(--color-ink)]"
+              }`}
+              title="Card view"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
+                <rect x="1" y="1" width="4" height="4" /><rect x="7" y="1" width="4" height="4" />
+                <rect x="1" y="7" width="4" height="4" /><rect x="7" y="7" width="4" height="4" />
+              </svg>
+            </Link>
+            <Link
+              href={buildHref({ platform: activePlatform, strategy: activeStrategy, view: "row" })}
+              aria-label="Row view"
+              className={`flex h-7 w-7 items-center justify-center border ${
+                activeView === "row"
+                  ? "border-[var(--color-ink)] text-[var(--color-ink)]"
+                  : "border-[var(--color-hairline)] text-[var(--color-ink-mute)] hover:border-[var(--color-ink)]"
+              }`}
+              title="Row view"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
+                <line x1="1" y1="3" x2="11" y2="3" /><line x1="1" y1="6" x2="11" y2="6" /><line x1="1" y1="9" x2="11" y2="9" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Card grid OR row list */}
+      {cardData.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] px-10 py-16 text-center">
+          <p className="t-micro-cap mb-3">No portfolios</p>
           <h2 className="t-h-lg mx-auto max-w-md text-[var(--color-ink)]">
-            Build one in the Portfolio Builder to see it here.
+            Nothing saved for this filter yet.
           </h2>
           <p className="t-body-md mx-auto mt-3 max-w-md text-[var(--color-ink-mute)]">
-            Confirmed portfolios appear here, sortable by provider and risk profile.
+            Build one in the Portfolio Builder, or change platform / strategy above.
           </p>
+          <Link
+            href={`/construction/${activePlatform}`}
+            className="mt-5 inline-flex t-caption text-[var(--color-primary)] hover:underline"
+          >
+            Build for {PLATFORM_TABS.find((t) => t.slug === activePlatform)?.short} →
+          </Link>
+        </div>
+      ) : activeView === "card" ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {cardData.map((d) => (
+            <PortfolioCard key={d.portfolio.id} data={d} />
+          ))}
         </div>
       ) : (
-        <>
-          {/* Sticky chrome — title + platform + mandate, in eyebrow-aligned rows */}
-          <div className="sticky top-0 z-20 -mx-10 mb-6 bg-[var(--color-canvas-soft)] px-10">
-            {/* Row 1: title + show-all toggle */}
-            <div className="flex items-center justify-between gap-3 border-b border-[var(--color-hairline-2)] py-3">
-              <div>
-                <p className="t-micro-cap mb-1">Advisor workspace</p>
-                <h1 className="t-h-md text-[var(--color-ink)]">Model Portfolio</h1>
-              </div>
-              {!isShowAll && (
-                <Link
-                  href={buildHref({ view: "all" })}
-                  className="shrink-0 t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
-                >
-                  Show all →
-                </Link>
-              )}
-            </div>
-
-            {/* Row 2: PLATFORM */}
-            <div className="flex items-center gap-6 border-b border-[var(--color-hairline-2)]">
-              <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
-              <nav aria-label="Platform" className="flex items-center gap-3 overflow-x-auto">
-                {providers.map((p) => {
-                  const n = providerCounts.get(p.slug) ?? 0;
-                  return (
-                    <TabLink
-                      key={p.slug}
-                      href={buildHref({ provider: p.slug })}
-                      label={PROVIDER_SHORT[p.slug] ?? p.name}
-                      active={!isShowAll && activeProvider === p.slug}
-                      disabled={n === 0}
-                    />
-                  );
-                })}
-              </nav>
-            </div>
-
-            {/* Row 3: MANDATE — hidden in show-all */}
-            {!isShowAll && activeProvider && (
-              <div className="flex items-center gap-6 border-b border-[var(--color-hairline)]">
-                <p className="t-micro-cap w-20 shrink-0 py-2">Mandate</p>
-                <nav aria-label="Mandate" className="flex items-center gap-3 overflow-x-auto">
-                  {CATEGORIES.map((c) => {
-                    const has = savedCategoriesForProvider.has(c.key);
-                    return (
-                      <TabLink
-                        key={c.key}
-                        href={buildHref({ provider: activeProvider, category: c.key })}
-                        label={c.label}
-                        active={activeCategory === c.key}
-                        disabled={!has}
-                      />
-                    );
-                  })}
-                </nav>
-              </div>
-            )}
-          </div>
-
-          {/* Expanded portfolio detail OR show-all grid */}
-          {isShowAll ? (
-            <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
-              {/* Header row */}
-              <div className="grid border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft)] px-4 py-2.5" style={{ gridTemplateColumns: "160px repeat(5, 1fr)" }}>
-                <p className="t-micro-cap">Platform</p>
-                {CATEGORIES.map((c) => (
-                  <p key={c.key} className="t-micro-cap pl-3">{c.label}</p>
-                ))}
-              </div>
-              {providersWithSaved.length === 0 ? (
-                <div className="p-10 text-center">
-                  <p className="t-body-md text-[var(--color-ink-mute)]">No saved portfolios yet.</p>
-                </div>
-              ) : (
-                providersWithSaved.map((prov) => (
-                  <div
-                    key={prov.slug}
-                    className="grid items-stretch border-b border-[var(--color-hairline-2)] px-4 py-3 last:border-0"
-                    style={{ gridTemplateColumns: "160px repeat(5, 1fr)" }}
-                  >
-                    <div className="flex flex-col justify-center pr-3">
-                      <p className="t-body-md font-medium text-[var(--color-ink)]">{PROVIDER_SHORT[prov.slug] ?? prov.name}</p>
-                      <p className="t-micro-cap mt-1">
-                        <span className="num">{providerCounts.get(prov.slug) ?? 0}</span> saved
-                      </p>
-                    </div>
-                    {CATEGORIES.map((c) => (
-                      <div key={c.key} className="pl-3">
-                        <GridCell p={latestByKey.get(`${prov.slug}::${c.key}`) ?? null} />
-                      </div>
-                    ))}
-                  </div>
-                ))
-              )}
-            </section>
-          ) : activePortfolio ? (
-            <div className="pb-10">
-              <PortfolioDetail portfolio={activePortfolio} holdings={holdings} />
-            </div>
-          ) : activeProvider ? (
-            <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] px-10 py-12 text-center">
-              <p className="t-body-md text-[var(--color-ink-mute)]">
-                No risk profile saved for this platform yet.{" "}
-                <Link href={`/construction/${activeProvider}`} className="text-[var(--color-primary)]">
-                  Build one →
-                </Link>
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] px-10 py-12 text-center">
-              <p className="t-body-md text-[var(--color-ink-mute)]">
-                Select a platform above, or{" "}
-                <Link href={buildHref({ view: "all" })} className="text-[var(--color-primary)]">
-                  show all
-                </Link>
-                .
-              </p>
-            </div>
-          )}
-        </>
+        <div className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-6">
+          {cardData.map((d) => (
+            <PortfolioRow key={d.portfolio.id} data={d} />
+          ))}
+        </div>
       )}
     </div>
   );
