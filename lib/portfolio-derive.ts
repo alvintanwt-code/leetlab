@@ -53,7 +53,13 @@ export function computeAssetMix(holdings: ConfirmedPortfolioHolding[]): AssetChi
 }
 
 // Risk class — pulled from the precomputed xrayJson when available, else
-// derived as the weighted average of fund-level risk_rating.
+// derived as the weight-bps-weighted average of fund-level `risk_rating`.
+//
+// `risk_rating` is sourced from Morningstar's CollectedSRRI / CalculatedSRRI
+// (see lib/morningstar/parse.ts). EU SRRI is nominally 1–7, but the values
+// observed across our 283-fund universe are entirely 1–5 — so the displayed
+// scale is /5 everywhere (cards, detail header, StudioShell xray). Whole-number
+// values render as integers; fractional values show one decimal.
 export function computeRiskRating(
   holdings: ConfirmedPortfolioHolding[],
   xray: PortfolioXray | null,

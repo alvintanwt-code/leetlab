@@ -280,7 +280,7 @@ export function PortfolioDetail({
               <>
                 {" "}
                 <span className="mx-1.5 text-[var(--color-hairline)]">·</span> RISK{" "}
-                {Math.round(xray.risk)}/5
+                {Number.isInteger(xray.risk) ? xray.risk.toFixed(0) : xray.risk.toFixed(1)}/5
               </>
             )}
           </p>

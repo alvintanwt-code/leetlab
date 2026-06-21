@@ -629,7 +629,11 @@ export function StudioShell({
                     <p className="t-body-lg font-medium text-[var(--color-ink)]">Portfolio X-ray</p>
                     <p className="t-micro-cap">
                       Weighted exposure
-                      {xray.risk != null && <> &nbsp;&middot;&nbsp; Risk {Math.round(xray.risk)}/5</>}
+                      {xray.risk != null && (
+                        <> &nbsp;&middot;&nbsp; Risk{" "}
+                          {Number.isInteger(xray.risk) ? xray.risk.toFixed(0) : xray.risk.toFixed(1)}/5
+                        </>
+                      )}
                     </p>
                   </div>
 

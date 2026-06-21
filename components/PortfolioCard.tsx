@@ -42,11 +42,11 @@ function PctText({ value, places = 2 }: { value: number | null | undefined; plac
 }
 
 function RiskText({ value }: { value: number | null | undefined }) {
-  if (value == null) return <span className="text-[var(--color-ink-mute)]">—/6</span>;
+  if (value == null) return <span className="text-[var(--color-ink-mute)]">—/5</span>;
   return (
     <span className="text-[var(--color-ink)]">
       {Number.isInteger(value) ? value.toFixed(0) : value.toFixed(1)}
-      <span className="text-[var(--color-ink-mute)]">/6</span>
+      <span className="text-[var(--color-ink-mute)]">/5</span>
     </span>
   );
 }
