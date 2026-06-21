@@ -521,12 +521,13 @@ export function FundSwitchWorkspace({
         />
         </div>
 
-        {/* Target Model — right column. Slim row variant: chips + title +
-            mandate + risk + 3-up KPI strip. No chart, no funds count —
-            still references the /portfolios design language.
-            self-start opts out of grid's default stretch alignment so the
-            card sizes to content instead of filling the column height. */}
-        <section className="self-start overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+        {/* Right column wrapper — Target Model + Generate CTA stacked.
+            self-start opts the whole column out of grid's stretch
+            alignment so it sits at the top instead of filling the row
+            height. gap-6 matches the inter-column gap for a consistent
+            rhythm in both directions. */}
+        <div className="flex flex-col gap-6 self-start">
+        <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="t-body-md font-medium text-[var(--color-ink)]">Target Model</h2>
             <p className="t-micro-cap">
@@ -551,32 +552,36 @@ export function FundSwitchWorkspace({
             )}
           </div>
         </section>
-      </div>
 
-      <div className="mt-12 flex items-center justify-between">
-        <p className="t-micro-cap text-[var(--color-ink-mute)]">
-          {generateError
-            ? generateError
-            : validHoldingsCount > 0
-            ? `${validHoldingsCount} holding${validHoldingsCount === 1 ? "" : "s"} ready · session-only, closing the tab discards it.`
-            : "Generated memo is session-only. Closing the tab discards it."}
-        </p>
-        <button
-          type="button"
-          disabled={!canGenerate || pending}
-          onClick={onGenerate}
-          className={`t-caption rounded-full px-5 py-2.5 font-medium transition-colors ${
-            canGenerate && !pending
-              ? "bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:bg-[var(--color-primary-deep)]"
-              : "cursor-not-allowed bg-[var(--color-canvas-soft)] text-[var(--color-ink-mute)]"
-          }`}
-        >
-          {pending
-            ? "Generating…"
-            : canGenerate
-            ? "Generate switch"
-            : "Add holdings and pick a model"}
-        </button>
+        {/* Generate CTA — sits directly under Target Model in the same
+            right column. Button full-width as the primary action;
+            status/error copy below in muted micro-cap. */}
+        <div>
+          <button
+            type="button"
+            disabled={!canGenerate || pending}
+            onClick={onGenerate}
+            className={`t-caption block w-full rounded-full px-5 py-2.5 text-center font-medium transition-colors ${
+              canGenerate && !pending
+                ? "bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:bg-[var(--color-primary-deep)]"
+                : "cursor-not-allowed bg-[var(--color-canvas-soft)] text-[var(--color-ink-mute)]"
+            }`}
+          >
+            {pending
+              ? "Generating…"
+              : canGenerate
+              ? "Generate switch"
+              : "Add holdings and pick a model"}
+          </button>
+          <p className="t-micro-cap mt-3 text-center text-[var(--color-ink-mute)]">
+            {generateError
+              ? generateError
+              : validHoldingsCount > 0
+              ? `${validHoldingsCount} holding${validHoldingsCount === 1 ? "" : "s"} ready · session-only`
+              : "Memo is session-only · closing the tab discards it"}
+          </p>
+        </div>
+        </div>
       </div>
 
       <div className="h-16" />
