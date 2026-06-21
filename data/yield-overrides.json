@@ -9,11 +9,11 @@
       "note": "FSSA Dividend Advantage Fund SGD Dis — scraped from FWD fund-report Dividends section ('12 mo Yield')."
     },
     "SG9999003826": {
-      "yieldPct": 0.83,
+      "yieldPct": 4.98,
       "source": "manual",
       "msid": "F0HKG062LS",
       "asOf": "2026-06-02",
-      "note": "Amova Singapore Dividend Equity Fund Dis SGD — TMLS surfaces only individual payouts, not a TTM yield. Annualised from latest ex-div 2 Jun 2026 (SGD 0.008) on NAV 1.9284, assuming semi-annual distribution: (0.008 × 2) / 1.9284 ≈ 0.83%. Revise once a second 2026 payout is observed or the fund's distribution frequency is confirmed."
+      "note": "Amova Singapore Dividend Equity Fund Dis SGD — TMLS surfaces only individual payouts, not a TTM yield. Annualised from latest ex-div 2 Jun 2026 (SGD 0.008) on NAV 1.9284 at monthly distribution frequency: (0.008 × 12) / 1.9284 ≈ 4.98%. Revise if the monthly payout size changes materially."
     }
   }
 }
