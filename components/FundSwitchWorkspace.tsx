@@ -581,7 +581,7 @@ export function FundSwitchWorkspace({
         </section>
       </div>
 
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-12 flex items-center justify-between">
         <p className="t-micro-cap text-[var(--color-ink-mute)]">
           {generateError
             ? generateError
