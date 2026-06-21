@@ -132,23 +132,17 @@ export default async function ModelPortfoliosIndex({
         </div>
       )}
 
-      {/* Hero — eyebrow + title */}
-      <header className="pt-8 pb-7">
-        <div className="min-w-0">
-          <p className="t-micro-cap mb-2 flex items-center gap-2">
-            <span className="inline-block h-[8px] w-[8px] bg-[var(--color-primary)]" />
-            Advisor workspace
-            <span className="text-[var(--color-hairline)]">·</span>
-            Portfolio library
-          </p>
-          <h1 className="text-[44px] font-medium leading-[1.05] tracking-[-0.025em] text-[var(--color-ink)]">
-            Model portfolio
-          </h1>
-          <p className="t-body-md mt-3 max-w-[44ch] text-[var(--color-ink-mute)]">
-            Confirmed model portfolios across our connected platforms. Each card distils mandate,
-            composition and trailing performance into a single editorial sheet.
-          </p>
+      {/* Page anchor — mirrors the FundSwitch ChromeTitle (eyebrow + t-h-md
+          title on the left, caption description on the right). */}
+      <header className="flex items-center justify-between gap-3 border-b border-[var(--color-hairline-2)] py-3">
+        <div>
+          <p className="t-micro-cap mb-1">Advisor workspace</p>
+          <h1 className="t-h-md text-[var(--color-ink)]">Model portfolio</h1>
         </div>
+        <p className="t-caption max-w-sm text-right text-[var(--color-ink-mute)]">
+          Confirmed model portfolios across our connected platforms. Each card distils mandate,
+          composition and trailing performance into a single editorial sheet.
+        </p>
       </header>
 
       {/* Filter bar — platform row + strategy row + view toggle */}
