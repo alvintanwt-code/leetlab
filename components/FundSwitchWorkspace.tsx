@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import type { ConfirmedPortfolio } from "@/lib/db/queries";
 import type { SwitchMemo } from "@/lib/switch/types";
 import {
   generateSwitch,
@@ -11,6 +10,11 @@ import {
   type ParsedHoldingRow,
 } from "@/app/(app)/switch/actions";
 import { FundSwitchMemo } from "@/components/FundSwitchMemo";
+import {
+  PortfolioRowBody,
+  PORTFOLIO_ROW_GRID,
+  type PortfolioCardData,
+} from "@/components/PortfolioCard";
 
 type Provider = { slug: string; name: string };
 
@@ -46,14 +50,6 @@ const PROVIDER_SHORT: Record<string, string> = {
   fwd: "FWD",
   tmls: "TM",
   gwm: "GWM",
-};
-
-const CATEGORY_LABEL: Record<string, string> = {
-  conservative: "Conservative",
-  balanced: "Balanced",
-  growth: "Growth",
-  aggressive: "Aggressive",
-  dividend_income: "Income",
 };
 
 function newRow(): Holding {
@@ -107,13 +103,16 @@ export function FundSwitchWorkspace({
   providers,
   fundsByPlatform,
 }: {
-  portfolios: ConfirmedPortfolio[];
+  portfolios: PortfolioCardData[];
   providers: Provider[];
   fundsByPlatform: Record<string, FundOption[]>;
 }) {
   const providerCounts = useMemo(() => {
     const m = new Map<string, number>();
-    for (const p of portfolios) m.set(p.provider_slug, (m.get(p.provider_slug) ?? 0) + 1);
+    for (const d of portfolios) {
+      const slug = d.portfolio.provider_slug;
+      m.set(slug, (m.get(slug) ?? 0) + 1);
+    }
     return m;
   }, [portfolios]);
 
@@ -300,7 +299,7 @@ export function FundSwitchWorkspace({
     });
   }
 
-  const platformModels = portfolios.filter((p) => p.provider_slug === platform);
+  const platformModels = portfolios.filter((d) => d.portfolio.provider_slug === platform);
   const platformFunds = fundsByPlatform[platform] ?? [];
   const portfolioTotal = holdings.reduce((s, h) => s + holdingValue(h), 0);
   const validHoldingsCount = holdings.filter(isHoldingValid).length;
@@ -355,7 +354,32 @@ export function FundSwitchWorkspace({
         <FundSwitchMemo memo={memo} onEdit={() => setMemo(null)} />
       ) : (
       <>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
+      {/* Target Model — full-width row list, matches the /portfolios row view */}
+      <section className="mb-6 flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-5 pt-5 pb-2">
+        <div className="mb-4 flex items-baseline justify-between">
+          <h2 className="t-body-md font-medium text-[var(--color-ink)]">Target Model</h2>
+          <p className="t-micro-cap">
+            {(PROVIDER_SHORT[platform] ?? platform).toUpperCase()} · CONFIRMED
+          </p>
+        </div>
+
+        {platformModels.length === 0 ? (
+          <div className="mb-3 rounded-md border border-dashed border-[var(--color-hairline-2)] px-4 py-8 text-center">
+            <p className="t-micro-cap">No confirmed models on this platform yet</p>
+          </div>
+        ) : (
+          platformModels.map((d) => (
+            <SwitchModelRow
+              key={d.portfolio.id}
+              data={d}
+              selected={current.selectedModelId === d.portfolio.id}
+              onSelect={() => selectModel(d.portfolio.id)}
+            />
+          ))
+        )}
+      </section>
+
+      <div>
         <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="t-body-md font-medium text-[var(--color-ink)]">Client portfolio</h2>
@@ -469,32 +493,6 @@ export function FundSwitchWorkspace({
               Total <span className="num">SGD {fmtSGD(portfolioTotal)}</span>
             </span>
           </p>
-        </section>
-
-        <section className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-          <div className="mb-4 flex items-baseline justify-between">
-            <h2 className="t-body-md font-medium text-[var(--color-ink)]">Target model</h2>
-            <p className="t-micro-cap">
-              {(PROVIDER_SHORT[platform] ?? platform).toUpperCase()} · CONFIRMED
-            </p>
-          </div>
-
-          <div className="-mx-2 flex-1">
-            {platformModels.length === 0 ? (
-              <div className="mx-2 rounded-md border border-dashed border-[var(--color-hairline-2)] px-4 py-8 text-center">
-                <p className="t-micro-cap">No confirmed models on this platform yet</p>
-              </div>
-            ) : (
-              platformModels.map((p) => (
-                <ModelRow
-                  key={p.id}
-                  p={p}
-                  selected={current.selectedModelId === p.id}
-                  onSelect={() => selectModel(p.id)}
-                />
-              ))
-            )}
-          </div>
         </section>
       </div>
 
@@ -802,42 +800,25 @@ function FundCombobox({
   );
 }
 
-function RiskDots({ value }: { value: number | null | undefined }) {
-  const v = value ?? 0;
-  return (
-    <span className="inline-flex items-center gap-[3px] align-middle">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <span
-          key={i}
-          className={`block h-[5px] w-[5px] rounded-[1px] ${
-            i <= v ? "bg-[var(--color-ink)]" : "bg-[var(--color-hairline)]"
-          }`}
-        />
-      ))}
-    </span>
-  );
-}
-
-function ModelRow({
-  p,
+// SwitchModelRow wraps the shared PortfolioRowBody from /portfolios in a
+// <button> with select + hover state. Same chips / title / mandate / chart /
+// KPIs as the catalog's row view; an inset 2px accent bar on the left edge
+// marks the selected row instead of background fill for the chrome.
+function SwitchModelRow({
+  data,
   selected,
   onSelect,
 }: {
-  p: ConfirmedPortfolio;
+  data: PortfolioCardData;
   selected: boolean;
   onSelect: () => void;
 }) {
-  let xray: { risk?: number | null; r3y?: number | null } = {};
-  try {
-    xray = p.xray_json ? JSON.parse(p.xray_json) : {};
-  } catch {}
-  const r3y = xray.r3y;
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`relative flex w-full items-center justify-between border-b border-[var(--color-hairline-2)] py-3 pl-4 pr-4 text-left transition-colors last:border-0 ${
+      className={`group relative ${PORTFOLIO_ROW_GRID} w-full border-b border-[var(--color-hairline-2)] text-left transition-colors last:border-b-0 ${
         selected
           ? "bg-[var(--color-canvas-soft)]"
           : "hover:bg-[var(--color-canvas-soft)]"
@@ -845,24 +826,11 @@ function ModelRow({
     >
       {selected && (
         <span
-          className="absolute left-0 top-0 h-full w-[2px] bg-[var(--color-ink)]"
+          className="pointer-events-none absolute left-0 top-0 h-full w-[2px] bg-[var(--color-ink)]"
           aria-hidden
         />
       )}
-      <div className="min-w-0">
-        <p className="t-body-md truncate font-medium text-[var(--color-ink)]" title={p.name}>
-          {p.name}
-        </p>
-        <p className="t-micro-cap mt-1 flex items-center gap-2 text-[var(--color-ink-mute)]">
-          <span>{CATEGORY_LABEL[p.category] ?? p.category}</span>
-          <span className="text-[var(--color-hairline)]">·</span>
-          <RiskDots value={xray.risk ?? null} />
-          <span className="text-[var(--color-hairline)]">·</span>
-          <span className="num">
-            {r3y != null ? `${r3y > 0 ? "+" : ""}${r3y.toFixed(1)}% 3Y` : "— 3Y"}
-          </span>
-        </p>
-      </div>
+      <PortfolioRowBody data={data} />
     </button>
   );
 }

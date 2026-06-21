@@ -157,17 +157,17 @@ export function PortfolioCard({ data }: { data: PortfolioCardData }) {
 
 // ---------------- row view ----------------
 
-export function PortfolioRow({ data }: { data: PortfolioCardData }) {
+// Inner row content (no wrapping element). Reused by PortfolioRow's <Link>
+// wrapper here and by the /switch page's <button> wrapper in
+// FundSwitchWorkspace's SwitchModelRow — same visual, different chrome.
+export function PortfolioRowBody({ data }: { data: PortfolioCardData }) {
   const { portfolio, assetMix, xray, risk, series, yieldPct } = data;
   const mandate = PORTFOLIO_MANDATES[portfolio.category];
   const title = `${PROVIDER_SHORT[portfolio.provider_slug] ?? portfolio.provider_name} ${CATEGORY_LABELS[portfolio.category] ?? portfolio.category}`;
   const isIncome = portfolio.category === "dividend_income";
 
   return (
-    <Link
-      href={`/portfolios/${portfolio.id}`}
-      className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-8 border-b border-[var(--color-hairline-2)] px-1 py-5 last:border-b-0 transition-colors hover:bg-[var(--color-canvas-soft)]"
-    >
+    <>
       {/* Left — chips + title + mandate */}
       <div className="min-w-0">
         <AssetChips chips={assetMix} />
@@ -196,6 +196,21 @@ export function PortfolioRow({ data }: { data: PortfolioCardData }) {
         </Kpi>
         <Kpi label="Funds"><span className="text-[var(--color-ink)]">{portfolio.holding_count}</span></Kpi>
       </div>
+    </>
+  );
+}
+
+// Shared grid class used by both wrappers so the layout stays in lockstep.
+export const PORTFOLIO_ROW_GRID =
+  "grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-8 px-1 py-5";
+
+export function PortfolioRow({ data }: { data: PortfolioCardData }) {
+  return (
+    <Link
+      href={`/portfolios/${data.portfolio.id}`}
+      className={`${PORTFOLIO_ROW_GRID} border-b border-[var(--color-hairline-2)] last:border-b-0 transition-colors hover:bg-[var(--color-canvas-soft)]`}
+    >
+      <PortfolioRowBody data={data} />
     </Link>
   );
 }
