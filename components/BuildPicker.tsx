@@ -157,7 +157,33 @@ export function BuildPicker({
   const [search, setSearch] = useState("");
 
   // Selected funds (the "cart") — kept as ID set for cheap membership checks.
+  // Hydrated from sessionStorage on mount + mirrored back on every change so
+  // bouncing between /picker and /review preserves the staged selection.
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(`build-picker:v1:${providerSlug}`);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { ids?: number[] };
+        setSelectedIds(new Set(parsed.ids ?? []));
+      }
+    } catch {
+      // ignore — start with empty selection
+    }
+    setHydrated(true);
+  }, [providerSlug]);
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      sessionStorage.setItem(
+        `build-picker:v1:${providerSlug}`,
+        JSON.stringify({ ids: Array.from(selectedIds) }),
+      );
+    } catch {
+      // storage unavailable — Confirm-build hand-off will no-op
+    }
+  }, [hydrated, providerSlug, selectedIds]);
 
   // Sort state. Default = alphabetical by name. Click a numeric header to flip
   // to that column desc (highest first); click the same header again to revert
@@ -229,16 +255,9 @@ export function BuildPicker({
 
   function confirmBuild() {
     if (selectedRows.length === 0) return;
-    try {
-      sessionStorage.setItem(
-        `build-picker:v1:${providerSlug}`,
-        JSON.stringify({ ids: Array.from(selectedIds) }),
-      );
-    } catch {
-      // storage unavailable — picker hand-off will no-op; StudioShell loads
-      // with an empty basket. Acceptable degradation.
-    }
-    router.push(`/construction/${providerSlug}`);
+    // sessionStorage is already in sync via the hydrate-mirror effect above;
+    // /review reads the same key on mount.
+    router.push(`/construction/${providerSlug}/review`);
   }
 
   return (
