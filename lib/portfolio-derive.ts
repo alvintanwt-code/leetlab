@@ -4,7 +4,9 @@ import type { ConfirmedPortfolio, ConfirmedPortfolioHolding } from "@/lib/db/que
 // Mapping mirrors `classKey` in components/StudioShell.tsx so the labels we
 // surface here are consistent with the rest of the app.
 
-const BUCKET_LABEL: Record<string, string> = {
+export type AssetBucket = "E" | "F" | "A" | "L" | "C" | "M";
+
+const BUCKET_LABEL: Record<AssetBucket, string> = {
   E: "Equity",
   F: "Fixed Income",
   A: "Multi-Asset",
@@ -13,7 +15,7 @@ const BUCKET_LABEL: Record<string, string> = {
   M: "Cash",
 };
 
-function bucketKey(raw: string | null): keyof typeof BUCKET_LABEL {
+function bucketKey(raw: string | null): AssetBucket {
   if (!raw) return "M";
   const s = raw.toLowerCase();
   if (s.includes("equity")) return "E";
@@ -24,18 +26,18 @@ function bucketKey(raw: string | null): keyof typeof BUCKET_LABEL {
   return "M";
 }
 
-export type AssetChip = { label: string; pct: number };
+export type AssetChip = { key: AssetBucket; label: string; pct: number };
 
 export function computeAssetMix(holdings: ConfirmedPortfolioHolding[]): AssetChip[] {
   const totalBps = holdings.reduce((s, h) => s + h.weight_bps, 0) || 1;
-  const bps = new Map<string, number>();
+  const bps = new Map<AssetBucket, number>();
   for (const h of holdings) {
     const k = bucketKey(h.asset_class);
     bps.set(k, (bps.get(k) ?? 0) + h.weight_bps);
   }
   // Convert to %, round to nearest 10, drop zeros, sort desc.
   const rounded: AssetChip[] = [...bps.entries()]
-    .map(([k, b]) => ({ label: BUCKET_LABEL[k], pct: Math.round(((b / totalBps) * 100) / 10) * 10 }))
+    .map(([k, b]) => ({ key: k, label: BUCKET_LABEL[k], pct: Math.round(((b / totalBps) * 100) / 10) * 10 }))
     .filter((c) => c.pct > 0)
     .sort((a, b) => b.pct - a.pct);
   // Take top 2 (cards stay tight); fold remainder into largest so chips sum 100.

@@ -163,3 +163,26 @@ html, body {
 .tag-primary { background: #eeecff; color: var(--color-primary-deep); border-color: transparent; }
 .tag-positive { background: #e9f6ef; color: var(--color-positive); border-color: transparent; }
 .tag-negative { background: #fbeaee; color: var(--color-negative); border-color: transparent; }
+
+/* Asset-class chip — compact pill (~25% smaller than .tag) with a semantic
+   colour per bucket. Borderless, tinted background, paired number + label.
+   Used on /portfolios cards and rows. */
+.chip-asset {
+  display: inline-flex; align-items: baseline; gap: 4px;
+  padding: 2px 6px; border-radius: 9999px;
+  font-size: 9px; font-weight: 400; line-height: 1.25;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+.chip-asset .pct {
+  font-feature-settings: "ss01", "tnum";
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.chip-asset .lbl { text-transform: uppercase; letter-spacing: 0.08em; }
+.chip-asset-equity { background: #e7f3ec; color: #0e6d44; }
+.chip-asset-fi     { background: #e7eff9; color: #1b5fb5; }
+.chip-asset-multi  { background: #ece9ff; color: var(--color-primary-deep); }
+.chip-asset-alt    { background: #fbf0e0; color: #8a5c2e; }
+.chip-asset-commod { background: #fef0e0; color: #b87509; }
+.chip-asset-cash   { background: #f0f3f7; color: var(--color-ink-mute); }
