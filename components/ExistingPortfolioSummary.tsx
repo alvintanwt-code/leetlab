@@ -356,34 +356,40 @@ export function ExistingPortfolioSummary({
         )}
       </section>
 
-      {/* Trailing 3Y chart — already wraps itself in a card */}
-      {chart ? (
-        <TrailingChart {...chart} />
-      ) : chartError ? (
-        <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-          <p className="t-caption text-center text-[var(--color-negative)]">{chartError}</p>
-        </section>
-      ) : chartLoading ? (
-        <section className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-          <p className="t-caption text-center text-[var(--color-ink-mute)]">Fetching Morningstar series…</p>
-        </section>
-      ) : null}
+      {/* Everything below is part of the overview — collapse toggle in the
+          first card hides all subsequent sibling cards too. */}
+      {!overviewCollapsed && (
+        <>
+          {/* Trailing 3Y chart — already wraps itself in a card */}
+          {chart ? (
+            <TrailingChart {...chart} />
+          ) : chartError ? (
+            <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+              <p className="t-caption text-center text-[var(--color-negative)]">{chartError}</p>
+            </section>
+          ) : chartLoading ? (
+            <section className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+              <p className="t-caption text-center text-[var(--color-ink-mute)]">Fetching Morningstar series…</p>
+            </section>
+          ) : null}
 
-      {/* Sector + Geography — each in its own white card, side by side */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-          <AllocationPanel title="Sector exposure" items={sectorAgg} kind="sector" />
-        </section>
-        <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-          <AllocationPanel title="Geographic exposure" items={geoAgg} kind="geo" />
-        </section>
-      </div>
+          {/* Sector + Geography — each in its own white card, side by side */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+              <AllocationPanel title="Sector exposure" items={sectorAgg} kind="sector" />
+            </section>
+            <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+              <AllocationPanel title="Geographic exposure" items={geoAgg} kind="geo" />
+            </section>
+          </div>
 
-      {/* Plain-English summary card */}
-      <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-        <p className="t-micro-cap mb-2">Summary</p>
-        <p className="t-body-md leading-[1.6] text-[var(--color-ink-2)]">{summary}</p>
-      </section>
+          {/* Plain-English summary card */}
+          <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+            <p className="t-micro-cap mb-2">Summary</p>
+            <p className="t-body-md leading-[1.6] text-[var(--color-ink-2)]">{summary}</p>
+          </section>
+        </>
+      )}
     </div>
   );
 }
@@ -461,106 +467,113 @@ function PerformanceTable({
 }) {
   const years = calendarReturns.map((c) => c.year);
   return (
-    <div className="overflow-x-auto">
-      {/* Table fills the card horizontally; auto layout lets the number
-          columns size to content while the Holding column expands to fill
-          the remaining space — pushes the year/return columns flush against
-          the card's right edge. */}
-      <table
-        className="table-pro table-pro-xs"
-        style={{ tableLayout: "auto", width: "100%" }}
-      >
-        <thead>
-          <tr>
-            <th style={{ width: "100%" }}>Holding</th>
-            <th className="right">1Y</th>
-            <th className="right">3Y ann.</th>
-            {years.map((y) => {
-              const partial = calendarReturns.find((c) => c.year === y)?.partial;
-              return (
-                <th key={y} className="right">
-                  {partial ? "YTD" : y}
-                </th>
-              );
-            })}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              <span className="t-body-md font-medium text-[var(--color-ink)]">Portfolio total</span>
-            </td>
-            <td className="nowrap right">
-              <span className="num">
-                <ReturnText value={portfolioTrailing.ann1y} />
-              </span>
-            </td>
-            <td className="nowrap right">
-              <span className="num">
-                <ReturnText value={portfolioTrailing.ann3y} />
-              </span>
-            </td>
-            {calendarReturns.map((c) => (
-              <td key={c.year} className="nowrap right">
-                <span className="num">
-                  <ReturnText value={c.returnPct} />
-                </span>
-              </td>
-            ))}
-          </tr>
-          {enrichedHoldings.map((h) => {
-            const opt = h.option;
-            const line = opt?.isin ? fundLines.get(opt.isin) ?? null : null;
-            return (
-              <tr key={h.fundId}>
-                <td className="cell-fund">
-                  <span
-                    className="name text-[var(--color-ink)]"
-                    title={opt?.name ?? ""}
-                    style={{
-                      whiteSpace: "normal",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                      fontSize: "13px",
-                    }}
-                  >
-                    {opt?.name ?? "—"}
-                  </span>
-                  <span className="meta">{opt?.isin ?? ""}</span>
-                </td>
-                <td className="nowrap right">
-                  <span className="num">
-                    <ReturnText value={opt?.ann_1y ?? line?.ann1y ?? null} />
-                  </span>
-                </td>
-                <td className="nowrap right">
-                  <span className="num">
-                    <ReturnText value={opt?.ann_3y ?? line?.ann3y ?? null} />
-                  </span>
-                </td>
+    <>
+      {/* Outer wrapper carries the rounded border + clipping; inner wrapper
+          allows horizontal scroll when the column count overflows. Matches
+          the Client portfolio holdings table's frame on the same page. */}
+      <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
+        <div className="overflow-x-auto">
+          <table
+            className="table-pro table-pro-xs"
+            style={{ tableLayout: "auto", width: "100%" }}
+          >
+            <thead>
+              <tr>
+                <th style={{ width: "100%" }}>Holding</th>
+                <th className="right">1Y</th>
+                <th className="right">3Y ann.</th>
                 {years.map((y) => {
-                  const yr = line?.calendars.find((c) => c.year === y);
+                  const partial = calendarReturns.find((c) => c.year === y)?.partial;
                   return (
-                    <td key={y} className="nowrap right">
-                      <span className="num">
-                        <ReturnText value={yr?.returnPct ?? null} />
-                      </span>
-                    </td>
+                    <th key={y} className="right">
+                      {partial ? "YTD" : y}
+                    </th>
                   );
                 })}
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {enrichedHoldings.map((h) => {
+                const opt = h.option;
+                const line = opt?.isin ? fundLines.get(opt.isin) ?? null : null;
+                return (
+                  <tr key={h.fundId}>
+                    <td className="cell-fund">
+                      <span
+                        className="name text-[var(--color-ink)]"
+                        title={opt?.name ?? ""}
+                        style={{
+                          whiteSpace: "normal",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          fontSize: "11.5px",
+                        }}
+                      >
+                        {opt?.name ?? "—"}
+                      </span>
+                      <span className="meta">{opt?.isin ?? ""}</span>
+                    </td>
+                    <td className="nowrap right">
+                      <span className="num">
+                        <ReturnText value={opt?.ann_1y ?? line?.ann1y ?? null} />
+                      </span>
+                    </td>
+                    <td className="nowrap right">
+                      <span className="num">
+                        <ReturnText value={opt?.ann_3y ?? line?.ann3y ?? null} />
+                      </span>
+                    </td>
+                    {years.map((y) => {
+                      const yr = line?.calendars.find((c) => c.year === y);
+                      return (
+                        <td key={y} className="nowrap right">
+                          <span className="num">
+                            <ReturnText value={yr?.returnPct ?? null} />
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+              {/* Portfolio total row — sits at the bottom of the table as
+                  the headline summary across all funds. Bigger font and
+                  heavier weight than fund rows; emphasised top border
+                  separates it from the constituents. */}
+              <tr style={{ borderTop: "1px solid var(--color-hairline)", background: "var(--color-canvas-soft)" }}>
+                <td style={{ fontSize: "13.5px", fontWeight: 600, paddingTop: 10, paddingBottom: 10 }}>
+                  <span className="text-[var(--color-ink)]">Portfolio total</span>
+                </td>
+                <td className="nowrap right" style={{ fontSize: "13.5px", fontWeight: 600, paddingTop: 10, paddingBottom: 10 }}>
+                  <span className="num">
+                    <ReturnText value={portfolioTrailing.ann1y} />
+                  </span>
+                </td>
+                <td className="nowrap right" style={{ fontSize: "13.5px", fontWeight: 600, paddingTop: 10, paddingBottom: 10 }}>
+                  <span className="num">
+                    <ReturnText value={portfolioTrailing.ann3y} />
+                  </span>
+                </td>
+                {calendarReturns.map((c) => (
+                  <td key={c.year} className="nowrap right" style={{ fontSize: "13.5px", fontWeight: 600, paddingTop: 10, paddingBottom: 10 }}>
+                    <span className="num">
+                      <ReturnText value={c.returnPct} />
+                    </span>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
       {loading && years.length === 0 && (
         <p className="t-caption mt-2 text-[var(--color-ink-mute)]">
           Computing calendar-year returns from Morningstar series…
         </p>
       )}
-    </div>
+    </>
   );
 }
 
