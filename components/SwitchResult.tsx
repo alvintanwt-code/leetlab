@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { SwitchMemo, SwitchFundRow, SwitchChangeRow, ChangeKind } from "@/lib/switch/types";
+import type {
+  ChangeKind,
+  SwitchChangeRow,
+  SwitchFundRow,
+  SwitchMemo,
+  SwitchOrder,
+} from "@/lib/switch/types";
 import { TrailingChart } from "@/components/TrailingChart";
 import { BarsRow } from "@/components/PortfolioDetail";
 
@@ -306,6 +312,146 @@ function TargetChart({ targetFunds }: { targetFunds: SwitchFundRow[] }) {
   );
 }
 
+// ---------------- switch order — fills the platform's switch form ----------------
+
+function SwitchOrderTables({ order }: { order: SwitchOrder }) {
+  const totalIn = order.switchIn.reduce((s, r) => s + r.pct, 0);
+  return (
+    <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <p className="t-body-lg font-medium text-[var(--color-ink)]">Switch order</p>
+        <p className="t-micro-cap">Execution form</p>
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* SWITCH OUT */}
+        <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
+          <div className="border-b border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] px-4 py-2">
+            <p className="t-micro-cap">Switch out</p>
+          </div>
+          <table className="table-pro table-pro-sm w-full" style={{ tableLayout: "fixed" }}>
+            <colgroup>
+              <col />
+              <col style={{ width: 90 }} />
+              <col style={{ width: 110 }} />
+              <col style={{ width: 80 }} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Fund</th>
+                <th>Account</th>
+                <th className="right">SGD</th>
+                <th className="right">% fund</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.switchOut.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-6 text-center">
+                    <p className="t-caption text-[var(--color-ink-mute)]">
+                      Nothing to switch out — current allocation already at or below target.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                order.switchOut.map((r, i) => (
+                  <tr key={`out-${i}`}>
+                    <td className="cell-fund">
+                      <span className="name text-[var(--color-ink)]" title={r.fund}>{r.fund}</span>
+                    </td>
+                    <td>
+                      <span className="t-body-md text-[var(--color-ink-mute)]">—</span>
+                    </td>
+                    <td className="nowrap right">
+                      <span className="num text-[var(--color-ink)]">
+                        {r.sgdAmount.toLocaleString("en-SG", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </span>
+                    </td>
+                    <td className="nowrap right">
+                      <span className="num text-[var(--color-ink)]">{r.pctOfFund.toFixed(1)}%</span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {order.switchOut.length > 0 && (
+              <tfoot>
+                <tr>
+                  <td colSpan={2} className="text-[var(--color-ink-mute)]">Total</td>
+                  <td className="nowrap right">
+                    <span className="num font-medium text-[var(--color-ink)]">
+                      {order.totalSwitchOutSgd.toLocaleString("en-SG", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </span>
+                  </td>
+                  <td />
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+
+        {/* SWITCH IN */}
+        <div className="overflow-hidden rounded-md border border-[var(--color-hairline-2)]">
+          <div className="border-b border-[var(--color-hairline-2)] bg-[var(--color-canvas-soft)] px-4 py-2">
+            <p className="t-micro-cap">Switch in</p>
+          </div>
+          <table className="table-pro table-pro-sm w-full" style={{ tableLayout: "fixed" }}>
+            <colgroup>
+              <col />
+              <col style={{ width: 90 }} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Fund</th>
+                <th className="right">% new</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.switchIn.length === 0 ? (
+                <tr>
+                  <td colSpan={2} className="px-4 py-6 text-center">
+                    <p className="t-caption text-[var(--color-ink-mute)]">No target funds.</p>
+                  </td>
+                </tr>
+              ) : (
+                order.switchIn.map((r, i) => (
+                  <tr key={`in-${i}`}>
+                    <td className="cell-fund">
+                      <span className="name text-[var(--color-ink)]" title={r.fund}>{r.fund}</span>
+                    </td>
+                    <td className="nowrap right">
+                      <span className="num text-[var(--color-ink)]">{r.pct}</span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {order.switchIn.length > 0 && (
+              <tfoot>
+                <tr>
+                  <td className="text-[var(--color-ink-mute)]">Total</td>
+                  <td className="nowrap right">
+                    <span className="num font-medium text-[var(--color-ink)]">{totalIn}</span>
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+      <p className="t-micro-cap mt-4 text-[var(--color-ink-mute)]">
+        Maps to the platform&rsquo;s fund-switch form (e.g. HSBC Life Form A · Section A).
+        Account column is left blank — fill per-account splits in the meeting.
+      </p>
+    </section>
+  );
+}
+
 // ---------------- main component ----------------
 
 export function SwitchResult({ memo, onEdit }: { memo: SwitchMemo; onEdit: () => void }) {
@@ -353,6 +499,9 @@ export function SwitchResult({ memo, onEdit }: { memo: SwitchMemo; onEdit: () =>
         </div>
         <TargetChart targetFunds={memo.targetFunds} />
       </div>
+
+      {/* Switch order — execution form for the platform */}
+      <SwitchOrderTables order={memo.switchOrder} />
     </div>
   );
 }
