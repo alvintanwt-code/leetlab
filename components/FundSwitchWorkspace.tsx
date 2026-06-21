@@ -11,10 +11,23 @@ import {
 } from "@/app/(app)/switch/actions";
 import { FundSwitchMemo } from "@/components/FundSwitchMemo";
 import {
-  PortfolioRowBody,
-  PORTFOLIO_ROW_GRID,
+  AssetChips,
+  Kpi,
+  PctText,
+  ReturnText,
+  RiskText,
   type PortfolioCardData,
 } from "@/components/PortfolioCard";
+import { CATEGORY_LABELS, PORTFOLIO_MANDATES } from "@/lib/portfolio-mandates";
+
+// Editorial provider names for the target-model row title — distinct from
+// the compact nav labels in PROVIDER_SHORT above.
+const PROVIDER_FULL: Record<string, string> = {
+  hsbc: "HSBC Life",
+  fwd: "FWD",
+  tmls: "Tokio Marine",
+  gwm: "GWM",
+};
 
 type Provider = { slug: string; name: string };
 
@@ -354,32 +367,7 @@ export function FundSwitchWorkspace({
         <FundSwitchMemo memo={memo} onEdit={() => setMemo(null)} />
       ) : (
       <>
-      {/* Target Model — full-width row list, matches the /portfolios row view */}
-      <section className="mb-6 flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-5 pt-5 pb-2">
-        <div className="mb-4 flex items-baseline justify-between">
-          <h2 className="t-body-md font-medium text-[var(--color-ink)]">Target Model</h2>
-          <p className="t-micro-cap">
-            {(PROVIDER_SHORT[platform] ?? platform).toUpperCase()} · CONFIRMED
-          </p>
-        </div>
-
-        {platformModels.length === 0 ? (
-          <div className="mb-3 rounded-md border border-dashed border-[var(--color-hairline-2)] px-4 py-8 text-center">
-            <p className="t-micro-cap">No confirmed models on this platform yet</p>
-          </div>
-        ) : (
-          platformModels.map((d) => (
-            <SwitchModelRow
-              key={d.portfolio.id}
-              data={d}
-              selected={current.selectedModelId === d.portfolio.id}
-              onSelect={() => selectModel(d.portfolio.id)}
-            />
-          ))
-        )}
-      </section>
-
-      <div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="t-body-md font-medium text-[var(--color-ink)]">Client portfolio</h2>
@@ -493,6 +481,35 @@ export function FundSwitchWorkspace({
               Total <span className="num">SGD {fmtSGD(portfolioTotal)}</span>
             </span>
           </p>
+        </section>
+
+        {/* Target Model — right column. Slim row variant: chips + title +
+            mandate + risk + 3-up KPI strip. No chart, no funds count —
+            still references the /portfolios design language. */}
+        <section className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+          <div className="mb-4 flex items-baseline justify-between">
+            <h2 className="t-body-md font-medium text-[var(--color-ink)]">Target Model</h2>
+            <p className="t-micro-cap">
+              {(PROVIDER_SHORT[platform] ?? platform).toUpperCase()} · CONFIRMED
+            </p>
+          </div>
+
+          <div className="-mx-5 flex-1">
+            {platformModels.length === 0 ? (
+              <div className="mx-5 rounded-md border border-dashed border-[var(--color-hairline-2)] px-4 py-8 text-center">
+                <p className="t-micro-cap">No confirmed models on this platform yet</p>
+              </div>
+            ) : (
+              platformModels.map((d) => (
+                <SwitchModelRow
+                  key={d.portfolio.id}
+                  data={d}
+                  selected={current.selectedModelId === d.portfolio.id}
+                  onSelect={() => selectModel(d.portfolio.id)}
+                />
+              ))
+            )}
+          </div>
         </section>
       </div>
 
@@ -800,10 +817,11 @@ function FundCombobox({
   );
 }
 
-// SwitchModelRow wraps the shared PortfolioRowBody from /portfolios in a
-// <button> with select + hover state. Same chips / title / mandate / chart /
-// KPIs as the catalog's row view; an inset 2px accent bar on the left edge
-// marks the selected row instead of background fill for the chrome.
+// Slim variant of the /portfolios row, sized for the 360px sidebar column:
+// asset chips + title + mandate tagline + risk meta on top, a 3-up KPI strip
+// (3Y ann · OCF · Dividends/Yield) below. No sparkline, no funds count.
+// Hover + selected states match the rest of the app's editorial chrome —
+// canvas-soft fill plus a 2px ink accent bar on the left edge when picked.
 function SwitchModelRow({
   data,
   selected,
@@ -813,12 +831,17 @@ function SwitchModelRow({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const { portfolio, assetMix, xray, risk, yieldPct } = data;
+  const mandate = PORTFOLIO_MANDATES[portfolio.category];
+  const title = `${PROVIDER_FULL[portfolio.provider_slug] ?? portfolio.provider_name} ${CATEGORY_LABELS[portfolio.category] ?? portfolio.category}`;
+  const isIncome = portfolio.category === "dividend_income";
+
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`group relative ${PORTFOLIO_ROW_GRID} w-full border-b border-[var(--color-hairline-2)] text-left transition-colors last:border-b-0 ${
+      className={`relative block w-full border-b border-[var(--color-hairline-2)] px-5 py-3.5 text-left transition-colors last:border-b-0 ${
         selected
           ? "bg-[var(--color-canvas-soft)]"
           : "hover:bg-[var(--color-canvas-soft)]"
@@ -830,7 +853,26 @@ function SwitchModelRow({
           aria-hidden
         />
       )}
-      <PortfolioRowBody data={data} />
+
+      <AssetChips chips={assetMix} />
+
+      <p className="mt-2 text-[14px] font-medium leading-tight tracking-[-0.005em] text-[var(--color-ink)]">
+        {title}
+      </p>
+      {mandate && (
+        <p className="t-caption mt-1 truncate text-[var(--color-ink-mute)]">{mandate.tagline}</p>
+      )}
+      <p className="t-micro-cap mt-1.5">
+        Risk <RiskText value={risk} />
+      </p>
+
+      <div className="mt-3 grid grid-cols-3 gap-x-3 border-t border-[var(--color-hairline-2)] pt-2.5">
+        <Kpi label="3Y ann."><ReturnText value={xray?.r3y ?? null} /></Kpi>
+        <Kpi label="OCF p.a."><PctText value={xray?.expense ?? null} /></Kpi>
+        <Kpi label={isIncome ? "Yield p.a." : "Dividends"}>
+          {isIncome ? <PctText value={yieldPct} /> : <span className="text-[var(--color-ink-mute)]">—</span>}
+        </Kpi>
+      </div>
     </button>
   );
 }

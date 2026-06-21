@@ -6,7 +6,7 @@ import {
   listProvidersWithCounts,
 } from "@/lib/db/queries";
 import { computeAssetMix, computeRiskRating, parseXray } from "@/lib/portfolio-derive";
-import { blendPortfolioSeries, blendPortfolioYield } from "@/lib/portfolio-performance";
+import { blendPortfolioYield } from "@/lib/portfolio-performance";
 import type { PortfolioCardData } from "@/components/PortfolioCard";
 
 export const dynamic = "force-dynamic";
@@ -17,30 +17,30 @@ export default async function FundSwitchPage() {
     listProvidersWithCounts(),
   ]);
 
-  // Enrich each confirmed portfolio with the row-display data shared with
-  // /portfolios — asset mix, risk, 3Y blended series, and (for income) yield.
-  // Morningstar fetches go through the in-process cache so funds shared
-  // across portfolios are only fetched once. Cold first load is slow; warm
-  // loads are instant for 6h.
+  // Enrich each confirmed portfolio with the slim-row data: asset mix, risk,
+  // KPIs from xrayJson, and (for income only) the trailing-12m yield via the
+  // Morningstar blender. The /switch Target Model row doesn't render the
+  // sparkline, so we skip blendPortfolioSeries entirely — saves ~5-10s on
+  // cold load. /portfolios still does its own series blend.
   const enrichedPortfolios: PortfolioCardData[] = await Promise.all(
     portfolios.map(async (portfolio) => {
       const holdings = await getPortfolioHoldings(portfolio.id);
       const xray = parseXray(portfolio);
       const totalBps = holdings.reduce((s, h) => s + h.weight_bps, 0) || 1;
-      const components = holdings
-        .filter((h) => !!h.isin)
-        .map((h) => ({ isin: h.isin as string, weight: h.weight_bps / totalBps }));
       const isIncome = portfolio.category === "dividend_income";
-      const [series, yieldBlend] = await Promise.all([
-        blendPortfolioSeries(components, 36),
-        isIncome ? blendPortfolioYield(components) : Promise.resolve(null),
-      ]);
+      const yieldBlend = isIncome
+        ? await blendPortfolioYield(
+            holdings
+              .filter((h) => !!h.isin)
+              .map((h) => ({ isin: h.isin as string, weight: h.weight_bps / totalBps })),
+          )
+        : null;
       return {
         portfolio,
         assetMix: computeAssetMix(holdings),
         xray,
         risk: computeRiskRating(holdings, xray),
-        series,
+        series: null,
         yieldPct: yieldBlend ? yieldBlend.yieldPct : null,
       };
     }),

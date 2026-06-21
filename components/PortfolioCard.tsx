@@ -23,7 +23,7 @@ export type PortfolioCardData = {
 
 // ---------------- shared subcomponents ----------------
 
-function ReturnText({ value }: { value: number | null | undefined }) {
+export function ReturnText({ value }: { value: number | null | undefined }) {
   if (value == null || Number.isNaN(value)) return <span className="text-[var(--color-ink-mute)]">—</span>;
   const sign = value > 0 ? "+" : value < 0 ? "−" : "";
   const abs = Math.abs(value).toFixed(1);
@@ -36,12 +36,12 @@ function ReturnText({ value }: { value: number | null | undefined }) {
   );
 }
 
-function PctText({ value, places = 2 }: { value: number | null | undefined; places?: number }) {
+export function PctText({ value, places = 2 }: { value: number | null | undefined; places?: number }) {
   if (value == null || Number.isNaN(value)) return <span className="text-[var(--color-ink-mute)]">—</span>;
   return <span className="text-[var(--color-ink)]">{value.toFixed(places)}%</span>;
 }
 
-function RiskText({ value }: { value: number | null | undefined }) {
+export function RiskText({ value }: { value: number | null | undefined }) {
   if (value == null) return <span className="text-[var(--color-ink-mute)]">—/5</span>;
   return (
     <span className="text-[var(--color-ink)]">
@@ -75,7 +75,7 @@ function MiniChart({
   return <PortfolioMiniChart points={series.points} width={width} height={height} compact={compact} />;
 }
 
-function Kpi({ label, children }: { label: string; children: React.ReactNode }) {
+export function Kpi({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
       <p className="t-micro-cap">{label}</p>
@@ -93,7 +93,7 @@ const CHIP_VARIANT: Record<AssetBucket, string> = {
   M: "chip-asset-cash",
 };
 
-function AssetChips({ chips }: { chips: AssetChip[] }) {
+export function AssetChips({ chips }: { chips: AssetChip[] }) {
   if (chips.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-1">
