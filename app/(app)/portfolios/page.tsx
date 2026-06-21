@@ -120,7 +120,7 @@ export default async function ModelPortfoliosIndex({
   );
 
   return (
-    <div className="mx-auto w-full max-w-[1180px] px-10 pb-16">
+    <div className="mx-auto w-full max-w-[1280px] px-20 pb-16">
       {sp.confirmed && (
         <div className="mt-4 flex items-center justify-between rounded-md border border-[#cfd7e1] bg-[#eef3fb] px-4 py-2.5">
           <p className="t-caption text-[var(--color-ink)]">
@@ -132,20 +132,16 @@ export default async function ModelPortfoliosIndex({
         </div>
       )}
 
-      {/* Page anchor — mirrors the FundSwitch ChromeTitle (eyebrow + t-h-md
-          title), no description. */}
-      <header className="border-b border-[var(--color-hairline-2)] py-3">
-        <p className="t-micro-cap mb-1">Advisor workspace</p>
-        <h1 className="t-h-md text-[var(--color-ink)]">Model portfolio</h1>
-      </header>
-
-      {/* Filter bar — platform row + strategy row + view toggle */}
-      <nav
-        aria-label="Filters"
-        className="sticky top-0 z-20 -mx-10 mb-8 border-y border-[var(--color-hairline)] bg-[var(--color-canvas-soft)]/95 px-10 backdrop-blur"
-      >
+      {/* Sticky chrome — anchor + filter nav. Mirrors the FundSwitchWorkspace
+          ChromeTitle + platform-strip pattern so both workspaces share the
+          same header shape. */}
+      <div className="sticky top-0 z-20 -mx-20 mb-12 bg-[var(--color-canvas-soft)] px-20">
+        <header className="border-b border-[var(--color-hairline-2)] py-3">
+          <p className="t-micro-cap mb-1">Advisor workspace</p>
+          <h1 className="t-h-md text-[var(--color-ink)]">Model portfolio</h1>
+        </header>
         <div className="flex items-center gap-6 border-b border-[var(--color-hairline-2)]">
-          <p className="t-micro-cap w-20 shrink-0 py-3">Platform</p>
+          <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
           <div className="flex flex-1 items-center gap-1 overflow-x-auto">
             {PLATFORM_TABS.map((t) => {
               const active = !t.disabled && t.slug === activePlatform;
@@ -183,7 +179,7 @@ export default async function ModelPortfoliosIndex({
         </div>
 
         <div className="flex items-center gap-6">
-          <p className="t-micro-cap w-20 shrink-0 py-3">Strategy</p>
+          <p className="t-micro-cap w-20 shrink-0 py-2">Strategy</p>
           <div className="flex flex-1 items-center gap-1 overflow-x-auto">
             {STRATEGY_CHIPS.map((c) => {
               const active = c.key === activeStrategy;
@@ -234,7 +230,7 @@ export default async function ModelPortfoliosIndex({
             </Link>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Card grid OR row list */}
       {cardData.length === 0 ? (
