@@ -1,16 +1,14 @@
-import Image from "next/image";
-
 export function TopBar() {
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-5">
       <div className="flex items-center gap-2">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src="/leet-logo.png"
           alt=""
-          width={18}
-          height={18}
-          priority
-          className="shrink-0"
+          width={20}
+          height={20}
+          className="block h-5 w-5 shrink-0 object-contain"
         />
         <span className="t-body-md font-medium tracking-tight text-[var(--color-ink)]">
           lab.leet
