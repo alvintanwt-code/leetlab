@@ -7,9 +7,9 @@ export function TopBar() {
           <img
             src="/leet-logo.png"
             alt=""
-            width={16}
-            height={16}
-            className="block h-4 w-4 object-contain"
+            width={20}
+            height={20}
+            className="block h-5 w-5 object-contain"
           />
         </span>
         <span className="t-body-md font-medium tracking-tight text-[var(--color-ink)]">
