@@ -222,7 +222,7 @@ function NavItem({
         href={href}
         title={collapsed ? label : undefined}
         className={[
-          "relative flex items-center rounded-md t-caption transition-colors",
+          "relative flex items-center rounded-md text-[12px] leading-[1.35] transition-colors",
           collapsed ? "justify-center px-2 py-2" : "gap-2 px-2 py-1.5",
           active
             ? "bg-[var(--color-canvas-soft)] text-[var(--color-ink)]"
