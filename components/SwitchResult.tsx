@@ -308,36 +308,18 @@ function TargetChart({ targetFunds }: { targetFunds: SwitchFundRow[] }) {
 
 // ---------------- main component ----------------
 
-export function SwitchResult({ memo, onEdit }: { memo: SwitchMemo; onEdit: () => void }) {
+export function SwitchResult({ memo }: { memo: SwitchMemo }) {
   return (
     <div className="flex flex-col gap-6">
-      {/* Header — context strip + edit-back affordance */}
-      <header className="flex items-end justify-between gap-4 border-b border-[var(--color-hairline)] pb-5">
-        <div>
-          <p className="t-micro-cap mb-2 flex items-center gap-2">
-            <span className="inline-block h-[8px] w-[8px] bg-[var(--color-primary)]" />
-            {memo.platformLabel}
-            <span className="text-[var(--color-hairline)]">·</span>
-            {memo.modelName}
-          </p>
-          <h1 className="text-[32px] font-medium leading-[1.05] tracking-[-0.02em] text-[var(--color-ink)]">
-            Proposed switch
-          </h1>
-          <p className="t-body-md mt-2 text-[var(--color-ink-mute)]">
-            {memo.currentFunds.length} {memo.currentFunds.length === 1 ? "fund" : "funds"} →
-            {" "}{memo.targetFunds.length} {memo.targetFunds.length === 1 ? "fund" : "funds"}
-            <span className="mx-2 text-[var(--color-hairline)]">·</span>
-            Total SGD <span className="num text-[var(--color-ink)]">{fmtSgd(memo.current.totalValue)}</span>
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onEdit}
-          className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
-        >
-          ← Edit inputs
-        </button>
-      </header>
+      {/* Eyebrow — platform · model name. The "Edit inputs" affordance and the
+          page title live in the workspace chrome above, so the result body
+          starts directly with this context strip. */}
+      <p className="t-micro-cap flex items-center gap-2">
+        <span className="inline-block h-[8px] w-[8px] bg-[var(--color-primary)]" />
+        {memo.platformLabel}
+        <span className="text-[var(--color-hairline)]">·</span>
+        {memo.modelName}
+      </p>
 
       {/* Top: side-by-side current vs target with an arrow between */}
       <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-[1fr_auto_1fr]">

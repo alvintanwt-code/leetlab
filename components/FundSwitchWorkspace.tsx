@@ -199,7 +199,7 @@ export function FundSwitchWorkspace({
 
   if (!initialPlatform) {
     return (
-      <div className="mx-auto w-full max-w-[1280px] px-10">
+      <div className="mx-auto w-full max-w-[1280px] px-20">
         <ChromeTitle />
         <div className="mt-6 rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] px-10 py-12 text-center">
           <p className="t-body-md text-[var(--color-ink-mute)]">
@@ -344,52 +344,66 @@ export function FundSwitchWorkspace({
     .map((h) => ({ fundId: h.fundId as number, value: holdingValue(h) }));
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-10">
-      <div className="sticky top-0 z-20 -mx-10 mb-6 bg-[var(--color-canvas-soft)] px-10">
+    <div className="mx-auto w-full max-w-[1280px] px-20">
+      <div className="sticky top-0 z-20 -mx-20 mb-12 bg-[var(--color-canvas-soft)] px-20">
         <ChromeTitle />
-        <div className="flex items-center gap-6 border-b border-[var(--color-hairline)]">
-          <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
-          <nav aria-label="Platform" className="flex items-center gap-3 overflow-x-auto">
-            {[...providers]
-              .sort((a, b) => PROVIDER_ORDER.indexOf(a.slug) - PROVIDER_ORDER.indexOf(b.slug))
-              .map((p) => {
-              const n = providerCounts.get(p.slug) ?? 0;
-              const active = platform === p.slug;
-              const disabled = n === 0;
-              const label = PROVIDER_SHORT[p.slug] ?? p.name;
-              if (disabled) {
+        {memo ? (
+          // Result view — platform tabs hidden; the Edit-inputs back link
+          // takes the slot where the platform strip used to live.
+          <div className="flex items-center justify-end border-b border-[var(--color-hairline)] py-2">
+            <button
+              type="button"
+              onClick={() => setMemo(null)}
+              className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
+            >
+              ← Edit inputs
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-6 border-b border-[var(--color-hairline)]">
+            <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
+            <nav aria-label="Platform" className="flex items-center gap-3 overflow-x-auto">
+              {[...providers]
+                .sort((a, b) => PROVIDER_ORDER.indexOf(a.slug) - PROVIDER_ORDER.indexOf(b.slug))
+                .map((p) => {
+                const n = providerCounts.get(p.slug) ?? 0;
+                const active = platform === p.slug;
+                const disabled = n === 0;
+                const label = PROVIDER_SHORT[p.slug] ?? p.name;
+                if (disabled) {
+                  return (
+                    <span
+                      key={p.slug}
+                      aria-disabled="true"
+                      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-2 pt-2 pb-2 -mb-px t-caption text-[var(--color-ink-mute)] opacity-50"
+                      title={`${label} · no confirmed models`}
+                    >
+                      {label}
+                    </span>
+                  );
+                }
                 return (
-                  <span
+                  <button
                     key={p.slug}
-                    aria-disabled="true"
-                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-2 pt-2 pb-2 -mb-px t-caption text-[var(--color-ink-mute)] opacity-50"
-                    title={`${label} · no confirmed models`}
+                    type="button"
+                    onClick={() => setActivePlatform(p.slug)}
+                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 pt-2 pb-2 -mb-px t-caption transition-colors ${
+                      active
+                        ? "border-[var(--color-ink)] text-[var(--color-ink)] font-medium"
+                        : "border-transparent text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
+                    }`}
                   >
                     {label}
-                  </span>
+                  </button>
                 );
-              }
-              return (
-                <button
-                  key={p.slug}
-                  type="button"
-                  onClick={() => setActivePlatform(p.slug)}
-                  className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 pt-2 pb-2 -mb-px t-caption transition-colors ${
-                    active
-                      ? "border-[var(--color-ink)] text-[var(--color-ink)] font-medium"
-                      : "border-transparent text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+              })}
+            </nav>
+          </div>
+        )}
       </div>
 
       {memo ? (
-        <SwitchResult memo={memo} onEdit={() => setMemo(null)} />
+        <SwitchResult memo={memo} />
       ) : (
       <>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
