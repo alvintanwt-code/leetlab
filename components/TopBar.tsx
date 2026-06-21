@@ -2,14 +2,16 @@ export function TopBar() {
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas)] px-5">
       <div className="flex items-center gap-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/leet-logo.png"
-          alt=""
-          width={20}
-          height={20}
-          className="block h-5 w-5 shrink-0 object-contain"
-        />
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--color-primary)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/leet-logo.png"
+            alt=""
+            width={16}
+            height={16}
+            className="block h-4 w-4 object-contain"
+          />
+        </span>
         <span className="t-body-md font-medium tracking-tight text-[var(--color-ink)]">
           lab.leet
         </span>
