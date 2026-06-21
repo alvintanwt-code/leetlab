@@ -13,6 +13,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { syntheticGrowth10K } from "@/lib/return-overrides";
 
 type SeriesPoint = { d: string; v: number };
 
@@ -43,10 +44,22 @@ type Snapshot = {
 const CACHE = new Map<string, { ts: number; snap: Snapshot }>();
 const TTL_MS = 6 * 60 * 60 * 1000;
 
+// Final fallback that only consults the return-overrides file. Used when
+// Morningstar errors out entirely so MAS-coded funds still show up.
+function overrideOnlySnapshot(isin: string): Snapshot {
+  const synth = syntheticGrowth10K(isin);
+  const yieldOv = loadYieldOverrides()[isin];
+  return {
+    points: synth.length >= 2 ? synth : [],
+    yield12m: yieldOv?.yieldPct ?? null,
+    distFreq: null,
+  };
+}
+
 async function fetchSnapshot(isin: string): Promise<Snapshot> {
   const cached = CACHE.get(isin);
   if (cached && Date.now() - cached.ts < TTL_MS) return cached.snap;
-  const empty: Snapshot = { points: [], yield12m: null, distFreq: null };
+  const empty: Snapshot = overrideOnlySnapshot(isin);
   const url = `https://tools.morningstar.co.uk/api/rest.svc/klr5zyak8x/security_details/${encodeURIComponent(
     isin,
   )}?idtype=isin&languageId=en-GB&responseViewFormat=json&viewId=MFsnapshot`;
@@ -73,6 +86,11 @@ async function fetchSnapshot(isin: string): Promise<Snapshot> {
         .map((h) => ({ d: String(h.EndDate).slice(0, 7), v: h.Value }))
         .filter((p) => p.v > 0);
       if (points.length < 2) points = [];
+    }
+    // Fallback for MAS-coded SG funds — same idea as the yield override below.
+    if (points.length < 2) {
+      const synth = syntheticGrowth10K(isin);
+      if (synth.length >= 2) points = synth;
     }
 
     // -------- yield (trailing 12m, Type code "52") --------

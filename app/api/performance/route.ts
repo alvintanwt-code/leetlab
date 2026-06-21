@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
+import { syntheticGrowth10K } from "@/lib/return-overrides";
 
 // Server-side proxy + cache for Morningstar's public security_details endpoint.
 // We fetch the GrowthOf10K series per ISIN, rebase to 100, then blend a model line.
@@ -30,16 +31,30 @@ async function fetchSeries(isin: string): Promise<SeriesPoint[]> {
   if (cached && Date.now() - cached.ts < TTL_MS) return cached.points;
 
   const url = `https://tools.morningstar.co.uk/api/rest.svc/klr5zyak8x/security_details/${encodeURIComponent(isin)}?idtype=isin&languageId=en-GB&responseViewFormat=json&viewId=MFsnapshot`;
-  const r = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15_000) });
-  if (!r.ok) throw new Error(`Morningstar ${r.status}`);
-  const j = (await r.json()) as unknown;
-  const arr = (Array.isArray(j) ? j[0] : j) as { GrowthOf10K?: Array<{ HistoryDetails?: Array<{ EndDate: string; Value: number }> }> };
-  const g = arr?.GrowthOf10K;
-  if (!Array.isArray(g) || g.length === 0) return [];
-  const series = g.reduce((a, b) => ((b.HistoryDetails?.length ?? 0) > (a.HistoryDetails?.length ?? 0) ? b : a));
-  const points: SeriesPoint[] = (series.HistoryDetails ?? [])
-    .map((h) => ({ d: String(h.EndDate).slice(0, 7), v: h.Value }))
-    .filter((p) => p.v > 0);
+  let points: SeriesPoint[] = [];
+  try {
+    const r = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15_000) });
+    if (r.ok) {
+      const j = (await r.json()) as unknown;
+      const arr = (Array.isArray(j) ? j[0] : j) as { GrowthOf10K?: Array<{ HistoryDetails?: Array<{ EndDate: string; Value: number }> }> };
+      const g = arr?.GrowthOf10K;
+      if (Array.isArray(g) && g.length > 0) {
+        const series = g.reduce((a, b) => ((b.HistoryDetails?.length ?? 0) > (a.HistoryDetails?.length ?? 0) ? b : a));
+        points = (series.HistoryDetails ?? [])
+          .map((h) => ({ d: String(h.EndDate).slice(0, 7), v: h.Value }))
+          .filter((p) => p.v > 0);
+      }
+    }
+  } catch {
+    // fall through to override
+  }
+  // Fallback for MAS-coded SG funds — Morningstar's MFsnapshot is empty for these,
+  // but data/return-overrides.json carries the cumulative-return series scraped
+  // from the chart endpoint (see scripts/scrape-mas-returns.ts).
+  if (points.length < 2) {
+    const synth = syntheticGrowth10K(isin);
+    if (synth.length >= 2) points = synth;
+  }
   if (points.length < 2) return [];
   CACHE.set(isin, { ts: Date.now(), points });
   return points;
