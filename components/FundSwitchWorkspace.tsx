@@ -551,8 +551,10 @@ export function FundSwitchWorkspace({
 
         {/* Target Model — right column. Slim row variant: chips + title +
             mandate + risk + 3-up KPI strip. No chart, no funds count —
-            still references the /portfolios design language. */}
-        <section className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+            still references the /portfolios design language.
+            self-start opts out of grid's default stretch alignment so the
+            card sizes to content instead of filling the column height. */}
+        <section className="self-start overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="t-body-md font-medium text-[var(--color-ink)]">Target Model</h2>
             <p className="t-micro-cap">
@@ -560,9 +562,9 @@ export function FundSwitchWorkspace({
             </p>
           </div>
 
-          <div className="-mx-5 flex-1">
+          <div className="-mx-5 -mb-5">
             {platformModels.length === 0 ? (
-              <div className="mx-5 rounded-md border border-dashed border-[var(--color-hairline-2)] px-4 py-8 text-center">
+              <div className="mx-5 mb-5 rounded-md border border-dashed border-[var(--color-hairline-2)] px-4 py-8 text-center">
                 <p className="t-micro-cap">No confirmed models on this platform yet</p>
               </div>
             ) : (
