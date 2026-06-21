@@ -159,9 +159,19 @@ export function BuildPicker({
   // Selected funds (the "cart") — kept as ID set for cheap membership checks.
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
+  // Sort state. Default = alphabetical by name. Click a numeric header to flip
+  // to that column desc (highest first); click the same header again to revert
+  // to alphabetical.
+  type SortKey = "name" | "ann_1y" | "ann_3y" | "ann_5y";
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+
+  function toggleSort(k: Exclude<SortKey, "name">) {
+    setSortKey((prev) => (prev === k ? "name" : k));
+  }
+
   const filteredRows = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    return rich.filter((f) => {
+    const filtered = rich.filter((f) => {
       if (selectedIds.has(f.id)) return false;
       if (!classOn.has(f.cls)) return false;
       if (!regionOn.has(f.region)) return false;
@@ -170,7 +180,20 @@ export function BuildPicker({
         return false;
       return true;
     });
-  }, [rich, classOn, regionOn, dividendOnly, search, selectedIds]);
+    if (sortKey === "name") {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      filtered.sort((a, b) => {
+        const av = a[sortKey] as number | null;
+        const bv = b[sortKey] as number | null;
+        if (av == null && bv == null) return a.name.localeCompare(b.name);
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        return bv - av;
+      });
+    }
+    return filtered;
+  }, [rich, classOn, regionOn, dividendOnly, search, selectedIds, sortKey]);
 
   const selectedRows = useMemo(
     () => rich.filter((f) => selectedIds.has(f.id)),
@@ -269,8 +292,22 @@ export function BuildPicker({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        {/* LEFT — search + table */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[200px_minmax(0,1fr)_320px] lg:items-stretch">
+        {/* LEFT — filter panel (40% slimmer, flush with the table + cart) */}
+        <FilterPanel
+          classOn={classOn}
+          regionOn={regionOn}
+          dividendOnly={dividendOnly}
+          onToggleClass={toggleClass}
+          onToggleRegion={toggleRegion}
+          onToggleDividend={() => setDividendOnly((v) => !v)}
+          onAllClasses={() => setClassOn(new Set(["E", "F", "A", "L", "C", "M"]))}
+          onNoClasses={() => setClassOn(new Set())}
+          onAllRegions={() => setRegionOn(new Set(["US", "Europe", "Asia", "EM", "Global", "Commodities", "Cash", "Unknown"]))}
+          onNoRegions={() => setRegionOn(new Set())}
+        />
+
+        {/* MIDDLE — search + fund table */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2">
             <input
@@ -284,31 +321,16 @@ export function BuildPicker({
               <span className="num">{filteredRows.length}</span> shown
             </p>
           </div>
-
-          <FundTable rows={filteredRows} onPick={pick} />
+          <FundTable rows={filteredRows} onPick={pick} sortKey={sortKey} onToggleSort={toggleSort} />
         </div>
 
-        {/* RIGHT — filter panel + selected cart */}
-        <aside className="flex flex-col gap-4">
-          <FilterPanel
-            classOn={classOn}
-            regionOn={regionOn}
-            dividendOnly={dividendOnly}
-            onToggleClass={toggleClass}
-            onToggleRegion={toggleRegion}
-            onToggleDividend={() => setDividendOnly((v) => !v)}
-            onAllClasses={() => setClassOn(new Set(["E", "F", "A", "L", "C", "M"]))}
-            onNoClasses={() => setClassOn(new Set())}
-            onAllRegions={() => setRegionOn(new Set(["US", "Europe", "Asia", "EM", "Global", "Commodities", "Cash", "Unknown"]))}
-            onNoRegions={() => setRegionOn(new Set())}
-          />
-          <SelectedCart
-            rows={selectedRows}
-            onRemove={unpick}
-            onConfirm={confirmBuild}
-            providerSlug={providerSlug}
-          />
-        </aside>
+        {/* RIGHT — selected cart, full row height so the Confirm CTA pins flush */}
+        <SelectedCart
+          rows={selectedRows}
+          onRemove={unpick}
+          onConfirm={confirmBuild}
+          providerSlug={providerSlug}
+        />
       </div>
     </div>
   );
@@ -316,7 +338,42 @@ export function BuildPicker({
 
 // ---------------- fund table ----------------
 
-function FundTable({ rows, onPick }: { rows: RichFund[]; onPick: (id: number) => void }) {
+type SortableKey = "ann_1y" | "ann_3y" | "ann_5y";
+
+function SortHeader({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1 transition-colors hover:text-[var(--color-ink)]"
+    >
+      {label}
+      <span className={`text-[8px] leading-none ${active ? "text-[var(--color-ink)]" : "text-[var(--color-hairline)]"}`}>
+        ▼
+      </span>
+    </button>
+  );
+}
+
+function FundTable({
+  rows,
+  onPick,
+  sortKey,
+  onToggleSort,
+}: {
+  rows: RichFund[];
+  onPick: (id: number) => void;
+  sortKey: "name" | SortableKey;
+  onToggleSort: (k: SortableKey) => void;
+}) {
   if (rows.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-canvas)] p-10 text-center">
@@ -330,18 +387,35 @@ function FundTable({ rows, onPick }: { rows: RichFund[]; onPick: (id: number) =>
   return (
     <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
       <div className="overflow-x-auto">
-        <table className="table-pro table-pro-xs" style={{ tableLayout: "auto", minWidth: 760 }}>
+        <table className="table-pro table-pro-xs" style={{ tableLayout: "fixed", width: "100%" }}>
+          <colgroup>
+            <col style={{ width: "30%" }} />
+            <col style={{ width: 88 }} />
+            <col style={{ width: 72 }} />
+            <col style={{ width: 56 }} />
+            <col style={{ width: 56 }} />
+            <col style={{ width: 56 }} />
+            <col style={{ width: 56 }} />
+            <col style={{ width: 56 }} />
+            <col style={{ width: 36 }} />
+          </colgroup>
           <thead>
             <tr>
-              <th style={{ minWidth: 220 }}>Fund</th>
+              <th>Fund</th>
               <th>Class</th>
               <th>Region</th>
               <th className="right">YTD</th>
-              <th className="right">1Y</th>
-              <th className="right">3Y</th>
-              <th className="right">5Y</th>
+              <th className="right">
+                <SortHeader label="1Y" active={sortKey === "ann_1y"} onClick={() => onToggleSort("ann_1y")} />
+              </th>
+              <th className="right">
+                <SortHeader label="3Y" active={sortKey === "ann_3y"} onClick={() => onToggleSort("ann_3y")} />
+              </th>
+              <th className="right">
+                <SortHeader label="5Y" active={sortKey === "ann_5y"} onClick={() => onToggleSort("ann_5y")} />
+              </th>
               <th className="right">Vol</th>
-              <th className="right" style={{ width: 36 }} />
+              <th className="right" />
             </tr>
           </thead>
           <tbody>
@@ -353,7 +427,7 @@ function FundTable({ rows, onPick }: { rows: RichFund[]; onPick: (id: number) =>
                 <tr key={f.id}>
                   <td className="cell-fund">
                     <span className="name text-[var(--color-ink)]" title={f.name}>{f.name}</span>
-                    {f.fund_house && <span className="meta">{f.fund_house}</span>}
+                    {f.fund_house && <span className="meta" title={f.fund_house ?? undefined}>{f.fund_house}</span>}
                   </td>
                   <td>
                     <span className={`chip-asset ${CLASS_CHIP[f.cls]}`} title={CLASS_LABEL[f.cls]}>
@@ -519,19 +593,19 @@ function SelectedCart({
 }) {
   const empty = rows.length === 0;
   return (
-    <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
-      <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3">
+    <section className="flex h-full flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+      <div className="flex shrink-0 items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3">
         <p className="t-body-md font-medium text-[var(--color-ink)]">Selected</p>
         <p className="t-micro-cap">{rows.length} {rows.length === 1 ? "fund" : "funds"}</p>
       </div>
       {empty ? (
-        <div className="px-5 py-8 text-center">
+        <div className="flex flex-1 items-center justify-center px-5 py-8 text-center">
           <p className="t-body-md text-[var(--color-ink-mute)]">
             Use the <span className="num">+</span> button on each row to stage funds for the build.
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col">
+        <ul className="flex flex-1 flex-col overflow-y-auto">
           {rows.map((f) => (
             <li
               key={f.id}
@@ -567,7 +641,7 @@ function SelectedCart({
           ))}
         </ul>
       )}
-      <div className="border-t border-[var(--color-hairline-2)] px-5 py-3">
+      <div className="shrink-0 border-t border-[var(--color-hairline-2)] px-5 py-3">
         <button
           type="button"
           onClick={onConfirm}
