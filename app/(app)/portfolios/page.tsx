@@ -133,16 +133,10 @@ export default async function ModelPortfoliosIndex({
       )}
 
       {/* Page anchor — mirrors the FundSwitch ChromeTitle (eyebrow + t-h-md
-          title on the left, caption description on the right). */}
-      <header className="flex items-center justify-between gap-3 border-b border-[var(--color-hairline-2)] py-3">
-        <div>
-          <p className="t-micro-cap mb-1">Advisor workspace</p>
-          <h1 className="t-h-md text-[var(--color-ink)]">Model portfolio</h1>
-        </div>
-        <p className="t-caption max-w-sm text-right text-[var(--color-ink-mute)]">
-          Confirmed model portfolios across our connected platforms. Each card distils mandate,
-          composition and trailing performance into a single editorial sheet.
-        </p>
+          title), no description. */}
+      <header className="border-b border-[var(--color-hairline-2)] py-3">
+        <p className="t-micro-cap mb-1">Advisor workspace</p>
+        <h1 className="t-h-md text-[var(--color-ink)]">Model portfolio</h1>
       </header>
 
       {/* Filter bar — platform row + strategy row + view toggle */}
