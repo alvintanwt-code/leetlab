@@ -345,21 +345,9 @@ export function FundSwitchWorkspace({
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-20">
-      <div className="sticky top-0 z-20 -mx-20 mb-12 bg-[var(--color-canvas-soft)] px-20">
+      <div className={`sticky top-0 z-20 -mx-20 bg-[var(--color-canvas-soft)] px-20 ${memo ? "mb-3" : "mb-12"}`}>
         <ChromeTitle />
-        {memo ? (
-          // Result view — platform tabs hidden; the Edit-inputs back link
-          // takes the slot where the platform strip used to live.
-          <div className="flex items-center justify-end border-b border-[var(--color-hairline)] py-2">
-            <button
-              type="button"
-              onClick={() => setMemo(null)}
-              className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
-            >
-              ← Edit inputs
-            </button>
-          </div>
-        ) : (
+        {memo ? null : (
           <div className="flex items-center gap-6 border-b border-[var(--color-hairline)]">
             <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
             <nav aria-label="Platform" className="flex items-center gap-3 overflow-x-auto">
@@ -403,7 +391,7 @@ export function FundSwitchWorkspace({
       </div>
 
       {memo ? (
-        <SwitchResult memo={memo} />
+        <SwitchResult memo={memo} onEdit={() => setMemo(null)} />
       ) : (
       <>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">

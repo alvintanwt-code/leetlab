@@ -147,6 +147,16 @@ html, body {
 .table-pro.table-pro-xs .cell-fund .meta { font-size: 9.5px; margin-top: 2px; }
 .table-pro tbody tr { background: var(--color-canvas); transition: background-color 100ms ease-out; }
 .table-pro tbody tr:hover { background: var(--color-canvas-soft); }
+/* Footer total row — mirrors body cell padding so totals line up under their
+   columns, with a heavier top border that separates the footer from data. */
+.table-pro tfoot td {
+  font-size: 13px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--color-hairline);
+  vertical-align: middle;
+  color: var(--color-ink);
+  background: var(--color-canvas);
+}
 .table-pro .num { font-variant-numeric: tabular-nums; font-feature-settings: "ss01", "tnum"; }
 .table-pro .right { text-align: right; }
 .table-pro .cell-fund { min-width: 0; }

@@ -45,7 +45,7 @@ function pctCls(v: number | null | undefined): string {
 function FundTable({ title, rows, totalLabel }: { title: string; rows: SwitchFundRow[]; totalLabel: string }) {
   const total = rows.reduce((s, r) => s + r.valueSgd, 0);
   return (
-    <section className="flex flex-col rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+    <section className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
       <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3">
         <p className="t-body-md font-medium text-[var(--color-ink)]">{title}</p>
         <p className="t-micro-cap">{rows.length} {rows.length === 1 ? "fund" : "funds"}</p>
@@ -93,12 +93,12 @@ function FundTable({ title, rows, totalLabel }: { title: string; rows: SwitchFun
           ))}
         </tbody>
         <tfoot>
-          <tr className="border-t border-[var(--color-hairline)]">
-            <td className="t-micro-cap">{totalLabel}</td>
-            <td className="nowrap right">
+          <tr>
+            <td className="text-[var(--color-ink-mute)]">{totalLabel}</td>
+            <td className="right">
               <span className="num text-[var(--color-ink-mute)]">100.0%</span>
             </td>
-            <td className="nowrap right">
+            <td className="right">
               <span className="num font-medium text-[var(--color-ink)]">{fmtSgd(total)}</span>
             </td>
           </tr>
@@ -134,7 +134,7 @@ function ChangeBadge({ kind }: { kind: ChangeKind }) {
 function ChangesTable({ rows }: { rows: SwitchChangeRow[] }) {
   if (rows.length === 0) return null;
   return (
-    <section className="flex flex-col rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
+    <section className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
       <div className="flex items-baseline justify-between gap-3 border-b border-[var(--color-hairline-2)] px-5 py-3">
         <p className="t-body-md font-medium text-[var(--color-ink)]">Summary of changes</p>
         <p className="t-micro-cap">{rows.length} {rows.length === 1 ? "fund" : "funds"}</p>
@@ -308,18 +308,26 @@ function TargetChart({ targetFunds }: { targetFunds: SwitchFundRow[] }) {
 
 // ---------------- main component ----------------
 
-export function SwitchResult({ memo }: { memo: SwitchMemo }) {
+export function SwitchResult({ memo, onEdit }: { memo: SwitchMemo; onEdit: () => void }) {
   return (
     <div className="flex flex-col gap-6">
-      {/* Eyebrow — platform · model name. The "Edit inputs" affordance and the
-          page title live in the workspace chrome above, so the result body
-          starts directly with this context strip. */}
-      <p className="t-micro-cap flex items-center gap-2">
-        <span className="inline-block h-[8px] w-[8px] bg-[var(--color-primary)]" />
-        {memo.platformLabel}
-        <span className="text-[var(--color-hairline)]">·</span>
-        {memo.modelName}
-      </p>
+      {/* Eyebrow row — platform · model name on the left, edit-back link on the
+          right. Sits inline so the chrome above stays minimal. */}
+      <div className="flex items-center justify-between gap-4">
+        <p className="t-micro-cap flex items-center gap-2">
+          <span className="inline-block h-[8px] w-[8px] bg-[var(--color-primary)]" />
+          {memo.platformLabel}
+          <span className="text-[var(--color-hairline)]">·</span>
+          {memo.modelName}
+        </p>
+        <button
+          type="button"
+          onClick={onEdit}
+          className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
+        >
+          ← Edit inputs
+        </button>
+      </div>
 
       {/* Top: side-by-side current vs target with an arrow between */}
       <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-[1fr_auto_1fr]">
