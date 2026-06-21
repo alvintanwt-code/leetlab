@@ -136,7 +136,7 @@ export default async function ModelPortfoliosIndex({
           ChromeTitle + platform-strip pattern so both workspaces share the
           same header shape. */}
       <div className="sticky top-0 z-20 -mx-20 mb-12 bg-[var(--color-canvas-soft)] px-20">
-        <header className="border-b border-[var(--color-hairline-2)] py-3">
+        <header className="border-b border-[var(--color-hairline-2)] py-6">
           <p className="t-micro-cap mb-1">Advisor workspace</p>
           <h1 className="t-h-md text-[var(--color-ink)]">Model portfolio</h1>
         </header>

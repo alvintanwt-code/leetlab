@@ -595,7 +595,7 @@ export function FundSwitchWorkspace({
 
 function ChromeTitle() {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-[var(--color-hairline-2)] py-3">
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--color-hairline-2)] py-6">
       <div>
         <p className="t-micro-cap mb-1">Advisor workspace</p>
         <h1 className="t-h-md text-[var(--color-ink)]">Fund Switch</h1>
