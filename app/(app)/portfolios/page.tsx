@@ -243,7 +243,7 @@ export default async function ModelPortfoliosIndex({
             Build one in the Portfolio Builder, or change platform / strategy above.
           </p>
           <Link
-            href={`/construction/${activePlatform}`}
+            href={`/construction/${activePlatform}/picker`}
             className="mt-5 inline-flex t-caption text-[var(--color-primary)] hover:underline"
           >
             Build for {PLATFORM_TABS.find((t) => t.slug === activePlatform)?.short} →

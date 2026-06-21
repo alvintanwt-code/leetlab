@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // that actually has funds. Falls back to /portfolios if no provider is ready.
   const rawProviders = await listProvidersWithCounts();
   const firstReady = rawProviders.find((p) => p.fund_count > 0);
-  const defaultBuilderHref = firstReady ? `/construction/${firstReady.slug}` : "/portfolios";
+  const defaultBuilderHref = firstReady ? `/construction/${firstReady.slug}/picker` : "/portfolios";
 
   async function signOutAction() {
     "use server";

@@ -182,6 +182,33 @@ export function StudioShell({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  // Pre-seed the basket from /construction/[provider]/picker if the advisor
+  // arrived via the picker hand-off. Each fund gets an equal share of 10000
+  // bps; remainder lands on the first row so the total still sums to 100%.
+  useEffect(() => {
+    try {
+      const key = `build-picker:v1:${providerSlug}`;
+      const raw = sessionStorage.getItem(key);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { ids?: number[] };
+      const ids = (parsed.ids ?? []).filter((id) => fundsById.has(id));
+      if (ids.length === 0) {
+        sessionStorage.removeItem(key);
+        return;
+      }
+      const each = Math.floor(10000 / ids.length);
+      const remainder = 10000 - each * ids.length;
+      setBasket(
+        ids.map((id, i) => ({ fundId: id, weightBps: each + (i === 0 ? remainder : 0) })),
+      );
+      sessionStorage.removeItem(key);
+    } catch {
+      // bad payload — silently drop, leave basket empty
+    }
+    // Only run once on mount; subsequent basket edits must not be clobbered.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const fundsById = useMemo(() => new Map(funds.map((f) => [f.id, f])), [funds]);
   const allocsByFund = useMemo(() => {
     const m = new Map<number, AllocationDetail[]>();
