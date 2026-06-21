@@ -456,8 +456,7 @@ function PerformanceTable({
               const partial = calendarReturns.find((c) => c.year === y)?.partial;
               return (
                 <th key={y} className="right">
-                  {y}
-                  {partial ? " YTD" : ""}
+                  {partial ? "YTD" : y}
                 </th>
               );
             })}
