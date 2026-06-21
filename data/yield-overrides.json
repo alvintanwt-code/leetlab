@@ -5,14 +5,14 @@
       "yieldPct": 3.37,
       "source": "fwd",
       "msid": "F0HKG062MZ",
-      "asOf": "2026-04-01",
+      "asOf": "1 Apr 2026",
       "note": "FSSA Dividend Advantage Fund SGD Dis — scraped from FWD fund-report Dividends section ('12 mo Yield')."
     },
     "SG9999003826": {
       "yieldPct": 4.98,
       "source": "tmls-monthly",
       "msid": "F0HKG062LS",
-      "asOf": "2026-06-02",
+      "asOf": "2 Jun 2026",
       "note": "Amova Singapore Dividend Equity Fund Dis SGD — TMLS surfaces only individual payouts. Scraper pulls latest payout amount + NAV and annualises at monthly frequency: (amount × 12) / NAV. Latest seen: SGD 0.008 ex-div 2 Jun 2026, NAV 1.9284, yield ≈ 4.98%."
     }
   }
