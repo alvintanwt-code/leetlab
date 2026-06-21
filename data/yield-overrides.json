@@ -10,10 +10,10 @@
     },
     "SG9999003826": {
       "yieldPct": 4.98,
-      "source": "manual",
+      "source": "tmls-monthly",
       "msid": "F0HKG062LS",
       "asOf": "2026-06-02",
-      "note": "Amova Singapore Dividend Equity Fund Dis SGD — TMLS surfaces only individual payouts, not a TTM yield. Annualised from latest ex-div 2 Jun 2026 (SGD 0.008) on NAV 1.9284 at monthly distribution frequency: (0.008 × 12) / 1.9284 ≈ 4.98%. Revise if the monthly payout size changes materially."
+      "note": "Amova Singapore Dividend Equity Fund Dis SGD — TMLS surfaces only individual payouts. Scraper pulls latest payout amount + NAV and annualises at monthly frequency: (amount × 12) / NAV. Latest seen: SGD 0.008 ex-div 2 Jun 2026, NAV 1.9284, yield ≈ 4.98%."
     }
   }
 }
