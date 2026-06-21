@@ -283,10 +283,15 @@ export async function parsePastedPortfolio(
             "Rules:\n" +
             "- One entry per unique fund — even when the source shows the same fund spread across multiple account sections (Initial Account, Accumulation Account, RSP, SRS, Cash, sub-policies, etc.). Combine them: SUM the units across accounts; the unit price stays the same (a fund's NAV is universal across accounts). The implicit total value equals units_summed × unitPrice.\n" +
             "- Skip headers, totals, subtotals, footnotes, summary rows, balance lines, account labels.\n" +
+            "- **Skip positions where units across all accounts sum to 0** — no actual exposure, would distort the analysis.\n" +
             "- Strip currency prefixes (SGD, S$, USD, $, etc.) and thousands separators to produce plain numbers.\n" +
+            "- **Multi-currency handling.** The emitted `unitPrice` must be in SGD.\n" +
+            "  • If the source's unit-price column is already in SGD (fund currency = SGD, or no other currency shown), use it directly.\n" +
+            "  • If the source shows unit price in a fund currency other than SGD AND an FX rate (e.g. column labelled `Fx Rate`, `Exchange Rate`) or an SGD-equivalent value (e.g. `Policy Value (Contract Currency)` where the contract currency is SGD), convert: emit `unitPrice` = fund_currency_NAV × fx_rate_to_sgd. If no FX rate is given but both fund-currency value and SGD value are shown for the same row, derive the FX as sgd_value / fund_ccy_value.\n" +
+            "  • Sanity-check: emitted_units × emitted_unitPrice should match the source's SGD value for that fund within a small rounding tolerance.\n" +
             "- Match each holding against the supplied platform fund universe (sourced from Morningstar). Use fund_house + name + asset class to disambiguate share classes. Prefer a confident match — only leave fundId null if multiple equally-good candidates exist.\n" +
             "- When matched, use the canonical name from the universe in `fund`.\n" +
-            "- Each emitted row needs `units` (total number of units / shares held across all accounts) AND `unitPrice` (NAV or price per unit). If the source only shows two of {units, unitPrice, total value}, derive the third — they're linked by value = units × unitPrice.",
+            "- Each emitted row needs `units` (total number of units / shares held across all accounts) AND `unitPrice` (NAV per unit, in SGD per the rule above). If the source only shows two of {units, unitPrice, total value}, derive the third — they're linked by value = units × unitPrice.",
         },
         {
           type: "text",
