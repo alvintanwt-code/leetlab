@@ -330,21 +330,17 @@ function FundTable({ rows, onPick }: { rows: RichFund[]; onPick: (id: number) =>
   return (
     <section className="overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
       <div className="overflow-x-auto">
-        <table className="table-pro table-pro-xs" style={{ tableLayout: "auto", minWidth: 1000 }}>
+        <table className="table-pro table-pro-xs" style={{ tableLayout: "auto", minWidth: 760 }}>
           <thead>
             <tr>
               <th style={{ minWidth: 220 }}>Fund</th>
               <th>Class</th>
               <th>Region</th>
+              <th className="right">YTD</th>
               <th className="right">1Y</th>
               <th className="right">3Y</th>
-              <th className="right">YTD</th>
-              <th className="right">2025</th>
-              <th className="right">2024</th>
-              <th className="right">2023</th>
-              <th className="right">2022</th>
-              <th className="right">Div.</th>
-              <th className="right">Risk</th>
+              <th className="right">5Y</th>
+              <th className="right">Vol</th>
               <th className="right" style={{ width: 36 }} />
             </tr>
           </thead>
@@ -352,6 +348,7 @@ function FundTable({ rows, onPick }: { rows: RichFund[]; onPick: (id: number) =>
             {rows.map((f) => {
               const r1 = fmtPct(f.ann_1y);
               const r3 = fmtPct(f.ann_3y);
+              const r5 = fmtPct(f.ann_5y);
               return (
                 <tr key={f.id}>
                   <td className="cell-fund">
@@ -366,23 +363,11 @@ function FundTable({ rows, onPick }: { rows: RichFund[]; onPick: (id: number) =>
                   <td>
                     <span className="t-caption text-[var(--color-ink-2)]">{REGION_LABEL[f.region]}</span>
                   </td>
+                  <td className="nowrap right"><span className="num text-[var(--color-ink-mute)]">—</span></td>
                   <td className="nowrap right"><span className={`num ${r1.cls}`}>{r1.text}</span></td>
                   <td className="nowrap right"><span className={`num ${r3.cls}`}>{r3.text}</span></td>
+                  <td className="nowrap right"><span className={`num ${r5.cls}`}>{r5.text}</span></td>
                   <td className="nowrap right"><span className="num text-[var(--color-ink-mute)]">—</span></td>
-                  <td className="nowrap right"><span className="num text-[var(--color-ink-mute)]">—</span></td>
-                  <td className="nowrap right"><span className="num text-[var(--color-ink-mute)]">—</span></td>
-                  <td className="nowrap right"><span className="num text-[var(--color-ink-mute)]">—</span></td>
-                  <td className="nowrap right"><span className="num text-[var(--color-ink-mute)]">—</span></td>
-                  <td className="nowrap right">
-                    <span className="num text-[var(--color-ink-mute)]">
-                      {f.distribution_type === "Dist" ? "Dist" : "—"}
-                    </span>
-                  </td>
-                  <td className="nowrap right">
-                    <span className="num text-[var(--color-ink)]">
-                      {f.risk_rating != null ? `${f.risk_rating}/5` : "—"}
-                    </span>
-                  </td>
                   <td className="right">
                     <button
                       type="button"
