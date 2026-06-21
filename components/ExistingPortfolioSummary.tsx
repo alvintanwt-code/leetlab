@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { BarsRow } from "@/components/PortfolioDetail";
 import { TrailingChart } from "@/components/TrailingChart";
 import { ReturnText } from "@/components/PortfolioCard";
@@ -163,6 +163,9 @@ export function ExistingPortfolioSummary({
   const [chart, setChart] = useState<ChartData | null>(null);
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState<string | null>(null);
+  // Collapse toggle for the entire Existing portfolio + Performance card.
+  // When collapsed only the header bar (with the toggle) remains visible.
+  const [overviewCollapsed, setOverviewCollapsed] = useState(false);
 
   const platformOptions = fundsByPlatform[platform] ?? [];
   const platformAllocs = allocationsByPlatform[platform] ?? {};
@@ -298,40 +301,59 @@ export function ExistingPortfolioSummary({
   // a flex column for spacing — no border or bg of its own.
   return (
     <div className="flex flex-col gap-4">
-      {/* Header + Performance — combined into one card with a clear visual
-          hierarchy. Identity block (total · holdings · profile) sits on top;
-          a hairline + extra spacing separates it from the performance table
-          below. Reads as: who this portfolio is, then how it has performed. */}
+      {/* Existing portfolio + Performance — one card with identity at top,
+          performance below, hairline between. Header has a collapse toggle
+          (right side) that hides the entire body — only the header bar
+          stays visible. */}
       <section className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-        <div className="mb-4 flex items-baseline justify-between border-b border-[var(--color-hairline-2)] pb-3">
+        <div
+          className={`flex items-baseline justify-between ${overviewCollapsed ? "" : "mb-4 border-b border-[var(--color-hairline-2)] pb-3"}`}
+        >
           <h2 className="t-body-md font-medium text-[var(--color-ink)]">Existing portfolio</h2>
-          <p className="t-micro-cap">Snapshot as parsed</p>
+          <button
+            type="button"
+            onClick={() => setOverviewCollapsed((v) => !v)}
+            className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
+            aria-expanded={!overviewCollapsed}
+          >
+            {overviewCollapsed ? "Expand overview ↓" : "Collapse overview ↑"}
+          </button>
         </div>
 
-        {/* Identity block */}
-        <div className="grid grid-cols-1 gap-y-3 gap-x-8 sm:grid-cols-[auto_auto_1fr] sm:items-baseline">
-          <Stat label="Total value" value={`SGD ${totalValue.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-          <Stat label="Holdings" value={String(enrichedHoldings.length)} />
-          <div>
-            <p className="t-micro-cap">Profile</p>
-            <p className="t-body-md mt-1.5 text-[var(--color-ink-2)]">{description}</p>
-          </div>
-        </div>
+        {!overviewCollapsed && (
+          <>
+            {/* Identity block — all left-aligned in a single row, labels
+                stacked above values. No Profile any more; 3Y annualised
+                takes its slot as the third headline stat. */}
+            <div className="flex flex-wrap items-baseline gap-x-10 gap-y-3">
+              <Stat
+                label="Total value"
+                value={`SGD ${totalValue.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              />
+              <Stat label="Holdings" value={String(enrichedHoldings.length)} />
+              <Stat
+                label="3Y annualised"
+                value={
+                  <ReturnText value={trailingPortfolio.ann3y} />
+                }
+              />
+            </div>
 
-        {/* Performance block — divided from identity by a hairline + breathing room */}
-        <div className="mt-6 border-t border-[var(--color-hairline-2)] pt-5">
-          <div className="mb-3 flex items-baseline justify-between">
-            <p className="t-body-md font-medium text-[var(--color-ink)]">Performance</p>
-            <p className="t-micro-cap">% per year &middot; geometric annualisation</p>
-          </div>
-          <PerformanceTable
-            enrichedHoldings={enrichedHoldings}
-            fundLines={fundLines}
-            calendarReturns={calendarReturns}
-            portfolioTrailing={trailingPortfolio}
-            loading={chartLoading}
-          />
-        </div>
+            {/* Performance block — divided from identity by a hairline + breathing room */}
+            <div className="mt-6 border-t border-[var(--color-hairline-2)] pt-5">
+              <div className="mb-3 flex items-baseline">
+                <p className="t-body-md font-medium text-[var(--color-ink)]">Performance</p>
+              </div>
+              <PerformanceTable
+                enrichedHoldings={enrichedHoldings}
+                fundLines={fundLines}
+                calendarReturns={calendarReturns}
+                portfolioTrailing={trailingPortfolio}
+                loading={chartLoading}
+              />
+            </div>
+          </>
+        )}
       </section>
 
       {/* Trailing 3Y chart — already wraps itself in a card */}
@@ -368,7 +390,7 @@ export function ExistingPortfolioSummary({
 
 // ---------------- subcomponents ----------------
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
       <p className="t-micro-cap">{label}</p>
@@ -440,16 +462,17 @@ function PerformanceTable({
   const years = calendarReturns.map((c) => c.year);
   return (
     <div className="overflow-x-auto">
-      {/* width: auto overrides .table-pro's width:100% so the table shrinks
-          to content when fewer calendar years are available. table-pro-xs
-          tightens font + padding vs table-pro-sm for the dense numeric grid. */}
+      {/* Table fills the card horizontally; auto layout lets the number
+          columns size to content while the Holding column expands to fill
+          the remaining space — pushes the year/return columns flush against
+          the card's right edge. */}
       <table
         className="table-pro table-pro-xs"
-        style={{ tableLayout: "auto", width: "auto" }}
+        style={{ tableLayout: "auto", width: "100%" }}
       >
         <thead>
           <tr>
-            <th>Holding</th>
+            <th style={{ width: "100%" }}>Holding</th>
             <th className="right">1Y</th>
             <th className="right">3Y ann.</th>
             {years.map((y) => {
