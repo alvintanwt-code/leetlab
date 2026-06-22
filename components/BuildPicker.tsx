@@ -188,7 +188,7 @@ export function BuildPicker({
   // Sort state. Default = alphabetical by name. Click a numeric header to flip
   // to that column desc (highest first); click the same header again to revert
   // to alphabetical.
-  type SortKey = "name" | "ann_1y" | "ann_3y" | "ann_5y";
+  type SortKey = "name" | "ann_1y" | "ann_3y" | "ann_5y" | "stddev_3y";
   const [sortKey, setSortKey] = useState<SortKey>("name");
 
   function toggleSort(k: Exclude<SortKey, "name">) {
@@ -357,7 +357,7 @@ export function BuildPicker({
 
 // ---------------- fund table ----------------
 
-type SortableKey = "ann_1y" | "ann_3y" | "ann_5y";
+type SortableKey = "ann_1y" | "ann_3y" | "ann_5y" | "stddev_3y";
 
 function SortHeader({
   label,
@@ -433,7 +433,9 @@ function FundTable({
               <th className="right">
                 <SortHeader label="5Y" active={sortKey === "ann_5y"} onClick={() => onToggleSort("ann_5y")} />
               </th>
-              <th className="right">Vol</th>
+              <th className="right">
+                <SortHeader label="Risk" active={sortKey === "stddev_3y"} onClick={() => onToggleSort("stddev_3y")} />
+              </th>
               <th className="right" />
             </tr>
           </thead>
@@ -442,6 +444,10 @@ function FundTable({
               const r1 = fmtPct(f.ann_1y);
               const r3 = fmtPct(f.ann_3y);
               const r5 = fmtPct(f.ann_5y);
+              const risk =
+                f.stddev_3y != null && Number.isFinite(f.stddev_3y)
+                  ? `${f.stddev_3y.toFixed(1)}%`
+                  : "—";
               return (
                 <tr key={f.id}>
                   <td className="cell-fund">
@@ -460,7 +466,11 @@ function FundTable({
                   <td className="nowrap right"><span className={`num ${r1.cls}`}>{r1.text}</span></td>
                   <td className="nowrap right"><span className={`num ${r3.cls}`}>{r3.text}</span></td>
                   <td className="nowrap right"><span className={`num ${r5.cls}`}>{r5.text}</span></td>
-                  <td className="nowrap right"><span className="num text-[var(--color-ink-mute)]">—</span></td>
+                  <td className="nowrap right">
+                    <span className={`num ${risk === "—" ? "text-[var(--color-ink-mute)]" : "text-[var(--color-ink)]"}`}>
+                      {risk}
+                    </span>
+                  </td>
                   <td className="right">
                     <button
                       type="button"

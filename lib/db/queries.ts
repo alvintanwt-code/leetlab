@@ -318,6 +318,7 @@ export type FundInspectorData = {
   ann_3y: number | null;
   ann_5y: number | null;
   ann_10y: number | null;
+  stddev_3y: number | null;
 };
 
 export async function fundsInspectorForProvider(providerSlug: string): Promise<FundInspectorData[]> {
@@ -332,11 +333,11 @@ export async function fundsInspectorForProvider(providerSlug: string): Promise<F
         f.sfdr_classification, f.expense_ratio, f.management_fee,
         f.morningstar_rating, f.investment_objective,
         s.nav, s.as_of AS nav_as_of, s.change_pct,
-        s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
+        s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y, s.stddev_3y
       FROM funds f
       JOIN providers p ON p.id = f.provider_id
       LEFT JOIN LATERAL (
-        SELECT nav, as_of, change_pct, ann_1y, ann_3y, ann_5y, ann_10y
+        SELECT nav, as_of, change_pct, ann_1y, ann_3y, ann_5y, ann_10y, stddev_3y
         FROM fund_snapshots WHERE fund_id = f.id ORDER BY as_of DESC LIMIT 1
       ) s ON true
       WHERE p.slug = ${providerSlug}
@@ -352,11 +353,11 @@ export async function fundsInspectorForProvider(providerSlug: string): Promise<F
       f.sfdr_classification, f.expense_ratio, f.management_fee,
       f.morningstar_rating, f.investment_objective,
       s.nav, s.as_of AS nav_as_of, s.change_pct,
-      s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
+      s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y, s.stddev_3y
     FROM funds f
     JOIN providers p ON p.id = f.provider_id
     LEFT JOIN LATERAL (
-      SELECT nav, as_of, change_pct, ann_1y, ann_3y, ann_5y, ann_10y
+      SELECT nav, as_of, change_pct, ann_1y, ann_3y, ann_5y, ann_10y, stddev_3y
       FROM fund_snapshots WHERE fund_id = f.id ORDER BY as_of DESC LIMIT 1
     ) s ON true
     WHERE p.slug = ${providerSlug}
