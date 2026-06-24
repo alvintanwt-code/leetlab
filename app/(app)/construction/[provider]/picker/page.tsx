@@ -4,6 +4,7 @@ import {
   detailedAllocationsForProvider,
   listProvidersWithCounts,
 } from "@/lib/db/queries";
+import { getReturnOverride } from "@/lib/return-overrides";
 import { BuildPicker } from "@/components/BuildPicker";
 
 export const dynamic = "force-dynamic";
@@ -20,10 +21,27 @@ export default async function PickerPage({ params }: { params: Promise<{ provide
   const meta = allProviders.find((p) => p.slug === provider);
   if (!meta) notFound();
 
-  const [funds, allocsFlat] = await Promise.all([
+  const [rawFunds, allocsFlat] = await Promise.all([
     fundsInspectorForProvider(provider),
     detailedAllocationsForProvider(provider),
   ]);
+
+  // Merge return-overrides for MAS-coded funds — Morningstar snapshot is empty
+  // for these, but data/return-overrides.json fills YTD / risk / trailing
+  // returns from the timeseries scrape (FWD/shared MSIDs) and the TMLS-page
+  // scrape (TMLS-only secIds). Existing DB values win when present.
+  const funds = rawFunds.map((f) => {
+    const fund = { ...f, ytd: null as number | null };
+    if (!f.isin) return fund;
+    const ov = getReturnOverride(f.isin);
+    if (!ov) return fund;
+    fund.ytd = ov.ytd ?? null;
+    if (fund.stddev_3y == null && ov.stddev3y != null) fund.stddev_3y = ov.stddev3y;
+    if (fund.ann_1y == null && ov.ann1y != null) fund.ann_1y = ov.ann1y;
+    if (fund.ann_3y == null && ov.ann3y != null) fund.ann_3y = ov.ann3y;
+    if (fund.ann_5y == null && ov.ann5y != null) fund.ann_5y = ov.ann5y;
+    return fund;
+  });
 
   // Canonical platform order + short labels shared with /portfolios and /switch.
   const PROVIDER_ORDER = ["hsbc", "fwd", "tmls", "gwm"];

@@ -17,7 +17,11 @@ export type ReturnOverride = {
   ann5y: number | null;
   ann10y: number | null;
   calendar: Record<string, number>;
-  series: { d: string; cum: number }[];
+  // Monthly series is only available when sourced from Morningstar's chart
+  // endpoint; TMLS-page-scraped entries omit it (the chart line will still
+  // skip those funds, but the YTD / calendar / trailing fields resolve).
+  series?: { d: string; cum: number }[];
+  stddev3y?: number | null;
 };
 
 type OverridesFile = { overrides?: Record<string, ReturnOverride> };
@@ -52,7 +56,7 @@ export function getReturnOverride(isin: string): ReturnOverride | null {
  */
 export function syntheticGrowth10K(isin: string): { d: string; v: number }[] {
   const ov = getReturnOverride(isin);
-  if (!ov || ov.series.length < 2) return [];
+  if (!ov || !ov.series || ov.series.length < 2) return [];
   return ov.series.map((p) => ({
     d: p.d.slice(0, 7), // truncate "YYYY-MM-DD" → "YYYY-MM" to match Morningstar's bucket
     v: 10_000 * (1 + p.cum / 100),

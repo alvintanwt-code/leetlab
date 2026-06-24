@@ -319,6 +319,9 @@ export type FundInspectorData = {
   ann_5y: number | null;
   ann_10y: number | null;
   stddev_3y: number | null;
+  // Not pulled from fund_snapshots — populated downstream from
+  // data/return-overrides.json when a MAS-coded fund has it.
+  ytd: number | null;
 };
 
 export async function fundsInspectorForProvider(providerSlug: string): Promise<FundInspectorData[]> {

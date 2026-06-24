@@ -1,5 +1,5 @@
 {
-  "_comment": "Monthly-derived returns for MAS-coded SG funds where Morningstar's MFsnapshot is empty. Scraped from lt.morningstar.com/api/rest.svc/timeseries_cumulativereturn (the same endpoint the FWD fund-report chart hits). Refreshed by scripts/scrape-mas-returns.ts.",
+  "_comment": "Monthly-derived returns for MAS-coded SG funds where Morningstar's MFsnapshot is empty. Scraped from lt.morningstar.com/api/rest.svc/timeseries_cumulativereturn (most entries) and tokiomarine.com fund-report pages (TMLS-only funds the timeseries feed doesn't expose). Refreshed by scripts/scrape-mas-returns.ts and scripts/scrape-tmls-page-returns.ts.",
   "asOfRun": "2026-06-24",
   "overrides": {
     "SG9999003826": {
@@ -6282,6 +6282,200 @@
           "cum": 31.6432
         }
       ]
+    },
+    "SG9999000194": {
+      "msid": "F0HKG062N3",
+      "asOf": "2026-06",
+      "ytd": 20.24,
+      "ann1y": 34.05,
+      "ann3y": 9.82,
+      "ann5y": -0.42,
+      "ann10y": null,
+      "calendar": {
+        "2016": 3.64,
+        "2017": 38.34,
+        "2018": -12.43,
+        "2019": 26.09,
+        "2020": 27.02,
+        "2021": 3.58,
+        "2022": -23.28,
+        "2023": -10.87,
+        "2024": 12.54,
+        "2025": 8.52
+      },
+      "stddev3y": 17
+    },
+    "SG9999010490": {
+      "msid": "F00000Q3EG",
+      "asOf": "2026-06",
+      "ytd": 14.74,
+      "ann1y": 43.35,
+      "ann3y": 23.22,
+      "ann5y": 20.04,
+      "ann10y": null,
+      "calendar": {
+        "2016": 3.47,
+        "2017": 23.2,
+        "2018": -15.08,
+        "2019": 21.45,
+        "2020": -3.52,
+        "2021": 12.17,
+        "2022": 5.4,
+        "2023": 36.58,
+        "2024": 17.92,
+        "2025": 28.38
+      },
+      "stddev3y": 14
+    },
+    "SG9999000186": {
+      "msid": "F0HKG062N4",
+      "asOf": "2026-06",
+      "ytd": -9.42,
+      "ann1y": -13.33,
+      "ann3y": 3.55,
+      "ann5y": 3.59,
+      "ann10y": null,
+      "calendar": {
+        "2016": 3.14,
+        "2017": 28.97,
+        "2018": -6.15,
+        "2019": 1.96,
+        "2020": 6.54,
+        "2021": 23.43,
+        "2022": -7.82,
+        "2023": 24.86,
+        "2024": 19.11,
+        "2025": -11.1
+      },
+      "stddev3y": 15
+    },
+    "SG9999017628": {
+      "msid": "F00000ZTFI",
+      "asOf": "2026-06",
+      "ytd": 1.87,
+      "ann1y": 9.15,
+      "ann3y": 8.68,
+      "ann5y": -0.54,
+      "ann10y": null,
+      "calendar": {
+        "2019": 6.65,
+        "2020": 0.96,
+        "2021": -19.39,
+        "2022": -11.91,
+        "2023": 12.99,
+        "2024": 9.86,
+        "2025": 6.56
+      },
+      "stddev3y": 6
+    },
+    "SG9999010037": {
+      "msid": "F00000WIU0",
+      "asOf": "2026-06",
+      "ytd": 3.85,
+      "ann1y": 12.72,
+      "ann3y": 9.38,
+      "ann5y": 0.08,
+      "ann10y": null,
+      "calendar": {
+        "2016": 13.3,
+        "2017": 0.14,
+        "2018": -0.18,
+        "2019": 5.92,
+        "2020": 0.44,
+        "2021": -17.93,
+        "2022": -12.13,
+        "2023": 12.51,
+        "2024": 15.77,
+        "2025": 2.84
+      },
+      "stddev3y": 8
+    },
+    "SG9999006779": {
+      "msid": "F00000LNTM",
+      "asOf": "2026-06",
+      "ytd": 12.36,
+      "ann1y": 27.7,
+      "ann3y": 15.44,
+      "ann5y": 7.51,
+      "ann10y": null,
+      "calendar": {
+        "2016": 3.42,
+        "2017": 12.12,
+        "2018": -10.51,
+        "2019": 20.19,
+        "2020": 13.35,
+        "2021": 17.98,
+        "2022": -19.13,
+        "2023": 16.83,
+        "2024": 17.37,
+        "2025": 10.3
+      },
+      "stddev3y": 11
+    },
+    "SG9999001143": {
+      "msid": "F0HKG062UL",
+      "asOf": "2026-06",
+      "ytd": -8.38,
+      "ann1y": 54.27,
+      "ann3y": 33.14,
+      "ann5y": 17.04,
+      "ann10y": null,
+      "calendar": {
+        "2016": 56.87,
+        "2017": 9.04,
+        "2018": -7.7,
+        "2019": 32.63,
+        "2020": 22.87,
+        "2021": 0.11,
+        "2022": -7.92,
+        "2023": 6.35,
+        "2024": 6.37,
+        "2025": 131.44
+      },
+      "stddev3y": 30
+    },
+    "SG9999001382": {
+      "msid": "F0HKG062HX",
+      "asOf": "2026-06",
+      "ytd": 0.55,
+      "ann1y": 2.12,
+      "ann3y": 3.54,
+      "ann5y": 1.97,
+      "ann10y": null,
+      "calendar": {
+        "2016": 3.25,
+        "2017": 2.15,
+        "2018": 0.05,
+        "2019": 4.16,
+        "2020": 3.06,
+        "2021": 0.15,
+        "2022": -2.31,
+        "2023": 4.32,
+        "2024": 4.07,
+        "2025": 3.58
+      },
+      "stddev3y": 4
+    },
+    "SG9999014864": {
+      "msid": "F00000XOR0",
+      "asOf": "2026-06",
+      "ytd": 2.48,
+      "ann1y": 5.32,
+      "ann3y": 4.08,
+      "ann5y": 2.45,
+      "ann10y": null,
+      "calendar": {
+        "2017": -4.88,
+        "2018": 2.67,
+        "2019": 3.3,
+        "2020": 1.39,
+        "2021": 2.01,
+        "2022": -2.86,
+        "2023": 3.8,
+        "2024": 9.61,
+        "2025": -0.28
+      },
+      "stddev3y": 7
     }
   }
 }
