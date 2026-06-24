@@ -259,6 +259,16 @@ export function FundSwitchWorkspace({
     });
   }
 
+  // Reset the client portfolio table to a single blank row. Keeps the target
+  // model selection and the paste-portfolio buffer (the advisor may want to
+  // re-paste a corrected statement immediately).
+  function clearHoldings() {
+    setState((s) => {
+      const prev = s[platform] ?? defaultPerPlatform();
+      return { ...s, [platform]: { ...prev, holdings: [newRow()] } };
+    });
+  }
+
   function applyParsedRows(rows: ParsedHoldingRow[]) {
     if (rows.length === 0) return;
     const newHoldings: Holding[] = rows.map((r) => ({
@@ -402,13 +412,25 @@ export function FundSwitchWorkspace({
             {pasting ? (
               <p className="t-micro-cap">Current holdings</p>
             ) : (
-              <button
-                type="button"
-                onClick={() => setPasting(true)}
-                className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
-              >
-                Paste portfolio →
-              </button>
+              <div className="flex items-baseline gap-4">
+                {validHoldingsCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearHoldings}
+                    className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-negative)]"
+                    title="Reset the client portfolio to a single empty row"
+                  >
+                    Clear all
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setPasting(true)}
+                  className="t-caption text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
+                >
+                  Paste portfolio →
+                </button>
+              </div>
             )}
           </div>
 
