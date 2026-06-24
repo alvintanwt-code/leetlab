@@ -1,20 +1,24 @@
-// Scrape monthly cumulative returns for MAS-coded FWD funds from Morningstar's
-// public chart endpoint (lt.morningstar.com/.../timeseries_cumulativereturn),
-// then derive YTD, calendar-year, and trailing 1Y/3Y/5Y locally.
+// Scrape monthly cumulative returns for MAS-coded provider funds from
+// Morningstar's public chart endpoint (lt.morningstar.com/.../
+// timeseries_cumulativereturn), then derive YTD, calendar-year, and trailing
+// 1Y/3Y/5Y locally.
 //
 // Why: Morningstar's MFsnapshot returns empty for these MAS-coded SG funds,
 // so the screener fallback only gives us ann_1y/3y/5y/10y. The widget chart
-// on the FWD fund-report page hits this timeseries endpoint instead, which
-// DOES return a monthly cumulative return series. We replicate the call here.
+// on each insurer's fund-report page hits this timeseries endpoint instead,
+// which DOES return a monthly cumulative return series. We replicate the
+// call here, keyed by Morningstar secId.
 //
-// Run with: npx tsx scripts/scrape-mas-returns.ts
-// Optional flag: --msid F0HKG062MZ to limit to one fund.
+// Run with:
+//   npx tsx scripts/scrape-mas-returns.ts                         # all MAS-coded funds across providers
+//   npx tsx scripts/scrape-mas-returns.ts --provider tmls         # only one provider
+//   npx tsx scripts/scrape-mas-returns.ts --msid F0HKG062MZ       # one fund (matches across providers)
 
 import { config } from "dotenv";
 import { join } from "node:path";
 config({ path: join(process.cwd(), ".env.local") });
 
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 
 const LT_KEY = "4j6t9375dd"; // public widget key seen on FWD/TMLS Morningstar reports
@@ -134,25 +138,41 @@ type Override = {
 
 async function main() {
   const sql = neon(process.env.DATABASE_URL!);
-  const onlyArgIdx = process.argv.indexOf("--msid");
-  const onlyMsid = onlyArgIdx >= 0 ? process.argv[onlyArgIdx + 1] : null;
+  const onlyMsidIdx = process.argv.indexOf("--msid");
+  const onlyMsid = onlyMsidIdx >= 0 ? process.argv[onlyMsidIdx + 1] : null;
+  const providerIdx = process.argv.indexOf("--provider");
+  const onlyProvider = providerIdx >= 0 ? process.argv[providerIdx + 1] : null;
 
+  // Each MAS-coded ISIN can be sold on more than one platform (e.g. FSSA
+  // Dividend Advantage on both FWD and TMLS), but the timeseries data is
+  // provider-independent — keyed by the Morningstar secId. We dedup so we
+  // only hit Morningstar once per fund.
   const rows = onlyMsid
     ? await sql`
-        SELECT f.external_id, f.isin, f.name
+        SELECT DISTINCT f.external_id, f.isin, f.name
         FROM funds f
         JOIN providers p ON p.id = f.provider_id
-        WHERE p.slug = 'fwd' AND f.external_id = ${onlyMsid}
+        WHERE f.external_id = ${onlyMsid}
+          ${onlyProvider ? sql`AND p.slug = ${onlyProvider}` : sql``}
       `
-    : await sql`
-        SELECT f.external_id, f.isin, f.name
-        FROM funds f
-        JOIN providers p ON p.id = f.provider_id
-        WHERE p.slug = 'fwd' AND f.isin LIKE 'SG9999%'
-        ORDER BY f.name
-      `;
+    : onlyProvider
+      ? await sql`
+          SELECT DISTINCT f.external_id, f.isin, f.name
+          FROM funds f
+          JOIN providers p ON p.id = f.provider_id
+          WHERE p.slug = ${onlyProvider} AND f.isin LIKE 'SG9999%'
+          ORDER BY f.name
+        `
+      : await sql`
+          SELECT DISTINCT f.external_id, f.isin, f.name
+          FROM funds f
+          JOIN providers p ON p.id = f.provider_id
+          WHERE p.slug IN ('fwd', 'tmls', 'hsbc', 'gwm') AND f.isin LIKE 'SG9999%'
+          ORDER BY f.name
+        `;
 
-  console.log(`Scraping ${rows.length} MAS-coded FWD fund(s) via lt.morningstar.com timeseries…\n`);
+  const scope = onlyProvider ? onlyProvider.toUpperCase() : "all-provider";
+  console.log(`Scraping ${rows.length} MAS-coded ${scope} fund(s) via lt.morningstar.com timeseries…\n`);
 
   // 10-year window. Use today as endDate; the API gladly clamps to fund inception.
   const today = new Date();
@@ -199,16 +219,30 @@ async function main() {
 
   if (!onlyMsid) {
     const outPath = join(process.cwd(), "data", "return-overrides.json");
+    // Merge with the existing file so a single-provider run doesn't blow
+    // away other providers' entries.
+    let prior: Record<string, Override> = {};
+    if (existsSync(outPath)) {
+      try {
+        const parsed = JSON.parse(readFileSync(outPath, "utf8")) as {
+          overrides?: Record<string, Override>;
+        };
+        prior = parsed.overrides ?? {};
+      } catch {
+        // ignore — start fresh
+      }
+    }
+    const merged: Record<string, Override> = { ...prior, ...overrides };
     const payload = {
       _comment:
         "Monthly-derived returns for MAS-coded SG funds where Morningstar's MFsnapshot is empty. " +
         "Scraped from lt.morningstar.com/api/rest.svc/timeseries_cumulativereturn (the same endpoint " +
         "the FWD fund-report chart hits). Refreshed by scripts/scrape-mas-returns.ts.",
       asOfRun: endDate,
-      overrides,
+      overrides: merged,
     };
     writeFileSync(outPath, JSON.stringify(payload, null, 2));
-    console.log(`\nWrote ${outPath}`);
+    console.log(`\nWrote ${outPath} (${Object.keys(merged).length} entries total, ${Object.keys(overrides).length} refreshed this run)`);
   }
 }
 
