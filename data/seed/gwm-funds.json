@@ -30,6 +30,16 @@
     "status": "Active"
   },
   {
+    "name": "Amova Singapore Div Eq SGD",
+    "isin": "SG9999003826",
+    "status": "Active"
+  },
+  {
+    "name": "Amova Singapore Div Eq USD",
+    "isin": "SG9999003925",
+    "status": "Active"
+  },
+  {
     "name": "Amova Singapore Equity SGD",
     "isin": "SG9999004360",
     "status": "Active"
