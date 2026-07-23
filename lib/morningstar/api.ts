@@ -23,6 +23,7 @@ export type UniverseFund = {
   ReturnM36?: number;
   ReturnM60?: number;
   ReturnM120?: number;
+  StandardDeviationM36?: number;
   CalculatedSRRI?: number;
   CollectedSRRI?: number;
 };
@@ -58,7 +59,7 @@ export async function fetchUniverse(universeId: string): Promise<UniverseFund[]>
     securityDataPoints:
       "secId,Name,Isin,LegalName,Currency,CategoryName,InceptionDate," +
       "BrandingCompanyName,FundCompanyName,OngoingCharge,ManagementFee," +
-      "ReturnM12,ReturnM36,ReturnM60,ReturnM120,CalculatedSRRI,CollectedSRRI",
+      "ReturnM12,ReturnM36,ReturnM60,ReturnM120,StandardDeviationM36,CalculatedSRRI,CollectedSRRI",
     top: "500",
     pageSize: "500",
   });
@@ -83,7 +84,7 @@ export async function fetchScreenerByIsin(isin: string): Promise<UniverseFund | 
     securityDataPoints:
       "secId,Name,Isin,LegalName,Currency,CategoryName,InceptionDate," +
       "BrandingCompanyName,FundCompanyName,OngoingCharge,ManagementFee," +
-      "ReturnM12,ReturnM36,ReturnM60,ReturnM120,CalculatedSRRI,CollectedSRRI",
+      "ReturnM12,ReturnM36,ReturnM60,ReturnM120,StandardDeviationM36,CalculatedSRRI,CollectedSRRI",
     term: isin,
     page: "1",
     pageSize: "3",

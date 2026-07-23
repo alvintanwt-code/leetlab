@@ -211,7 +211,7 @@ export function parseScreenerRow(
     alpha3y: null,
     beta3y: null,
     sharpe3y: null,
-    stddev3y: null,
+    stddev3y: row.StandardDeviationM36 ?? null,
   };
 
   return { fund, snapshot, allocations: [], documents: [], rawMarkdown: "" };

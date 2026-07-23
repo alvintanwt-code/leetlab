@@ -111,6 +111,10 @@ export async function upsertSnapshot(fundId: number, s: NormalizedSnapshot): Pro
         ann5y: sql`excluded.ann_5y`,
         ann10y: sql`excluded.ann_10y`,
         annSince: sql`excluded.ann_since`,
+        alpha3y: sql`excluded.alpha_3y`,
+        beta3y: sql`excluded.beta_3y`,
+        sharpe3y: sql`excluded.sharpe_3y`,
+        stddev3y: sql`excluded.stddev_3y`,
       },
     });
 }
