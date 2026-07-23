@@ -352,9 +352,32 @@ function computeSwitchOrder(args: {
 
   const totalSwitchOutSgd = switchOut.reduce((s, r) => s + r.sgdAmount, 0);
 
-  const switchIn: SwitchOrderInRow[] = modelHoldings
-    .map((tgt) => ({ fund: tgt.name, pct: Math.round(tgt.weightPct) }))
-    .filter((r) => r.pct > 0);
+  // Switch IN = per target fund, the NET INCREASE required after netting
+  // against whatever's already held of that fund. Prevents the switch form
+  // from double-buying an overlapping holding: if Fund X is at 40% today
+  // and target is 55%, switchIn should say "buy 15% of proceeds", not
+  // "buy 55% of proceeds".
+  //
+  // Percentages are of totalSwitchOutSgd so the switch form's "% of
+  // proceeds" convention works cleanly — the switch-in amounts sum to
+  // 100% because switch-out and switch-in dollars conserve.
+  const currentByFundId = new Map<number, CurrentAggregated>();
+  for (const c of currentAggregated) if (c.fundId != null) currentByFundId.set(c.fundId, c);
+
+  const netIncreases: { fund: string; sgd: number }[] = [];
+  for (const tgt of modelHoldings) {
+    const targetValue = totalValue * (tgt.weightPct / 100);
+    const currentValue = tgt.fundId != null ? (currentByFundId.get(tgt.fundId)?.currentValue ?? 0) : 0;
+    const netBuy = targetValue - currentValue;
+    if (netBuy <= WEIGHT_NOISE_THRESHOLD) continue;
+    netIncreases.push({ fund: tgt.name, sgd: netBuy });
+  }
+
+  const totalNetBuySgd = netIncreases.reduce((s, r) => s + r.sgd, 0) || 1;
+  const switchIn: SwitchOrderInRow[] = netIncreases.map((r) => ({
+    fund: r.fund,
+    pct: Math.round((r.sgd / totalNetBuySgd) * 100),
+  })).filter((r) => r.pct > 0);
 
   if (switchIn.length > 0) {
     const sum = switchIn.reduce((s, r) => s + r.pct, 0);
