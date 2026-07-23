@@ -21,6 +21,16 @@ function PencilIcon() {
   );
 }
 
+function DocsIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="M4 2h5l3 3v9H4V2Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+      <path d="M9 2v3h3" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+      <path d="M6 8h4M6 10.5h4M6 6h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function BlocksIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -114,7 +124,7 @@ export function LeftSidebar({
     });
   }
 
-  const isResearchWrite = pathname.startsWith("/write");
+  const isResources = pathname.startsWith("/resources") || pathname.startsWith("/write");
   const isBuilder = pathname.startsWith("/construction");
   const isModels = pathname.startsWith("/portfolios");
   const isSwitch = pathname.startsWith("/switch");
@@ -145,7 +155,7 @@ export function LeftSidebar({
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <ul className="flex flex-col gap-0.5">
-          <NavItem href="/write" label="Write" icon={<PencilIcon />} active={isResearchWrite} locked collapsed={collapsed} />
+          <NavItem href="/resources" label="Resources" icon={<DocsIcon />} active={isResources} collapsed={collapsed} />
           <NavItem href={defaultBuilderHref} label="Build" icon={<BlocksIcon />} active={isBuilder} locked collapsed={collapsed} />
           <NavItem href="/portfolios?view=all" label="Model portfolio" icon={<ChartIcon />} active={isModels} collapsed={collapsed} />
           <NavItem href="/switch" label="Fund switch" icon={<SwapIcon />} active={isSwitch} collapsed={collapsed} />
