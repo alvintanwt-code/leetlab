@@ -31,11 +31,11 @@ export default async function PickerPage({ params }: { params: Promise<{ provide
   // returns from the timeseries scrape (FWD/shared MSIDs) and the TMLS-page
   // scrape (TMLS-only secIds). Existing DB values win when present.
   const funds = rawFunds.map((f) => {
-    const fund = { ...f, ytd: null as number | null };
+    const fund = { ...f };
     if (!f.isin) return fund;
     const ov = getReturnOverride(f.isin);
     if (!ov) return fund;
-    fund.ytd = ov.ytd ?? null;
+    if (fund.ytd == null && ov.ytd != null) fund.ytd = ov.ytd;
     if (fund.stddev_3y == null && ov.stddev3y != null) fund.stddev_3y = ov.stddev3y;
     if (fund.ann_1y == null && ov.ann1y != null) fund.ann_1y = ov.ann1y;
     if (fund.ann_3y == null && ov.ann3y != null) fund.ann_3y = ov.ann3y;

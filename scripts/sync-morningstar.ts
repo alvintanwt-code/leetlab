@@ -166,7 +166,7 @@ async function syncProvider(p: Provider, sample: number | null): Promise<void> {
 
       const fundId = await upsertFund(providerId, parsed.fund);
       const s = parsed.snapshot;
-      if (s.nav != null || s.ann1y != null || s.ann3y != null) {
+      if (s.nav != null || s.ytd != null || s.ann1y != null || s.ann3y != null) {
         await upsertSnapshot(fundId, s);
       }
       await replaceAllocations(fundId, parsed.allocations);

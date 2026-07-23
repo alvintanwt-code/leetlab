@@ -60,6 +60,7 @@ export const fundSnapshots = pgTable(
     nav: real("nav"),
     currency: text("currency"),
     changePct: real("change_pct"),
+    ytd: real("ytd"),
     ann1y: real("ann_1y"),
     ann3y: real("ann_3y"),
     ann5y: real("ann_5y"),

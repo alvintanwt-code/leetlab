@@ -96,6 +96,7 @@ async function main() {
           nav: r.nav,
           currency: r.currency,
           changePct: null,
+          ytd: null,
           ann1y: r.ann1y,
           ann3y: r.ann3y,
           ann5y: r.ann5y,

@@ -27,6 +27,7 @@ export type NormalizedSnapshot = {
   nav: number | null;
   currency: string | null;
   changePct: number | null;
+  ytd: number | null;
   ann1y: number | null;
   ann3y: number | null;
   ann5y: number | null;
