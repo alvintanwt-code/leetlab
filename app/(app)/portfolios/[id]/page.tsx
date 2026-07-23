@@ -69,10 +69,10 @@ export default async function PortfolioDetailPage({
             Open fact sheet ↗
           </a>
           <a
-            href={`/api/factsheet/${portfolio.id}?download=1`}
+            href={`/api/factsheet/${portfolio.id}?download=1&format=pdf`}
             className="t-caption inline-flex h-8 items-center gap-1.5 border border-[var(--color-ink)] bg-[var(--color-ink)] px-3 text-[var(--color-canvas)] hover:bg-[var(--color-ink)]/90"
           >
-            Download ↓
+            Download PDF ↓
           </a>
         </div>
       </div>

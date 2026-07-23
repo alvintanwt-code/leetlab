@@ -5,25 +5,28 @@ import {
   getLatestFactsheet,
 } from "@/lib/db/queries";
 import { buildFactsheetForPortfolio } from "@/lib/factsheet/build";
+import { htmlToPdf } from "@/lib/factsheet/pdf";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+// PDF generation needs Chromium headroom on Vercel — 60s covers cold-start
+// binary decompression + first render.
+export const maxDuration = 60;
 
 /**
  * GET /api/factsheet/:id
  *   ?download=1        — force browser download instead of inline render
  *   ?month=YYYY-MM     — serve a specific archived month
+ *   ?format=pdf        — render the archived HTML to PDF server-side via
+ *                        headless Chromium and return application/pdf.
+ *                        Without this flag the endpoint returns the raw
+ *                        HTML the browser will Cmd+P print anyway.
  *
- * Resolution order:
- *   1. If ?month=YYYY-MM is given, serve that archived row or 404.
- *   2. Otherwise serve the LATEST archived row for this portfolio.
+ * Resolution order (HTML source):
+ *   1. If ?month=YYYY-MM is given, use that archived row or 404.
+ *   2. Otherwise use the LATEST archived row for this portfolio.
  *   3. If no archive exists yet (portfolio is fresh, or cron hasn't run),
  *      render live for the previous full month as a preview.
- *
- * Once the monthly cron (/api/factsheets/generate) has landed for the
- * new month, this endpoint automatically starts serving that newer row —
- * the display and download URL stay stable, the underlying content rolls
- * forward.
  */
 export async function GET(
   req: NextRequest,
@@ -38,6 +41,7 @@ export async function GET(
 
   const monthParam = req.nextUrl.searchParams.get("month");
   const download = req.nextUrl.searchParams.get("download") === "1";
+  const format = req.nextUrl.searchParams.get("format") === "pdf" ? "pdf" : "html";
 
   let html: string | null = null;
   let asOfMonthKey: string | null = null;
@@ -61,12 +65,29 @@ export async function GET(
     }
   }
 
-  const filename = `factsheet-${portfolio.provider_slug}-${portfolio.category}-${asOfMonthKey}.html`;
+  const stem = `factsheet-${portfolio.provider_slug}-${portfolio.category}-${asOfMonthKey}`;
+
+  if (format === "pdf") {
+    try {
+      const pdf = await htmlToPdf(html);
+      return new Response(new Uint8Array(pdf), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${stem}.pdf"`,
+          "Cache-Control": "no-store",
+        },
+      });
+    } catch (e) {
+      return NextResponse.json({ error: "pdf render failed", detail: (e as Error).message }, { status: 500 });
+    }
+  }
+
   return new Response(html, {
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
-      "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${filename}"`,
+      "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${stem}.html"`,
       "Cache-Control": "no-store",
     },
   });
