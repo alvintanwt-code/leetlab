@@ -236,10 +236,17 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
   .track{height:9px;background:#EBEBEC;}
   .fill{height:9px;background:#00B4BE;}
   .foot{margin-top:auto;border-top:1px solid #D9DAD9;padding-top:9px;font-size:9px;line-height:1.5;color:#838483;}
-  @page{size:letter;margin:0;}
+  /* Letter with a 20px safety margin — the 776px section sits centred on
+     the 776px content column that leaves, so proportions match on-screen
+     exactly. Chrome / Safari / Firefox all respect this and drop their
+     own default margins. */
+  @page{size:letter;margin:20px;}
   @media print{
     body{background:#FFFFFF;padding:0;}
-    .page{margin:0;box-shadow:none;page-break-after:always;min-height:auto;}
+    /* Keep margin:0 auto so the section centres on the printed page.
+       Without this override the browser would strip the auto and hard-
+       left-align. */
+    .page{margin:0 auto;box-shadow:none;page-break-after:always;min-height:auto;}
     .page:last-of-type{page-break-after:auto;}
   }
 </style>
