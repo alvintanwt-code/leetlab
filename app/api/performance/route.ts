@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { syntheticGrowth10K } from "@/lib/return-overrides";
 import { loadProxies, spliceProxyPrefix } from "@/lib/return-proxy-splice";
+import { neon } from "@neondatabase/serverless";
 
 // Server-side proxy + cache for Morningstar's public security_details endpoint.
 // We fetch the GrowthOf10K series per ISIN, rebase to 100, then blend a model line.
@@ -27,6 +28,49 @@ type FundSeries = { isin: string; name: string; weight: number; points: SeriesPo
 const CACHE = new Map<string, { ts: number; points: SeriesPoint[] }>();
 const TTL_MS = 6 * 60 * 60 * 1000; // 6h
 
+function synthesiseFromTrailingBundle(
+  t: { ann_1y: number | null; ann_3y: number | null; ann_5y: number | null; ann_10y: number | null },
+  months = 120,
+): SeriesPoint[] {
+  const anchors: { m: number; ret: number }[] = [];
+  if (t.ann_1y != null) anchors.push({ m: 12, ret: t.ann_1y / 100 });
+  if (t.ann_3y != null) anchors.push({ m: 36, ret: t.ann_3y / 100 });
+  if (t.ann_5y != null) anchors.push({ m: 60, ret: t.ann_5y / 100 });
+  if (t.ann_10y != null) anchors.push({ m: 120, ret: t.ann_10y / 100 });
+  if (anchors.length === 0) return [];
+  anchors.sort((a, b) => a.m - b.m);
+  const knot: { m: number; ln: number }[] = [{ m: 0, ln: 0 }];
+  for (const a of anchors) knot.push({ m: a.m, ln: -a.m * Math.log(1 + a.ret) / 12 });
+  const maxM = Math.min(months, anchors[anchors.length - 1].m);
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const out: SeriesPoint[] = [];
+  for (let i = maxM; i >= 0; i--) {
+    let hi = knot.length - 1;
+    for (let k = 1; k < knot.length; k++) if (knot[k].m >= i) { hi = k; break; }
+    const lo = hi - 1 >= 0 ? hi - 1 : hi;
+    const a = knot[lo], b = knot[hi];
+    const t2 = a.m === b.m ? 0 : (i - a.m) / (b.m - a.m);
+    const ln = a.ln + t2 * (b.ln - a.ln);
+    const v = 100 * Math.exp(ln);
+    const d = new Date(start); d.setMonth(d.getMonth() - i);
+    out.push({ d: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, v });
+  }
+  return out;
+}
+
+async function fetchDbTrailing(isin: string): Promise<{ ann_1y: number | null; ann_3y: number | null; ann_5y: number | null; ann_10y: number | null } | null> {
+  if (!process.env.DATABASE_URL) return null;
+  const sql = neon(process.env.DATABASE_URL);
+  const rows = (await sql`
+    SELECT s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
+    FROM funds f
+    LEFT JOIN LATERAL (SELECT ann_1y, ann_3y, ann_5y, ann_10y FROM fund_snapshots WHERE fund_id = f.id ORDER BY as_of DESC LIMIT 1) s ON true
+    WHERE f.isin = ${isin} LIMIT 1
+  `) as { ann_1y: number | null; ann_3y: number | null; ann_5y: number | null; ann_10y: number | null }[];
+  return rows[0] ?? null;
+}
+
 async function fetchSeries(isin: string): Promise<SeriesPoint[]> {
   const cached = CACHE.get(isin);
   if (cached && Date.now() - cached.ts < TTL_MS) return cached.points;
@@ -47,14 +91,24 @@ async function fetchSeries(isin: string): Promise<SeriesPoint[]> {
       }
     }
   } catch {
-    // fall through to override
+    // fall through to override / synth
   }
-  // Fallback for MAS-coded SG funds — Morningstar's MFsnapshot is empty for these,
-  // but data/return-overrides.json carries the cumulative-return series scraped
-  // from the chart endpoint (see scripts/scrape-mas-returns.ts).
+  // Fallback 1: return-overrides.json — pre-scraped monthly cumulative series
+  // for a small set of MAS-coded SG funds.
   if (points.length < 2) {
     const synth = syntheticGrowth10K(isin);
     if (synth.length >= 2) points = synth;
+  }
+  // Fallback 2: synthesise from trailing returns pulled from fund_snapshots.
+  // Matches the fact-sheet builder so /api/performance and the archived HTML
+  // agree — critical for MAS-coded proxy funds (SG9999003339 etc.) whose
+  // GrowthOf10K is empty at Morningstar but whose ann_1y/3y/5y/10y are known.
+  if (points.length < 2) {
+    const t = await fetchDbTrailing(isin);
+    if (t) {
+      const synth = synthesiseFromTrailingBundle(t);
+      if (synth.length >= 2) points = synth;
+    }
   }
   if (points.length < 2) return [];
   CACHE.set(isin, { ts: Date.now(), points });

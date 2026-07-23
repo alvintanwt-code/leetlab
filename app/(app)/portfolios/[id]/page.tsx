@@ -5,7 +5,7 @@ import {
   getConfirmedPortfolio,
   getPortfolioHoldings,
 } from "@/lib/db/queries";
-import { computeTrailingReturns } from "@/lib/factsheet/build";
+import { computeTrailingReturns, fillHoldingsWithProxies } from "@/lib/factsheet/build";
 import { computeLiveXrayExtras } from "@/lib/portfolio-xray-live";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +22,10 @@ export default async function PortfolioDetailPage({
   const portfolio = await getConfirmedPortfolio(portfolioId);
   if (!portfolio) notFound();
 
-  const holdings = await getPortfolioHoldings(portfolioId);
+  const rawHoldings = await getPortfolioHoldings(portfolioId);
+  // Splice proxy-share-class trailing figures into per-holding rows so the
+  // Instruments table below matches the portfolio-level blended numbers.
+  const holdings = await fillHoldingsWithProxies(rawHoldings);
 
   // Rebuild the entire xray live rather than serving the stored snapshot.
   //   - Trailing returns via computeTrailingReturns (proxy-share-class aware).

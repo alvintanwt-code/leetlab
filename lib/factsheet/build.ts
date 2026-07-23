@@ -121,6 +121,33 @@ type ResolvedHolding = {
   usedProxy10y: boolean;
 };
 
+/**
+ * Return the input holdings with ann_5y and ann_10y filled in from the
+ * configured proxy fund when the target's own trailing figure is null.
+ * Preserves the ConfirmedPortfolioHolding shape so the value is a drop-in
+ * substitute for the raw DB output — used by /portfolios/[id] so the
+ * Instruments table reads the same numbers the portfolio-level metrics
+ * already blend from.
+ */
+export async function fillHoldingsWithProxies(holdings: ConfirmedPortfolioHolding[]): Promise<ConfirmedPortfolioHolding[]> {
+  const proxies = loadProxies();
+  const proxyIsins = holdings.filter((h) => h.isin && proxies[h.isin]).map((h) => proxies[h.isin as string].proxy);
+  if (proxyIsins.length === 0) return holdings;
+  const trailing = await fetchProxyReturns(proxyIsins);
+  return holdings.map((h) => {
+    if (!h.isin) return h;
+    const cfg = proxies[h.isin];
+    if (!cfg) return h;
+    const p = trailing.get(cfg.proxy);
+    if (!p) return h;
+    return {
+      ...h,
+      ann_5y: h.ann_5y ?? p.ann_5y ?? null,
+      ann_10y: h.ann_10y ?? p.ann_10y ?? null,
+    };
+  });
+}
+
 async function resolveHoldingsWithProxies(holdings: ConfirmedPortfolioHolding[]): Promise<ResolvedHolding[]> {
   const proxies = loadProxies();
   const totalBps = holdings.reduce((s, h) => s + h.weight_bps, 0) || 1;

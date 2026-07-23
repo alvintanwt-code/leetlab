@@ -452,11 +452,12 @@ export function PortfolioDetail({
           </div>
           <table className="table-pro table-pro-sm" style={{ tableLayout: "fixed" }}>
             <colgroup>
-              <col style={{ width: "36%" }} />
-              <col style={{ width: "16%" }} />
-              <col style={{ width: "16%" }} />
-              <col style={{ width: "16%" }} />
-              <col style={{ width: "16%" }} />
+              <col style={{ width: "34%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "14%" }} />
             </colgroup>
             <thead>
               <tr>
@@ -465,6 +466,7 @@ export function PortfolioDetail({
                 <th className="right">1Y</th>
                 <th className="right">3Y</th>
                 <th className="right">5Y</th>
+                <th className="right">10Y</th>
               </tr>
             </thead>
             <tbody>
@@ -472,6 +474,7 @@ export function PortfolioDetail({
                 const r1 = fmtPct(h.ann_1y);
                 const r3 = fmtPct(h.ann_3y);
                 const r5 = fmtPct(h.ann_5y);
+                const r10 = fmtPct(h.ann_10y);
                 return (
                   <tr key={h.fund_id}>
                     <td className="cell-fund">
@@ -497,6 +500,7 @@ export function PortfolioDetail({
                     <td className="nowrap right"><span className={`num ${r1.cls}`}>{r1.text}</span></td>
                     <td className="nowrap right"><span className={`num ${r3.cls}`}>{r3.text}</span></td>
                     <td className="nowrap right"><span className={`num ${r5.cls}`}>{r5.text}</span></td>
+                    <td className="nowrap right"><span className={`num ${r10.cls}`}>{r10.text}</span></td>
                   </tr>
                 );
               })}
