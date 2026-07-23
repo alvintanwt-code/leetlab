@@ -12,15 +12,13 @@ const CATEGORY_LABEL: Record<string, string> = {
   dividend_income: "Income",
 };
 
-// Two kinds of card: static PDFs uploaded to /public/resources/ (Market
-// Outlook etc.) and dynamic fact sheets served fresh from the archive.
 type StaticResource = {
   kind: "static";
   slug: string;
   title: string;
   subtitle: string;
   category: string;
-  file: string;    // path under /public
+  file: string;
   edition: string;
 };
 
@@ -29,8 +27,8 @@ type FactsheetResource = {
   slug: string;
   title: string;
   subtitle: string;
-  category: string; // "Fact sheet"
-  provider: string; // "HSBC" / "FWD" / etc.
+  category: string;
+  provider: string;
   edition: string;
   openHref: string;
   downloadHref: string;
@@ -73,7 +71,6 @@ function editionLabel(iso: string): string {
 
 export default async function ResourcesPage() {
   const portfolios = await listConfirmedPortfolios();
-  // Dedup — same portfolio may exist in multiple versions; keep the newest.
   const seen = new Set<string>();
   const factsheets: FactsheetResource[] = [];
   for (const p of portfolios) {
@@ -95,8 +92,6 @@ export default async function ResourcesPage() {
     });
   }
 
-  const resources: Resource[] = [...STATIC_RESOURCES, ...factsheets];
-
   return (
     <div className="mx-auto w-full max-w-[1280px] px-20 pb-16">
       <div className="sticky top-0 z-20 -mx-20 mb-12 bg-[var(--color-canvas-soft)] px-20">
@@ -107,14 +102,39 @@ export default async function ResourcesPage() {
       </div>
 
       <p className="t-body-md text-[var(--color-ink-mute)] max-w-[680px] mb-10">
-        Client-facing documents, one card per artifact. Open renders inline; Download saves the PDF. Fact sheets are re-served from the latest monthly archive on each click.
+        Client-facing documents. Open renders inline; Download saves the PDF. Fact sheets re-render from the latest monthly archive on each click.
       </p>
 
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {resources.map((r) => (
-          <ResourceCard key={r.slug} resource={r} />
-        ))}
-      </div>
+      {/* Fact sheets — 4-column grid of smaller cards */}
+      <section className="mb-16">
+        <div className="mb-5 flex items-baseline justify-between">
+          <p className="t-micro-cap text-[var(--color-ink)]">Fact sheets</p>
+          <p className="t-caption text-[var(--color-ink-mute)]">
+            {factsheets.length} · one per confirmed model portfolio
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+          {factsheets.map((r) => (
+            <ResourceCard key={r.slug} resource={r} />
+          ))}
+        </div>
+      </section>
+
+      {/* Hairline divider */}
+      <div className="mb-16 border-t border-[var(--color-hairline)]" aria-hidden />
+
+      {/* Market commentary — standalone row */}
+      <section>
+        <div className="mb-5 flex items-baseline justify-between">
+          <p className="t-micro-cap text-[var(--color-ink)]">Market commentary</p>
+          <p className="t-caption text-[var(--color-ink-mute)]">Quarterly + event-driven notes</p>
+        </div>
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+          {STATIC_RESOURCES.map((r) => (
+            <ResourceCard key={r.slug} resource={r} />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -128,8 +148,6 @@ function ResourceCard({ resource }: { resource: Resource }) {
     : resource.openHref;
   const downloadHref = isStatic ? resource.file : resource.downloadHref;
   const isPdf = isStatic;
-
-  // Accent colour distinguishes the two card types.
   const accent = isStatic ? "#00B4BE" : "#E20C10";
 
   return (
@@ -142,62 +160,62 @@ function ResourceCard({ resource }: { resource: Resource }) {
         href={openHref}
         target={openHref ? "_blank" : undefined}
         rel="noopener"
-        className="relative block h-[280px] bg-[var(--color-ink)] p-6 text-[var(--color-canvas)]"
+        className="relative block h-[200px] bg-[var(--color-ink)] p-4 text-[var(--color-canvas)]"
         aria-disabled={isMissing}
       >
         <div className="flex h-full flex-col justify-between">
           <div>
-            <div className="mb-1 h-[3px] w-8" style={{ background: accent }} />
-            <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/70">
+            <div className="mb-1 h-[2px] w-6" style={{ background: accent }} />
+            <p className="text-[9px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/70">
               {resource.category}
               {!isStatic && (
                 <>
-                  <span className="mx-1.5">·</span>
+                  <span className="mx-1">·</span>
                   {(resource as FactsheetResource).provider}
                 </>
               )}
             </p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/70 mb-2">
+            <p className="text-[9px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/70 mb-1.5">
               {resource.edition}
             </p>
             <h3
-              className="text-[22px] leading-tight tracking-tight font-medium"
+              className="text-[16px] leading-tight tracking-tight font-medium"
               style={{ fontFamily: "'Bitter', Georgia, serif" }}
             >
               {resource.title}
             </h3>
           </div>
         </div>
-        <span className="absolute right-4 top-4 text-[10px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/60">
+        <span className="absolute right-3 top-3 text-[9px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/60">
           {isPdf ? "PDF" : "HTML · PDF"}
         </span>
       </a>
 
-      <div className="flex flex-col gap-3 p-5">
-        <p className="t-body-sm text-[var(--color-ink)] leading-snug">{resource.subtitle}</p>
-        <div className="flex items-center justify-between border-t border-[var(--color-hairline-2)] pt-3">
-          <p className="t-caption text-[var(--color-ink-mute)]">
-            {isMissing ? "File not yet uploaded" : meta.sizeLabel}
+      <div className="flex flex-col gap-2.5 p-3.5">
+        <p className="t-caption text-[var(--color-ink)] leading-snug line-clamp-2">{resource.subtitle}</p>
+        <div className="flex items-center justify-between border-t border-[var(--color-hairline-2)] pt-2.5">
+          <p className="text-[10px] text-[var(--color-ink-mute)]">
+            {isMissing ? "Not uploaded" : meta.sizeLabel}
           </p>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {!isMissing && openHref && (
               <>
                 <a
                   href={openHref}
                   target="_blank"
                   rel="noopener"
-                  className="t-caption inline-flex h-7 items-center border border-[var(--color-hairline)] px-2 text-[var(--color-ink)] hover:border-[var(--color-ink)]"
+                  className="inline-flex h-6 items-center border border-[var(--color-hairline)] px-1.5 text-[10px] text-[var(--color-ink)] hover:border-[var(--color-ink)]"
                 >
                   Open ↗
                 </a>
                 <a
                   href={downloadHref}
                   {...(isStatic ? { download: true } : {})}
-                  className="t-caption inline-flex h-7 items-center border border-[var(--color-ink)] bg-[var(--color-ink)] px-2 text-[var(--color-canvas)] hover:bg-[var(--color-ink)]/90"
+                  className="inline-flex h-6 items-center border border-[var(--color-ink)] bg-[var(--color-ink)] px-1.5 text-[10px] text-[var(--color-canvas)] hover:bg-[var(--color-ink)]/90"
                 >
-                  Download{isStatic ? " ↓" : " PDF ↓"}
+                  {isStatic ? "PDF ↓" : "PDF ↓"}
                 </a>
               </>
             )}
