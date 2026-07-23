@@ -8,11 +8,16 @@ import { redirect } from "next/navigation";
 // access, not primary security.
 
 const COOKIE_NAME = "builder_unlocked";
+// Hardcoded on purpose — this is an internal advisor tool with a small user
+// pool, and the primary auth (Google OAuth) already gates the whole app. This
+// gate is a per-role speed bump, not real security; rotating it means one
+// commit + push, no infra.
+const BUILDER_PASSWORD = "leet1337";
 
 async function unlockAction(formData: FormData) {
   "use server";
   const attempt = String(formData.get("password") ?? "").trim();
-  const expected = process.env.BUILDER_PASSWORD ?? "";
+  const expected = BUILDER_PASSWORD;
   const next = String(formData.get("next") ?? "/construction").trim() || "/construction";
   // Only allow same-origin construction URLs to avoid open-redirect surprises.
   const safeNext = next.startsWith("/construction") ? next : "/construction";
