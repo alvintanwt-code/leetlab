@@ -24,6 +24,18 @@
     "IE00BLFJC025": {
       "proxy": "IE00B8DMPF88",
       "reason": "Dimensional Global Core Equity LC ESG Screen SGD Acc → USD Acc (2013 inception)"
+    },
+    "LU1791710236": {
+      "proxy": "LU0261950470",
+      "reason": "Fidelity Em Mkts A-Acc-SGD H (TMLS Aggressive) → A-Acc-USD (1993 inception)"
+    },
+    "LU2682081513": {
+      "proxy": "LU1046421795",
+      "reason": "Fidelity Global Technology A-Acc-SGD H (FWD Aggressive) → A-Acc-USD (2014 inception)"
+    },
+    "LU1914381329": {
+      "proxy": "GB00BYQ91V66",
+      "reason": "Allianz Best Styles Global Eq ET H2 SGD (FWD Aggressive) → Allianz Best Styles Global AC Eq I Acc GBP (2015 inception)"
     }
   }
 }

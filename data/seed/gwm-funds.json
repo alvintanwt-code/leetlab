@@ -5,6 +5,11 @@
     "status": "Active"
   },
   {
+    "name": "Allianz Best Styles Global AC Eq I Acc GBP",
+    "isin": "GB00BYQ91V66",
+    "status": "Active"
+  },
+  {
     "name": "Allianz Global High Payout SGD",
     "isin": "SG9999002224",
     "status": "Active"
@@ -162,6 +167,11 @@
   {
     "name": "Fidelity Global Technology A-Acc-SGD",
     "isin": "LU1823568750",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Global Technology A-Acc-USD",
+    "isin": "LU1046421795",
     "status": "Active"
   },
   {
