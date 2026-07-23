@@ -24,12 +24,30 @@ export default async function PortfolioDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-10 py-10">
-      <Link
-        href={`/portfolios?platform=${portfolio.provider_slug}`}
-        className="t-caption inline-flex items-center gap-1 text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
-      >
-        &larr; Back to Model Portfolios
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          href={`/portfolios?platform=${portfolio.provider_slug}`}
+          className="t-caption inline-flex items-center gap-1 text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
+        >
+          &larr; Back to Model Portfolios
+        </Link>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/api/factsheet/${portfolio.id}`}
+            target="_blank"
+            rel="noopener"
+            className="t-caption inline-flex h-8 items-center gap-1.5 border border-[var(--color-hairline)] px-3 text-[var(--color-ink)] hover:border-[var(--color-ink)]"
+          >
+            Open fact sheet ↗
+          </a>
+          <a
+            href={`/api/factsheet/${portfolio.id}?download=1`}
+            className="t-caption inline-flex h-8 items-center gap-1.5 border border-[var(--color-ink)] bg-[var(--color-ink)] px-3 text-[var(--color-canvas)] hover:bg-[var(--color-ink)]/90"
+          >
+            Download ↓
+          </a>
+        </div>
+      </div>
       <PortfolioDetail portfolio={portfolio} holdings={holdings} />
     </div>
   );

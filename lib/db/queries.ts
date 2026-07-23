@@ -440,10 +440,12 @@ export type ConfirmedPortfolioHolding = {
   risk_rating: number | null;
   expense_ratio: number | null;
   nav: number | null;
+  ytd: number | null;
   ann_1y: number | null;
   ann_3y: number | null;
   ann_5y: number | null;
   ann_10y: number | null;
+  stddev_3y: number | null;
 };
 
 export async function getConfirmedPortfolio(id: number): Promise<ConfirmedPortfolio | null> {
@@ -465,11 +467,11 @@ export async function getPortfolioHoldings(portfolioId: number): Promise<Confirm
     SELECT h.weight_bps,
            f.id AS fund_id, f.external_id, f.name, f.isin, f.fund_house, f.currency,
            f.asset_class, f.risk_rating, f.expense_ratio,
-           s.nav, s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
+           s.nav, s.ytd, s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y, s.stddev_3y
     FROM model_portfolio_holdings h
     JOIN funds f ON f.id = h.fund_id
     LEFT JOIN LATERAL (
-      SELECT nav, ann_1y, ann_3y, ann_5y, ann_10y FROM fund_snapshots
+      SELECT nav, ytd, ann_1y, ann_3y, ann_5y, ann_10y, stddev_3y FROM fund_snapshots
       WHERE fund_id = f.id ORDER BY as_of DESC LIMIT 1
     ) s ON true
     WHERE h.portfolio_id = ${portfolioId}

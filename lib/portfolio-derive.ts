@@ -74,6 +74,7 @@ export function computeRiskRating(
   return Math.round(weighted * 10) / 10;
 }
 
+export type XrayBar = { label: string; weight_pct: number };
 export type PortfolioXray = {
   expense?: number | null;
   risk?: number | null;
@@ -81,6 +82,10 @@ export type PortfolioXray = {
   r3y?: number | null;
   r5y?: number | null;
   r10y?: number | null;
+  equityCoverage?: number | null;
+  geo?: XrayBar[];
+  sector?: XrayBar[];
+  holdings?: XrayBar[];
 };
 
 export function parseXray(p: Pick<ConfirmedPortfolio, "xray_json">): PortfolioXray | null {
