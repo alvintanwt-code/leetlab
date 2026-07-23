@@ -18,6 +18,7 @@ export default {
       const isPublic =
         path === "/login" ||
         path.startsWith("/api/auth") ||
+        path.startsWith("/api/factsheets/generate") ||
         path.startsWith("/_next") ||
         path === "/favicon.ico";
       if (isPublic) return true;

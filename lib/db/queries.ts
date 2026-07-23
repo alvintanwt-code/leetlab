@@ -462,6 +462,62 @@ export async function getConfirmedPortfolio(id: number): Promise<ConfirmedPortfo
   return rows[0] ?? null;
 }
 
+// ─── Factsheet archive ─────────────────────────────────────────
+// One-row-per-portfolio-per-month store of frozen fact-sheet HTML.
+// Populated by the /api/factsheets/generate cron on the 4th of every
+// month for the prior full month.
+
+export type FactsheetRow = {
+  id: number;
+  portfolio_id: number;
+  as_of_month: string; // YYYY-MM
+  html_content: string;
+  generated_at: string;
+};
+
+export async function getLatestFactsheet(portfolioId: number): Promise<FactsheetRow | null> {
+  const rows = await q<FactsheetRow>(sql`
+    SELECT id, portfolio_id, as_of_month, html_content, generated_at::text
+    FROM portfolio_factsheets
+    WHERE portfolio_id = ${portfolioId}
+    ORDER BY as_of_month DESC
+    LIMIT 1
+  `);
+  return rows[0] ?? null;
+}
+
+export async function getFactsheetByMonth(portfolioId: number, asOfMonth: string): Promise<FactsheetRow | null> {
+  const rows = await q<FactsheetRow>(sql`
+    SELECT id, portfolio_id, as_of_month, html_content, generated_at::text
+    FROM portfolio_factsheets
+    WHERE portfolio_id = ${portfolioId} AND as_of_month = ${asOfMonth}
+    LIMIT 1
+  `);
+  return rows[0] ?? null;
+}
+
+export async function insertFactsheet(portfolioId: number, asOfMonth: string, html: string): Promise<{ id: number; inserted: boolean }> {
+  const rows = await q<{ id: number }>(sql`
+    INSERT INTO portfolio_factsheets (portfolio_id, as_of_month, html_content)
+    VALUES (${portfolioId}, ${asOfMonth}, ${html})
+    ON CONFLICT (portfolio_id, as_of_month) DO NOTHING
+    RETURNING id
+  `);
+  if (rows[0]) return { id: rows[0].id, inserted: true };
+  const existing = await getFactsheetByMonth(portfolioId, asOfMonth);
+  return { id: existing?.id ?? -1, inserted: false };
+}
+
+export async function listConfirmedPortfolioIds(): Promise<{ id: number; slug: string; name: string }[]> {
+  return q<{ id: number; slug: string; name: string }>(sql`
+    SELECT mp.id, p.slug, mp.name
+    FROM model_portfolios mp
+    JOIN providers p ON p.id = mp.provider_id
+    WHERE mp.status = 'confirmed'
+    ORDER BY mp.id
+  `);
+}
+
 export async function getPortfolioHoldings(portfolioId: number): Promise<ConfirmedPortfolioHolding[]> {
   return q<ConfirmedPortfolioHolding>(sql`
     SELECT h.weight_bps,

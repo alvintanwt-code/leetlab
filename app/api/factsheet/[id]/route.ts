@@ -1,21 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getConfirmedPortfolio, getPortfolioHoldings } from "@/lib/db/queries";
-import { parseXray } from "@/lib/portfolio-derive";
-import { blendPortfolioSeries } from "@/lib/portfolio-performance";
-import { renderFactsheetHtml } from "@/lib/factsheet/render";
+import {
+  getConfirmedPortfolio,
+  getFactsheetByMonth,
+  getLatestFactsheet,
+} from "@/lib/db/queries";
+import { buildFactsheetForPortfolio } from "@/lib/factsheet/build";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
  * GET /api/factsheet/:id
- *   ?download=1  — force browser download instead of inline render
+ *   ?download=1        — force browser download instead of inline render
+ *   ?month=YYYY-MM     — serve a specific archived month
  *
- * Renders the two-page Global Alpha fact sheet for a specific confirmed model
- * portfolio using live database + Morningstar data. Everything the template
- * needs is derived here (weighted YTD / trailing / stddev / expense, blended
- * growth-of-100k series) then passed to lib/factsheet/render.ts, which owns
- * the SKILL brand system markup.
+ * Resolution order:
+ *   1. If ?month=YYYY-MM is given, serve that archived row or 404.
+ *   2. Otherwise serve the LATEST archived row for this portfolio.
+ *   3. If no archive exists yet (portfolio is fresh, or cron hasn't run),
+ *      render live for the previous full month as a preview.
+ *
+ * Once the monthly cron (/api/factsheets/generate) has landed for the
+ * new month, this endpoint automatically starts serving that newer row —
+ * the display and download URL stay stable, the underlying content rolls
+ * forward.
  */
 export async function GET(
   req: NextRequest,
@@ -28,48 +36,32 @@ export async function GET(
   const portfolio = await getConfirmedPortfolio(portfolioId);
   if (!portfolio) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const holdings = await getPortfolioHoldings(portfolioId);
-  const xray = parseXray(portfolio);
-
-  const totalBps = holdings.reduce((s, h) => s + h.weight_bps, 0) || 1;
-  const components = holdings
-    .filter((h) => !!h.isin)
-    .map((h) => ({ isin: h.isin as string, weight: h.weight_bps / totalBps }));
-
-  const series = await blendPortfolioSeries(components, 120);
-
-  // Weighted trailing figures — YTD from fund_snapshots.ytd (Morningstar M0),
-  // 1Y/3Y/5Y from xray (already weighted at portfolio-build time).
-  const weight = (h: typeof holdings[number]) => h.weight_bps / totalBps;
-  const weightedYtd = holdings.reduce((s, h) => {
-    return h.ytd == null ? s : s + weight(h) * h.ytd;
-  }, 0);
-  const weightedStddev3y = holdings.reduce((s, h) => {
-    return h.stddev_3y == null ? s : s + weight(h) * h.stddev_3y;
-  }, 0);
-
-  const asOfMonth = (() => {
-    const d = new Date();
-    // Report on last completed month-end. e.g. 23 Jul → June 2026.
-    d.setDate(1);
-    d.setMonth(d.getMonth() - 1);
-    return d;
-  })();
-
-  const html = renderFactsheetHtml({
-    portfolio,
-    holdings,
-    xray,
-    series,
-    weightedYtd: Number.isFinite(weightedYtd) ? weightedYtd : null,
-    weightedStddev3y: Number.isFinite(weightedStddev3y) ? weightedStddev3y : null,
-    asOfMonth,
-  });
-
-  const filename = `factsheet-${portfolio.provider_slug}-${portfolio.category}-${asOfMonth
-    .toISOString()
-    .slice(0, 7)}.html`;
+  const monthParam = req.nextUrl.searchParams.get("month");
   const download = req.nextUrl.searchParams.get("download") === "1";
+
+  let html: string | null = null;
+  let asOfMonthKey: string | null = null;
+
+  if (monthParam) {
+    const row = await getFactsheetByMonth(portfolioId, monthParam);
+    if (!row) return NextResponse.json({ error: "no archive for that month" }, { status: 404 });
+    html = row.html_content;
+    asOfMonthKey = row.as_of_month;
+  } else {
+    const latest = await getLatestFactsheet(portfolioId);
+    if (latest) {
+      html = latest.html_content;
+      asOfMonthKey = latest.as_of_month;
+    } else {
+      // Fallback: nothing archived yet — render live for last full month.
+      const built = await buildFactsheetForPortfolio(portfolioId);
+      if (!built) return NextResponse.json({ error: "render failed" }, { status: 500 });
+      html = built.html;
+      asOfMonthKey = built.asOfMonthKey;
+    }
+  }
+
+  const filename = `factsheet-${portfolio.provider_slug}-${portfolio.category}-${asOfMonthKey}.html`;
   return new Response(html, {
     status: 200,
     headers: {

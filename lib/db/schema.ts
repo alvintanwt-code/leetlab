@@ -13,6 +13,22 @@ export const providers = pgTable("providers", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const portfolioFactsheets = pgTable(
+  "portfolio_factsheets",
+  {
+    id: serial("id").primaryKey(),
+    // Note: FK target `modelPortfolios` is defined further down; drizzle
+    // resolves this reference lazily via the callback form.
+    portfolioId: integer("portfolio_id").notNull(),
+    asOfMonth: text("as_of_month").notNull(), // YYYY-MM
+    htmlContent: text("html_content").notNull(),
+    generatedAt: timestamp("generated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    uniqPortfolioMonth: unique("portfolio_factsheets_portfolio_month_key").on(t.portfolioId, t.asOfMonth),
+  }),
+);
+
 export const funds = pgTable(
   "funds",
   {
