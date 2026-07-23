@@ -1,0 +1,29 @@
+{
+  "_comment": "Return-history proxies. When a fund's ann_5y or ann_10y is null in fund_snapshots (typically a newly-launched SGD share class), the fact-sheet builder falls back to the proxy ISIN's returns. Convention: proxy is a longer-history share class of the same underlying strategy (USD Acc → SGD Acc, or a sibling MAS-coded SG fund tracking the same index).",
+  "proxies": {
+    "LU2420245917": {
+      "proxy": "SG9999003339",
+      "reason": "Amundi Idx MSCI World A12S-C SGD (2022 inception) → Infinity Global Stock Index USD (2003 inception, both track MSCI World)"
+    },
+    "IE00BF20L986": {
+      "proxy": "IE00B2PC0609",
+      "reason": "Dimensional Global Targeted Value SGD Acc → USD Acc (2008 inception)"
+    },
+    "IE00BF20LB02": {
+      "proxy": "IE00BYVJQT42",
+      "reason": "Dimensional EM LrgCap Core Equity SGD Acc → USD Acc (2016 inception)"
+    },
+    "IE00BF20L879": {
+      "proxy": "IE00B2PC0153",
+      "reason": "Dimensional Global Core Equity SGD Acc → USD Acc (2008 inception)"
+    },
+    "IE00BG85LH23": {
+      "proxy": "IE0034140404",
+      "reason": "Dimensional Pacific Basin Small Companies SGD Acc → USD Acc (2004 inception)"
+    },
+    "IE00BLFJC025": {
+      "proxy": "IE00B8DMPF88",
+      "reason": "Dimensional Global Core Equity LC ESG Screen SGD Acc → USD Acc (2013 inception)"
+    }
+  }
+}

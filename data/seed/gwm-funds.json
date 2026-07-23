@@ -85,8 +85,23 @@
     "status": "Active"
   },
   {
+    "name": "Dimensional EM LrgCap Core Eq USD Acc",
+    "isin": "IE00BYVJQT42",
+    "status": "Active"
+  },
+  {
+    "name": "Dimensional European Value USD Dist",
+    "isin": "IE00B3LCJT79",
+    "status": "Active"
+  },
+  {
     "name": "Dimensional Gl Cor Eq LC ESG Sc SGD A",
     "isin": "IE00BLFJC025",
+    "status": "Active"
+  },
+  {
+    "name": "Dimensional Gl Cor Eq LC ESG Sc USD A",
+    "isin": "IE00B8DMPF88",
     "status": "Active"
   },
   {
@@ -95,13 +110,28 @@
     "status": "Active"
   },
   {
+    "name": "Dimensional Global Core Equity USD Acc",
+    "isin": "IE00B2PC0153",
+    "status": "Active"
+  },
+  {
     "name": "Dimensional Global Trgtd Value SGD Acc",
     "isin": "IE00BF20L986",
     "status": "Active"
   },
   {
+    "name": "Dimensional Global Trgtd Value USD Acc",
+    "isin": "IE00B2PC0609",
+    "status": "Active"
+  },
+  {
     "name": "Dimensional Pac Basin Sm Comp SGD Acc",
     "isin": "IE00BG85LH23",
+    "status": "Active"
+  },
+  {
+    "name": "Dimensional Pac Basin Sm Comp USD Acc",
+    "isin": "IE0034140404",
     "status": "Active"
   },
   {
@@ -172,6 +202,16 @@
   {
     "name": "Infinity European Stock Index SGD",
     "isin": "SG9999003305",
+    "status": "Active"
+  },
+  {
+    "name": "Infinity Global Stock Index SGD",
+    "isin": "SG9999003321",
+    "status": "Active"
+  },
+  {
+    "name": "Infinity Global Stock Index USD",
+    "isin": "SG9999003339",
     "status": "Active"
   },
   {

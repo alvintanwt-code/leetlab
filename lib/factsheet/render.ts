@@ -4,6 +4,7 @@ import type {
 } from "@/lib/db/queries";
 import type { PortfolioXray } from "@/lib/portfolio-derive";
 import type { BlendedSeries } from "@/lib/portfolio-performance";
+import type { TrailingReturns } from "./build";
 
 /**
  * Owns the Global Alpha fact-sheet template. Everything the SKILL.md
@@ -35,8 +36,8 @@ export type FactsheetInput = {
   holdings: ConfirmedPortfolioHolding[];
   xray: PortfolioXray | null;
   series: BlendedSeries;
-  weightedYtd: number | null;
-  weightedStddev3y: number | null;
+  /** Freshly-computed weighted trailing returns with proxy-fund fallback. */
+  returns: TrailingReturns;
   asOfMonth: Date;
 };
 
@@ -153,13 +154,29 @@ function renderBarRows(rows: { label: string; weight_pct: number }[] | undefined
 }
 
 export function renderFactsheetHtml(input: FactsheetInput): string {
-  const { portfolio, holdings, xray, series, weightedYtd, weightedStddev3y, asOfMonth } = input;
+  const { portfolio, holdings, xray, series, returns, asOfMonth } = input;
+  const weightedYtd = returns.ytd;
+  const weightedStddev3y = returns.stddev_3y;
   const totalBps = holdings.reduce((s, h) => s + h.weight_bps, 0) || 1;
   const rebased = rebaseToSgd(series);
 
   const categoryLabel = CATEGORY_LABEL[portfolio.category] ?? portfolio.category;
-  const heroPct = xray?.r5y ?? xray?.r3y ?? xray?.r1y ?? null;
-  const heroWindow = xray?.r5y != null ? "5-year annualised" : xray?.r3y != null ? "3-year annualised" : "1-year";
+  // Hero picks the longest available window whose coverage is meaningful; if a
+  // window drew from proxy funds, we still surface it but note that in the
+  // caption below.
+  const heroPct = returns.ann_10y ?? returns.ann_5y ?? returns.ann_3y ?? returns.ann_1y ?? null;
+  const heroWindow = returns.ann_10y != null
+    ? "10-year annualised"
+    : returns.ann_5y != null
+      ? "5-year annualised"
+      : returns.ann_3y != null
+        ? "3-year annualised"
+        : "1-year";
+  const heroUsesProxy = returns.ann_10y != null
+    ? returns.coverage.proxied_10y_weight > 0
+    : returns.ann_5y != null
+      ? returns.coverage.proxied_5y_weight > 0
+      : false;
   const cumulativeSinceStart = rebased ? rebased.end / 1000 - 100 : null; // (end/100k - 1) × 100
 
   // Weighted expense from holdings (fund-level expense_ratio × weight); fall back to xray.expense if that's already sensible.
@@ -304,7 +321,7 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
     <div class="hero-fig num">${fmtPct(heroPct, 1, false)}</div>
     <div class="hero-cap">
       ${esc(heroWindow)} return<br>
-      Look-through composite · SGD · gross of DPS fee
+      Look-through composite · SGD · gross of DPS fee${heroUsesProxy ? "<br>Includes proxy share-class returns" : ""}
     </div>
   </div>
 
@@ -315,15 +332,15 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
     </div>
     <div class="stat-cell">
       <div class="stat-lbl">1 Year</div>
-      <div class="stat-val num ${xray?.r1y == null ? "mute" : xray.r1y >= 0 ? "teal" : "neg"}">${fmtPct(xray?.r1y ?? null, 1)}</div>
+      <div class="stat-val num ${returns.ann_1y == null ? "mute" : returns.ann_1y >= 0 ? "teal" : "neg"}">${fmtPct(returns.ann_1y, 1)}</div>
     </div>
     <div class="stat-cell">
       <div class="stat-lbl">3 Years p.a.</div>
-      <div class="stat-val num ${xray?.r3y == null ? "mute" : xray.r3y >= 0 ? "teal" : "neg"}">${fmtPct(xray?.r3y ?? null, 1)}</div>
+      <div class="stat-val num ${returns.ann_3y == null ? "mute" : returns.ann_3y >= 0 ? "teal" : "neg"}">${fmtPct(returns.ann_3y, 1)}</div>
     </div>
     <div class="stat-cell">
-      <div class="stat-lbl">5 Years p.a.</div>
-      <div class="stat-val num ${xray?.r5y == null ? "mute" : xray.r5y >= 0 ? "teal" : "neg"}">${fmtPct(xray?.r5y ?? null, 1)}</div>
+      <div class="stat-lbl">${returns.ann_10y != null ? "10 Years p.a." : "5 Years p.a."}</div>
+      <div class="stat-val num ${(returns.ann_10y ?? returns.ann_5y) == null ? "mute" : (returns.ann_10y ?? returns.ann_5y)! >= 0 ? "teal" : "neg"}">${fmtPct(returns.ann_10y ?? returns.ann_5y, 1)}</div>
     </div>
   </div>
 
