@@ -134,6 +134,14 @@ export type BlendedSeries = {
 export async function blendPortfolioSeries(
   components: Component[],
   windowMonths = 36,
+  /**
+   * Optional supplemental series per ISIN. Consulted when Morningstar's
+   * MFsnapshot + return-overrides.json can't yield a series (e.g. MAS-coded
+   * SG funds whose GrowthOf10K is empty). Lets the caller synthesise from
+   * trailing returns so the fund still contributes to the blend at its
+   * real weight instead of being silently dropped.
+   */
+  supplementalSeries?: Map<string, SeriesPoint[]>,
 ): Promise<BlendedSeries> {
   const valid = components.filter((c) => c.isin && c.weight > 0);
   if (valid.length === 0) return null;
@@ -141,7 +149,12 @@ export async function blendPortfolioSeries(
   const fetched = await Promise.all(
     valid.map(async (c) => {
       const snap = await fetchSnapshot(c.isin);
-      return { weight: c.weight, points: snap.points };
+      let points = snap.points;
+      if (points.length < 3 && supplementalSeries) {
+        const supp = supplementalSeries.get(c.isin);
+        if (supp && supp.length >= 3) points = supp;
+      }
+      return { weight: c.weight, points };
     }),
   );
   const usable = fetched.filter((f) => f.points.length >= 3);

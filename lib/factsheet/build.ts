@@ -10,6 +10,48 @@ import { parseXray } from "@/lib/portfolio-derive";
 import { blendPortfolioSeries } from "@/lib/portfolio-performance";
 import { renderFactsheetHtml } from "./render";
 
+type SeriesPoint = { d: string; v: number };
+
+/**
+ * Synthesise a monthly growth-of-100 series over the last 120 months from a
+ * fund's trailing annualised returns. Used when Morningstar's GrowthOf10K
+ * comes back empty (MAS-coded SG funds) so the fund still contributes to the
+ * fact-sheet chart at its real weight.
+ *
+ * Anchors NAV at t=0, -12M, -36M, -60M, -120M and log-linearly interpolates
+ * between them. The path is smooth (no fake drawdowns) but hits the published
+ * trailing rates exactly at each anchor — honest given the input.
+ */
+function synthesiseSeriesFromTrailing(holding: ConfirmedPortfolioHolding, months = 120, asOf: Date = new Date()): SeriesPoint[] {
+  const anchors: { m: number; ret: number }[] = [];
+  if (holding.ann_1y != null) anchors.push({ m: 12, ret: holding.ann_1y / 100 });
+  if (holding.ann_3y != null) anchors.push({ m: 36, ret: holding.ann_3y / 100 });
+  if (holding.ann_5y != null) anchors.push({ m: 60, ret: holding.ann_5y / 100 });
+  if (holding.ann_10y != null) anchors.push({ m: 120, ret: holding.ann_10y / 100 });
+  if (anchors.length === 0) return [];
+
+  anchors.sort((a, b) => a.m - b.m);
+  const knot: { m: number; ln: number }[] = [{ m: 0, ln: 0 }];
+  for (const a of anchors) knot.push({ m: a.m, ln: -a.m * Math.log(1 + a.ret) / 12 });
+
+  const maxM = Math.min(months, anchors[anchors.length - 1].m);
+  const out: SeriesPoint[] = [];
+  const start = new Date(asOf.getFullYear(), asOf.getMonth(), 1);
+  for (let i = maxM; i >= 0; i--) {
+    // Find bracketing anchors
+    let hi = knot.length - 1;
+    for (let k = 1; k < knot.length; k++) if (knot[k].m >= i) { hi = k; break; }
+    const lo = hi - 1 >= 0 ? hi - 1 : hi;
+    const a = knot[lo], b = knot[hi];
+    const t = a.m === b.m ? 0 : (i - a.m) / (b.m - a.m);
+    const ln = a.ln + t * (b.ln - a.ln);
+    const v = 100 * Math.exp(ln);
+    const d = new Date(start); d.setMonth(d.getMonth() - i);
+    out.push({ d: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, v });
+  }
+  return out;
+}
+
 export function previousMonthEnd(now: Date = new Date()): Date {
   const d = new Date(now);
   d.setDate(1);
@@ -189,7 +231,16 @@ export async function buildFactsheetForPortfolio(portfolioId: number, asOfMonth?
     .filter((h) => !!h.isin)
     .map((h) => ({ isin: h.isin as string, weight: h.weight_bps / totalBps }));
 
-  const series = await blendPortfolioSeries(components, 120);
+  // Pre-build synthesised series for any holding whose Morningstar payload
+  // won't carry a real growth series (MAS-coded SG funds). blendPortfolioSeries
+  // reaches into this map when the primary + override paths both come up empty.
+  const supplementalSeries = new Map<string, SeriesPoint[]>();
+  for (const h of holdings) {
+    if (!h.isin) continue;
+    const synth = synthesiseSeriesFromTrailing(h);
+    if (synth.length >= 3) supplementalSeries.set(h.isin, synth);
+  }
+  const series = await blendPortfolioSeries(components, 120, supplementalSeries);
   const returns = await computeTrailingReturns(holdings);
   const asOf = asOfMonth ?? previousMonthEnd();
 
