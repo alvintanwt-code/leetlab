@@ -94,14 +94,14 @@ export default async function ResourcesPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-20 pb-16">
-      <div className="sticky top-0 z-20 -mx-20 mb-12 bg-[var(--color-canvas-soft)] px-20">
+      <div className="sticky top-0 z-20 -mx-20 mb-4 bg-[var(--color-canvas-soft)] px-20">
         <header className="border-b border-[var(--color-hairline-2)] py-6">
           <p className="t-micro-cap mb-1">leet research</p>
           <h1 className="t-h-md text-[var(--color-ink)]">Resources</h1>
         </header>
       </div>
 
-      <p className="t-body-md text-[var(--color-ink-mute)] max-w-[680px] mb-10">
+      <p className="t-body-sm text-[var(--color-ink-mute)] max-w-[680px] mb-8">
         Client-facing documents. Open renders inline; Download saves the PDF. Fact sheets re-render from the latest monthly archive on each click.
       </p>
 
