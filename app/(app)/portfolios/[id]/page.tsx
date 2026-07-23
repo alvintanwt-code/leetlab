@@ -6,6 +6,7 @@ import {
   getPortfolioHoldings,
 } from "@/lib/db/queries";
 import { computeTrailingReturns } from "@/lib/factsheet/build";
+import { computeLiveXrayExtras } from "@/lib/portfolio-xray-live";
 
 export const dynamic = "force-dynamic";
 
@@ -23,26 +24,27 @@ export default async function PortfolioDetailPage({
 
   const holdings = await getPortfolioHoldings(portfolioId);
 
-  // The stored xray_json was frozen at portfolio confirmation. Recompute the
-  // trailing returns live from fund_snapshots with proxy-share-class fallback
-  // so the page shows the same numbers as the fact sheet. Everything else on
-  // the xray (risk, expense, geo, sector, holdings look-through) still comes
-  // from the frozen snapshot for now.
-  const returns = await computeTrailingReturns(holdings);
-  const freshXray = (() => {
-    try {
-      const base = portfolio.xray_json ? JSON.parse(portfolio.xray_json) : {};
-      return {
-        ...base,
-        r1y: returns.ann_1y,
-        r3y: returns.ann_3y,
-        r5y: returns.ann_5y,
-        r10y: returns.ann_10y,
-      };
-    } catch {
-      return { r1y: returns.ann_1y, r3y: returns.ann_3y, r5y: returns.ann_5y, r10y: returns.ann_10y };
-    }
-  })();
+  // Rebuild the entire xray live rather than serving the stored snapshot.
+  //   - Trailing returns via computeTrailingReturns (proxy-share-class aware).
+  //   - Expense, risk, equity coverage, look-through geo / sector / top-10
+  //     holdings via computeLiveXrayExtras (reduces current fund_snapshots +
+  //     fund_allocations, same math as the picker).
+  const [returns, extras] = await Promise.all([
+    computeTrailingReturns(holdings),
+    computeLiveXrayExtras(holdings),
+  ]);
+  const freshXray = {
+    r1y: returns.ann_1y,
+    r3y: returns.ann_3y,
+    r5y: returns.ann_5y,
+    r10y: returns.ann_10y,
+    expense: extras.expense,
+    risk: extras.risk,
+    equityCoverage: extras.equityCoverage,
+    geo: extras.geo,
+    sector: extras.sector,
+    holdings: extras.holdings,
+  };
   const portfolioWithFreshReturns = { ...portfolio, xray_json: JSON.stringify(freshXray) };
 
   return (

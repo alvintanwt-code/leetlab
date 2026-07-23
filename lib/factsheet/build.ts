@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { neon } from "@neondatabase/serverless";
 import { getConfirmedPortfolio, getPortfolioHoldings, type ConfirmedPortfolio, type ConfirmedPortfolioHolding } from "@/lib/db/queries";
 import { parseXray } from "@/lib/portfolio-derive";
+import { computeLiveXrayExtras } from "@/lib/portfolio-xray-live";
 import { blendPortfolioSeries } from "@/lib/portfolio-performance";
 import { renderFactsheetHtml } from "./render";
 
@@ -224,7 +225,13 @@ export async function buildFactsheetForPortfolio(portfolioId: number, asOfMonth?
   if (!portfolio) return null;
 
   const holdings = await getPortfolioHoldings(portfolioId);
-  const xray = parseXray(portfolio);
+  // The stored xray_json is frozen at confirmation. Recompute every field
+  // live so the fact sheet page 2 (risk, expense, geo, sector, look-through
+  // top holdings) reflects the current sync — same numbers users see on the
+  // portfolio detail page.
+  const storedXray = parseXray(portfolio);
+  const liveExtras = await computeLiveXrayExtras(holdings);
+  const xray = { ...(storedXray ?? {}), ...liveExtras };
 
   const totalBps = holdings.reduce((s, h) => s + h.weight_bps, 0) || 1;
   const components = holdings

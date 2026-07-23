@@ -373,6 +373,22 @@ export type AllocationDetail = {
   weight_pct: number;
 };
 
+export async function allocationsForFundIds(fundIds: number[]): Promise<AllocationDetail[]> {
+  if (fundIds.length === 0) return [];
+  // Drizzle's tagged template unpacks a JS array into positional params, so
+  // `= ANY(${fundIds})` becomes `= ANY($1,$2,…)` which is a syntax error.
+  // Rewriting the id list as a SQL-side ARRAY[…] literal side-steps that.
+  // Guard against injection by keeping only finite integers.
+  const clean = fundIds.filter((id) => Number.isInteger(id) && id > 0);
+  if (clean.length === 0) return [];
+  return q<AllocationDetail>(sql`
+    SELECT fund_id, kind, label, weight_pct
+    FROM fund_allocations
+    WHERE fund_id = ANY(ARRAY[${sql.raw(clean.join(","))}])
+    ORDER BY fund_id, kind, weight_pct DESC
+  `);
+}
+
 export async function detailedAllocationsForProvider(providerSlug: string): Promise<AllocationDetail[]> {
   return q<AllocationDetail>(sql`
     SELECT a.fund_id, a.kind, a.label, a.weight_pct
