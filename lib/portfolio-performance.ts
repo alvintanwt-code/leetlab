@@ -56,7 +56,7 @@ function overrideOnlySnapshot(isin: string): Snapshot {
   };
 }
 
-async function fetchSnapshot(isin: string): Promise<Snapshot> {
+export async function fetchSnapshot(isin: string): Promise<Snapshot> {
   const cached = CACHE.get(isin);
   if (cached && Date.now() - cached.ts < TTL_MS) return cached.snap;
   const empty: Snapshot = overrideOnlySnapshot(isin);
@@ -148,13 +148,13 @@ export async function blendPortfolioSeries(
 
   const fetched = await Promise.all(
     valid.map(async (c) => {
+      // Supplemental wins outright when the caller has staged a longer series
+      // (e.g. proxy prefix spliced onto the target's real history). Falls
+      // through to Morningstar for the common case.
+      const supp = supplementalSeries?.get(c.isin);
+      if (supp && supp.length >= 3) return { weight: c.weight, points: supp };
       const snap = await fetchSnapshot(c.isin);
-      let points = snap.points;
-      if (points.length < 3 && supplementalSeries) {
-        const supp = supplementalSeries.get(c.isin);
-        if (supp && supp.length >= 3) points = supp;
-      }
-      return { weight: c.weight, points };
+      return { weight: c.weight, points: snap.points };
     }),
   );
   const usable = fetched.filter((f) => f.points.length >= 3);

@@ -8,10 +8,11 @@ import { neon } from "@neondatabase/serverless";
 import { getConfirmedPortfolio, getPortfolioHoldings, type ConfirmedPortfolio, type ConfirmedPortfolioHolding } from "@/lib/db/queries";
 import { parseXray } from "@/lib/portfolio-derive";
 import { computeLiveXrayExtras } from "@/lib/portfolio-xray-live";
-import { blendPortfolioSeries } from "@/lib/portfolio-performance";
+import { blendPortfolioSeries, fetchSnapshot } from "@/lib/portfolio-performance";
+import { loadProxies as loadReturnProxies, spliceProxyPrefix, type SeriesPoint as SplicePoint } from "@/lib/return-proxy-splice";
 import { renderFactsheetHtml } from "./render";
 
-type SeriesPoint = { d: string; v: number };
+type SeriesPoint = SplicePoint;
 
 /**
  * Synthesise a monthly growth-of-100 series over the last 120 months from a
@@ -23,12 +24,19 @@ type SeriesPoint = { d: string; v: number };
  * between them. The path is smooth (no fake drawdowns) but hits the published
  * trailing rates exactly at each anchor — honest given the input.
  */
-function synthesiseSeriesFromTrailing(holding: ConfirmedPortfolioHolding, months = 120, asOf: Date = new Date()): SeriesPoint[] {
+type TrailingBundle = {
+  ann_1y: number | null;
+  ann_3y: number | null;
+  ann_5y: number | null;
+  ann_10y: number | null;
+};
+
+function synthesiseFromTrailingBundle(t: TrailingBundle, months = 120, asOf: Date = new Date()): SeriesPoint[] {
   const anchors: { m: number; ret: number }[] = [];
-  if (holding.ann_1y != null) anchors.push({ m: 12, ret: holding.ann_1y / 100 });
-  if (holding.ann_3y != null) anchors.push({ m: 36, ret: holding.ann_3y / 100 });
-  if (holding.ann_5y != null) anchors.push({ m: 60, ret: holding.ann_5y / 100 });
-  if (holding.ann_10y != null) anchors.push({ m: 120, ret: holding.ann_10y / 100 });
+  if (t.ann_1y != null) anchors.push({ m: 12, ret: t.ann_1y / 100 });
+  if (t.ann_3y != null) anchors.push({ m: 36, ret: t.ann_3y / 100 });
+  if (t.ann_5y != null) anchors.push({ m: 60, ret: t.ann_5y / 100 });
+  if (t.ann_10y != null) anchors.push({ m: 120, ret: t.ann_10y / 100 });
   if (anchors.length === 0) return [];
 
   anchors.sort((a, b) => a.m - b.m);
@@ -53,6 +61,14 @@ function synthesiseSeriesFromTrailing(holding: ConfirmedPortfolioHolding, months
   return out;
 }
 
+function synthesiseSeriesFromTrailing(holding: ConfirmedPortfolioHolding, months = 120, asOf: Date = new Date()): SeriesPoint[] {
+  return synthesiseFromTrailingBundle(
+    { ann_1y: holding.ann_1y, ann_3y: holding.ann_3y, ann_5y: holding.ann_5y, ann_10y: holding.ann_10y },
+    months,
+    asOf,
+  );
+}
+
 export function previousMonthEnd(now: Date = new Date()): Date {
   const d = new Date(now);
   d.setDate(1);
@@ -73,35 +89,23 @@ export type BuildResult = {
 };
 
 // ─── Return proxy layer ────────────────────────────────────────
-type ProxyEntry = { proxy: string; reason?: string };
-type ProxyMap = Record<string, ProxyEntry>;
+// Config + splice helpers moved to lib/return-proxy-splice.ts so the
+// /api/performance route (portfolio detail chart) can share the same
+// splice math.
+const loadProxies = loadReturnProxies;
 
-let PROXY_CACHE: ProxyMap | null = null;
-function loadProxies(): ProxyMap {
-  if (PROXY_CACHE) return PROXY_CACHE;
-  const file = join(process.cwd(), "data", "return-proxies.json");
-  if (!existsSync(file)) return (PROXY_CACHE = {});
-  try {
-    const parsed = JSON.parse(readFileSync(file, "utf8")) as { proxies?: ProxyMap };
-    PROXY_CACHE = parsed.proxies ?? {};
-  } catch {
-    PROXY_CACHE = {};
-  }
-  return PROXY_CACHE;
-}
-
-// Look up ann_5y and ann_10y for a list of proxy ISINs. One trip.
-async function fetchProxyReturns(isins: string[]): Promise<Map<string, { ann_5y: number | null; ann_10y: number | null }>> {
-  const out = new Map<string, { ann_5y: number | null; ann_10y: number | null }>();
+// Look up the full trailing bundle for a list of proxy ISINs. One trip.
+async function fetchProxyReturns(isins: string[]): Promise<Map<string, TrailingBundle & { ann_5y: number | null; ann_10y: number | null }>> {
+  const out = new Map<string, TrailingBundle>();
   if (isins.length === 0) return out;
   const sql = neon(process.env.DATABASE_URL!);
   const rows = (await sql`
-    SELECT f.isin, s.ann_5y, s.ann_10y
+    SELECT f.isin, s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y
     FROM funds f
-    LEFT JOIN LATERAL (SELECT ann_5y, ann_10y FROM fund_snapshots WHERE fund_id = f.id ORDER BY as_of DESC LIMIT 1) s ON true
+    LEFT JOIN LATERAL (SELECT ann_1y, ann_3y, ann_5y, ann_10y FROM fund_snapshots WHERE fund_id = f.id ORDER BY as_of DESC LIMIT 1) s ON true
     WHERE f.isin = ANY(${isins})
-  `) as { isin: string; ann_5y: number | null; ann_10y: number | null }[];
-  for (const r of rows) out.set(r.isin, { ann_5y: r.ann_5y, ann_10y: r.ann_10y });
+  `) as { isin: string; ann_1y: number | null; ann_3y: number | null; ann_5y: number | null; ann_10y: number | null }[];
+  for (const r of rows) out.set(r.isin, { ann_1y: r.ann_1y, ann_3y: r.ann_3y, ann_5y: r.ann_5y, ann_10y: r.ann_10y });
   return out;
 }
 
@@ -238,15 +242,45 @@ export async function buildFactsheetForPortfolio(portfolioId: number, asOfMonth?
     .filter((h) => !!h.isin)
     .map((h) => ({ isin: h.isin as string, weight: h.weight_bps / totalBps }));
 
-  // Pre-build synthesised series for any holding whose Morningstar payload
-  // won't carry a real growth series (MAS-coded SG funds). blendPortfolioSeries
-  // reaches into this map when the primary + override paths both come up empty.
+  // Pre-build a supplemental series per holding, using this priority:
+  //   1. Splice: target's real GrowthOf10K + proxy fund's earlier history
+  //      scaled to connect at the target's inception. Used whenever a
+  //      return-proxy is configured and the proxy's series reaches further
+  //      back than the target's — extends both the chart window and the
+  //      annual-return bars.
+  //   2. Synth from trailing returns: for MAS-coded SG funds whose
+  //      Morningstar payload carries no series at all.
+  const proxies = loadProxies();
+  const proxyIsins = holdings.map((h) => (h.isin ? proxies[h.isin]?.proxy : null)).filter((x): x is string => !!x);
+  const proxyTrailingByIsin = await fetchProxyReturns(proxyIsins);
   const supplementalSeries = new Map<string, SeriesPoint[]>();
-  for (const h of holdings) {
-    if (!h.isin) continue;
-    const synth = synthesiseSeriesFromTrailing(h);
-    if (synth.length >= 3) supplementalSeries.set(h.isin, synth);
-  }
+  await Promise.all(
+    holdings.map(async (h) => {
+      if (!h.isin) return;
+      const cfg = proxies[h.isin];
+      if (cfg) {
+        const [targetSnap, proxySnap] = await Promise.all([
+          fetchSnapshot(h.isin),
+          fetchSnapshot(cfg.proxy),
+        ]);
+        // If the proxy is itself a MAS-coded fund with no GrowthOf10K
+        // (e.g. Infinity Global Stock Index USD), fall back to synthesising
+        // the proxy's series from its own trailing returns before splicing.
+        let proxySeries = proxySnap.points;
+        if (proxySeries.length < 3) {
+          const proxyTrailing = proxyTrailingByIsin.get(cfg.proxy);
+          if (proxyTrailing) proxySeries = synthesiseFromTrailingBundle(proxyTrailing);
+        }
+        const spliced = spliceProxyPrefix(targetSnap.points, proxySeries);
+        if (spliced.length > targetSnap.points.length) {
+          supplementalSeries.set(h.isin, spliced);
+          return;
+        }
+      }
+      const synth = synthesiseSeriesFromTrailing(h);
+      if (synth.length >= 3) supplementalSeries.set(h.isin, synth);
+    }),
+  );
   const series = await blendPortfolioSeries(components, 120, supplementalSeries);
   const returns = await computeTrailingReturns(holdings);
   const asOf = asOfMonth ?? previousMonthEnd();

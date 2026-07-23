@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { syntheticGrowth10K } from "@/lib/return-overrides";
+import { loadProxies, spliceProxyPrefix } from "@/lib/return-proxy-splice";
 
 // Server-side proxy + cache for Morningstar's public security_details endpoint.
 // We fetch the GrowthOf10K series per ISIN, rebase to 100, then blend a model line.
@@ -72,13 +73,23 @@ export async function POST(req: Request) {
   }
 
   // Renormalise weights to sum 1.0 across components with usable data.
+  // Splice a proxy fund's earlier history onto any target that has one
+  // configured — the fact-sheet builder does the same, so the two charts
+  // agree in start date, terminal value, and annual-return bars.
+  const proxies = loadProxies();
   const fetched = await Promise.allSettled(
-    parsed.components.map(async (c) => ({
-      isin: c.isin,
-      name: c.name,
-      weight: c.weight,
-      points: await fetchSeries(c.isin),
-    })),
+    parsed.components.map(async (c) => {
+      const cfg = proxies[c.isin];
+      if (cfg) {
+        const [target, proxy] = await Promise.all([
+          fetchSeries(c.isin),
+          fetchSeries(cfg.proxy),
+        ]);
+        const spliced = spliceProxyPrefix(target, proxy);
+        return { isin: c.isin, name: c.name, weight: c.weight, points: spliced };
+      }
+      return { isin: c.isin, name: c.name, weight: c.weight, points: await fetchSeries(c.isin) };
+    }),
   );
   const usable: FundSeries[] = fetched
     .map((r) => (r.status === "fulfilled" ? r.value : null))
