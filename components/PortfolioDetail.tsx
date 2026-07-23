@@ -82,20 +82,24 @@ function pctCls(v: number | null | undefined): string {
 // calendar years.
 export function computeAnnualReturns(
   points: { d: string; v: number }[],
-): { year: number; return_pct: number }[] {
+): { year: number; return_pct: number; is_partial: boolean }[] {
   if (points.length < 2) return [];
-  const yearEnd = new Map<number, number>();
+  // Keep the last {d, v} per year so we know whether the year ran to December.
+  const yearEnd = new Map<number, { d: string; v: number }>();
   for (const p of points) {
     const y = parseInt(p.d.slice(0, 4), 10);
-    yearEnd.set(y, p.v); // last point per year wins
+    yearEnd.set(y, p);
   }
   const years = Array.from(yearEnd.keys()).sort((a, b) => a - b);
-  const out: { year: number; return_pct: number }[] = [];
+  const out: { year: number; return_pct: number; is_partial: boolean }[] = [];
   for (let i = 1; i < years.length; i++) {
     const y = years[i];
-    const endV = yearEnd.get(y)!;
-    const startV = yearEnd.get(years[i - 1])!;
-    out.push({ year: y, return_pct: (endV / startV - 1) * 100 });
+    const end = yearEnd.get(y)!;
+    const start = yearEnd.get(years[i - 1])!;
+    // A partial year is one whose last month is not December (or January of
+    // the following year). Only affects the trailing bar in the chart.
+    const is_partial = end.d.slice(5, 7) !== "12";
+    out.push({ year: y, return_pct: (end.v / start.v - 1) * 100, is_partial });
   }
   return out;
 }
@@ -103,7 +107,7 @@ export function computeAnnualReturns(
 // Annual-return bar chart — editorial. Central baseline, ink bars up for
 // positive, negative-red down for losses. Square ends, value labels outside
 // each bar, '15 / '16 / … tick labels on the x-axis.
-export function AnnualReturnsBars({ data }: { data: { year: number; return_pct: number }[] }) {
+export function AnnualReturnsBars({ data }: { data: { year: number; return_pct: number; is_partial: boolean }[] }) {
   if (data.length === 0) {
     return <p className="t-caption text-[var(--color-ink-mute)]">Not enough data to compute annual returns yet.</p>;
   }
@@ -113,7 +117,7 @@ export function AnnualReturnsBars({ data }: { data: { year: number; return_pct: 
       {data.map((d) => {
         const isPos = d.return_pct >= 0;
         const heightPct = (Math.abs(d.return_pct) / maxAbs) * 42;
-        const yearLabel = `'${(d.year % 100).toString().padStart(2, "0")}`;
+        const yearLabel = d.is_partial ? "YTD" : `'${(d.year % 100).toString().padStart(2, "0")}`;
         const isZero = Math.abs(d.return_pct) < 0.05;
         return (
           <div key={d.year} className="flex min-w-0 flex-1 flex-col items-stretch">
@@ -257,11 +261,15 @@ export function PortfolioDetail({
     chart && chart.model.points.length >= 2
       ? computeAnnualReturns(chart.model.points)
       : [];
-  const bestYearReturn = annualReturns.length
-    ? annualReturns.reduce((a, b) => (a.return_pct > b.return_pct ? a : b))
+  // Best / worst only makes sense across full calendar years; a partial
+  // (year-to-date) bar would otherwise dominate when it happens to lead
+  // or lag the rest of the record.
+  const fullYearReturns = annualReturns.filter((r) => !r.is_partial);
+  const bestYearReturn = fullYearReturns.length
+    ? fullYearReturns.reduce((a, b) => (a.return_pct > b.return_pct ? a : b))
     : null;
-  const worstYearReturn = annualReturns.length
-    ? annualReturns.reduce((a, b) => (a.return_pct < b.return_pct ? a : b))
+  const worstYearReturn = fullYearReturns.length
+    ? fullYearReturns.reduce((a, b) => (a.return_pct < b.return_pct ? a : b))
     : null;
   const endYear = chart ? parseInt(chart.commonEnd.slice(0, 4), 10) : null;
   const rangeLabel = (yearsBack: number): string =>

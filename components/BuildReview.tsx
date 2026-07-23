@@ -274,11 +274,14 @@ export function BuildReview({
   const endYear = chart ? parseInt(chart.commonEnd.slice(0, 4), 10) : null;
   const rangeLabel = (yearsBack: number): string =>
     endYear ? `${endYear - yearsBack} - ${endYear}` : "—";
-  const bestYearReturn = annualReturns.length
-    ? annualReturns.reduce((a, b) => (a.return_pct > b.return_pct ? a : b))
+  // Best / worst reflect completed calendar years only — a partial YTD bar
+  // would otherwise dominate as best or worst.
+  const fullYearReturns = annualReturns.filter((r) => !r.is_partial);
+  const bestYearReturn = fullYearReturns.length
+    ? fullYearReturns.reduce((a, b) => (a.return_pct > b.return_pct ? a : b))
     : null;
-  const worstYearReturn = annualReturns.length
-    ? annualReturns.reduce((a, b) => (a.return_pct < b.return_pct ? a : b))
+  const worstYearReturn = fullYearReturns.length
+    ? fullYearReturns.reduce((a, b) => (a.return_pct < b.return_pct ? a : b))
     : null;
   const endingFrom100 =
     xray?.r10y != null ? (100 * Math.pow(1 + xray.r10y / 100, 10)).toFixed(2) : null;
