@@ -1,10 +1,5 @@
 [
   {
-    "name": "abrdn Glbl Technology SGD",
-    "isin": "SG9999000418",
-    "status": "Active"
-  },
-  {
     "name": "Allianz Best Styles Global AC Eq I Acc GBP",
     "isin": "GB00BYQ91V66",
     "status": "Active"
@@ -40,18 +35,23 @@
     "status": "Active"
   },
   {
-    "name": "Amundi Idx MSCI World A12S-C",
-    "isin": "LU2420245917",
-    "status": "Active"
-  },
-  {
     "name": "Amundi IS Core MSCI Emerg Mkts A12S Acc",
     "isin": "LU2420246139",
     "status": "Active"
   },
   {
+    "name": "Amundi IS MSCI World AE-C",
+    "isin": "LU0996182563",
+    "status": "Active"
+  },
+  {
     "name": "Amundi IS Prime USA AS",
     "isin": "LU2420246055",
+    "status": "Active"
+  },
+  {
+    "name": "Amundi Idx MSCI World A12S-C",
+    "isin": "LU2420245917",
     "status": "Active"
   },
   {
@@ -160,6 +160,11 @@
     "status": "Active"
   },
   {
+    "name": "FTGF RY US SmCp Opp A SGD Acc",
+    "isin": "IE00B66KJ199",
+    "status": "Active"
+  },
+  {
     "name": "Fidelity Asia Pacific MAGI A-MInc(G)-SGD",
     "isin": "LU1439102457",
     "status": "Active"
@@ -200,11 +205,6 @@
     "status": "Active"
   },
   {
-    "name": "FTGF RY US SmCp Opp A SGD Acc",
-    "isin": "IE00B66KJ199",
-    "status": "Active"
-  },
-  {
     "name": "HSBC GIF Economic Scale US Equity PD",
     "isin": "LU0011818662",
     "status": "Active"
@@ -235,28 +235,13 @@
     "status": "Active"
   },
   {
-    "name": "iShares Dev Wld Idx (IE) D Acc SGD",
-    "isin": "IE000NNYZMJ7",
-    "status": "Active"
-  },
-  {
-    "name": "iShares Dev Wld Idx (IE) D Acc SGD H",
-    "isin": "IE000XUK0R09",
-    "status": "Active"
-  },
-  {
-    "name": "iShares US Index (IE) D Acc SGD",
-    "isin": "IE0000F26BG9",
+    "name": "JPM US Technology A acc SGD",
+    "isin": "LU0719512351",
     "status": "Active"
   },
   {
     "name": "Janus Henderson Hrzn GlbTechLdrs A2SGD",
     "isin": "LU1316542783",
-    "status": "Active"
-  },
-  {
-    "name": "JPM US Technology A acc SGD",
-    "isin": "LU0719512351",
     "status": "Active"
   },
   {
@@ -295,11 +280,6 @@
     "status": "Active"
   },
   {
-    "name": "Phillip Singapore Rel Est Inc I SGD",
-    "isin": "SG9999007884",
-    "status": "Active"
-  },
-  {
     "name": "PIMCO GIS Bal Inc & Gr M Ret SGD H IncII",
     "isin": "IE000YTNTUN2",
     "status": "Active"
@@ -307,6 +287,11 @@
   {
     "name": "PIMCO GIS Income Administrative SGDH Inc",
     "isin": "IE00B91RQ825",
+    "status": "Active"
+  },
+  {
+    "name": "Phillip Singapore Rel Est Inc I SGD",
+    "isin": "SG9999007884",
     "status": "Active"
   },
   {
@@ -337,6 +322,26 @@
   {
     "name": "United Global Technology",
     "isin": "SG9999001192",
+    "status": "Active"
+  },
+  {
+    "name": "abrdn Glbl Technology SGD",
+    "isin": "SG9999000418",
+    "status": "Active"
+  },
+  {
+    "name": "iShares Dev Wld Idx (IE) D Acc SGD",
+    "isin": "IE000NNYZMJ7",
+    "status": "Active"
+  },
+  {
+    "name": "iShares Dev Wld Idx (IE) D Acc SGD H",
+    "isin": "IE000XUK0R09",
+    "status": "Active"
+  },
+  {
+    "name": "iShares US Index (IE) D Acc SGD",
+    "isin": "IE0000F26BG9",
     "status": "Active"
   }
 ]

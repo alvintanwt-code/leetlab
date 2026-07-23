@@ -2,8 +2,8 @@
   "_comment": "Return-history proxies. When a fund's ann_5y or ann_10y is null in fund_snapshots (typically a newly-launched SGD share class), the fact-sheet builder falls back to the proxy ISIN's returns. Convention: proxy is a longer-history share class of the same underlying strategy (USD Acc → SGD Acc, or a sibling MAS-coded SG fund tracking the same index).",
   "proxies": {
     "LU2420245917": {
-      "proxy": "SG9999003339",
-      "reason": "Amundi Idx MSCI World A12S-C SGD (2022 inception) → Infinity Global Stock Index USD (2003 inception, both track MSCI World)"
+      "proxy": "LU0996182563",
+      "reason": "Amundi Idx MSCI World A12S-C SGD (2022 inception) → Amundi IS MSCI World AE-C EUR (2014 inception, same fund family, same underlying index, real monthly NAV back to Dec 2016 for a true month-by-month chart texture)"
     },
     "IE00BF20L986": {
       "proxy": "IE00B2PC0609",
