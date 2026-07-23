@@ -178,7 +178,7 @@ export type TrailingReturns = {
   };
 };
 
-async function computeTrailingReturns(holdings: ConfirmedPortfolioHolding[]): Promise<TrailingReturns> {
+export async function computeTrailingReturns(holdings: ConfirmedPortfolioHolding[]): Promise<TrailingReturns> {
   const resolved = await resolveHoldingsWithProxies(holdings);
   const totalWeight = resolved.reduce((s, r) => s + r.weight, 0) || 1;
 

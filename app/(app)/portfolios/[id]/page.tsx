@@ -5,6 +5,7 @@ import {
   getConfirmedPortfolio,
   getPortfolioHoldings,
 } from "@/lib/db/queries";
+import { computeTrailingReturns } from "@/lib/factsheet/build";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,28 @@ export default async function PortfolioDetailPage({
   if (!portfolio) notFound();
 
   const holdings = await getPortfolioHoldings(portfolioId);
+
+  // The stored xray_json was frozen at portfolio confirmation. Recompute the
+  // trailing returns live from fund_snapshots with proxy-share-class fallback
+  // so the page shows the same numbers as the fact sheet. Everything else on
+  // the xray (risk, expense, geo, sector, holdings look-through) still comes
+  // from the frozen snapshot for now.
+  const returns = await computeTrailingReturns(holdings);
+  const freshXray = (() => {
+    try {
+      const base = portfolio.xray_json ? JSON.parse(portfolio.xray_json) : {};
+      return {
+        ...base,
+        r1y: returns.ann_1y,
+        r3y: returns.ann_3y,
+        r5y: returns.ann_5y,
+        r10y: returns.ann_10y,
+      };
+    } catch {
+      return { r1y: returns.ann_1y, r3y: returns.ann_3y, r5y: returns.ann_5y, r10y: returns.ann_10y };
+    }
+  })();
+  const portfolioWithFreshReturns = { ...portfolio, xray_json: JSON.stringify(freshXray) };
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-10 py-10">
@@ -48,7 +71,7 @@ export default async function PortfolioDetailPage({
           </a>
         </div>
       </div>
-      <PortfolioDetail portfolio={portfolio} holdings={holdings} />
+      <PortfolioDetail portfolio={portfolioWithFreshReturns} holdings={holdings} />
     </div>
   );
 }
