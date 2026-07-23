@@ -1,39 +1,61 @@
 import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { listConfirmedPortfolios } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
-type Resource = {
+const CATEGORY_LABEL: Record<string, string> = {
+  aggressive: "Aggressive",
+  balanced: "Balanced",
+  conservative: "Conservative",
+  growth: "Growth",
+  dividend_income: "Income",
+};
+
+// Two kinds of card: static PDFs uploaded to /public/resources/ (Market
+// Outlook etc.) and dynamic fact sheets served fresh from the archive.
+type StaticResource = {
+  kind: "static";
   slug: string;
   title: string;
   subtitle: string;
   category: string;
   file: string;    // path under /public
-  edition: string; // e.g. "July 2026"
+  edition: string;
 };
 
-// Static registry until an upload UI exists. Drop new PDFs into
-// public/resources/ and add a row here.
-const RESOURCES: Resource[] = [
+type FactsheetResource = {
+  kind: "factsheet";
+  slug: string;
+  title: string;
+  subtitle: string;
+  category: string; // "Fact sheet"
+  provider: string; // "HSBC" / "FWD" / etc.
+  edition: string;
+  openHref: string;
+  downloadHref: string;
+};
+
+type Resource = StaticResource | FactsheetResource;
+
+const STATIC_RESOURCES: StaticResource[] = [
   {
+    kind: "static",
     slug: "q3-market-outlook-2026",
     title: "Q3 2026 Market Outlook",
-    subtitle:
-      "Base case, risks, and the trades we would tighten into the quarter.",
+    subtitle: "Base case, risks, and the trades we would tighten into the quarter.",
     category: "Market outlook",
     file: "/resources/q3-2026-market-outlook.pdf",
     edition: "July 2026",
   },
-  {
-    slug: "gwm-fund-factsheet-july-2026",
-    title: "GWM Fund Fact Sheet",
-    subtitle:
-      "Global Alpha discretionary portfolio — one-page composite performance and holdings.",
-    category: "Fact sheet",
-    file: "/resources/gwm-fund-factsheet-july-2026.pdf",
-    edition: "July 2026",
-  },
 ];
+
+const PROVIDER_SHORT: Record<string, string> = {
+  hsbc: "HSBC",
+  fwd: "FWD",
+  tmls: "Tokio Marine",
+  gwm: "GWM",
+};
 
 function fileMeta(publicPath: string): { available: boolean; sizeLabel: string | null } {
   const abs = join(process.cwd(), "public", publicPath.replace(/^\//, ""));
@@ -44,7 +66,37 @@ function fileMeta(publicPath: string): { available: boolean; sizeLabel: string |
   return { available: true, sizeLabel };
 }
 
-export default function ResourcesPage() {
+function editionLabel(iso: string): string {
+  const [y, m] = iso.split("-").map((s) => parseInt(s, 10));
+  return new Date(y, (m ?? 1) - 1, 1).toLocaleString("en-SG", { month: "long", year: "numeric" });
+}
+
+export default async function ResourcesPage() {
+  const portfolios = await listConfirmedPortfolios();
+  // Dedup — same portfolio may exist in multiple versions; keep the newest.
+  const seen = new Set<string>();
+  const factsheets: FactsheetResource[] = [];
+  for (const p of portfolios) {
+    const key = `${p.provider_slug}-${p.category}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const cat = CATEGORY_LABEL[p.category] ?? p.category;
+    const provider = PROVIDER_SHORT[p.provider_slug] ?? p.provider_name;
+    factsheets.push({
+      kind: "factsheet",
+      slug: `factsheet-${p.provider_slug}-${p.category}`,
+      title: p.name,
+      subtitle: `${cat} model portfolio · composite performance, holdings, and allocations for ${provider}.`,
+      category: "Fact sheet",
+      provider,
+      edition: editionLabel(new Date().toISOString().slice(0, 7)),
+      openHref: `/api/factsheet/${p.id}`,
+      downloadHref: `/api/factsheet/${p.id}?download=1&format=pdf`,
+    });
+  }
+
+  const resources: Resource[] = [...STATIC_RESOURCES, ...factsheets];
+
   return (
     <div className="mx-auto w-full max-w-[1280px] px-20 pb-16">
       <div className="sticky top-0 z-20 -mx-20 mb-12 bg-[var(--color-canvas-soft)] px-20">
@@ -55,11 +107,11 @@ export default function ResourcesPage() {
       </div>
 
       <p className="t-body-md text-[var(--color-ink-mute)] max-w-[680px] mb-10">
-        Client-facing documents, filed by edition. Click a card to open the PDF in a new tab; the download button forces a save.
+        Client-facing documents, one card per artifact. Open renders inline; Download saves the PDF. Fact sheets are re-served from the latest monthly archive on each click.
       </p>
 
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {RESOURCES.map((r) => (
+        {resources.map((r) => (
           <ResourceCard key={r.slug} resource={r} />
         ))}
       </div>
@@ -68,8 +120,18 @@ export default function ResourcesPage() {
 }
 
 function ResourceCard({ resource }: { resource: Resource }) {
-  const meta = fileMeta(resource.file);
+  const isStatic = resource.kind === "static";
+  const meta = isStatic ? fileMeta(resource.file) : { available: true, sizeLabel: "Live" };
   const isMissing = !meta.available;
+  const openHref = isStatic
+    ? isMissing ? undefined : resource.file
+    : resource.openHref;
+  const downloadHref = isStatic ? resource.file : resource.downloadHref;
+  const isPdf = isStatic;
+
+  // Accent colour distinguishes the two card types.
+  const accent = isStatic ? "#00B4BE" : "#E20C10";
+
   return (
     <article
       className={`group flex flex-col overflow-hidden border border-[var(--color-hairline-2)] bg-[var(--color-canvas)] transition-colors ${
@@ -77,17 +139,23 @@ function ResourceCard({ resource }: { resource: Resource }) {
       }`}
     >
       <a
-        href={isMissing ? undefined : resource.file}
-        target={isMissing ? undefined : "_blank"}
+        href={openHref}
+        target={openHref ? "_blank" : undefined}
         rel="noopener"
         className="relative block h-[280px] bg-[var(--color-ink)] p-6 text-[var(--color-canvas)]"
         aria-disabled={isMissing}
       >
         <div className="flex h-full flex-col justify-between">
           <div>
-            <div className="mb-1 h-[3px] w-8 bg-[#00B4BE]" />
+            <div className="mb-1 h-[3px] w-8" style={{ background: accent }} />
             <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/70">
               {resource.category}
+              {!isStatic && (
+                <>
+                  <span className="mx-1.5">·</span>
+                  {(resource as FactsheetResource).provider}
+                </>
+              )}
             </p>
           </div>
           <div>
@@ -103,7 +171,7 @@ function ResourceCard({ resource }: { resource: Resource }) {
           </div>
         </div>
         <span className="absolute right-4 top-4 text-[10px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/60">
-          PDF
+          {isPdf ? "PDF" : "HTML · PDF"}
         </span>
       </a>
 
@@ -114,10 +182,10 @@ function ResourceCard({ resource }: { resource: Resource }) {
             {isMissing ? "File not yet uploaded" : meta.sizeLabel}
           </p>
           <div className="flex items-center gap-1.5">
-            {!isMissing && (
+            {!isMissing && openHref && (
               <>
                 <a
-                  href={resource.file}
+                  href={openHref}
                   target="_blank"
                   rel="noopener"
                   className="t-caption inline-flex h-7 items-center border border-[var(--color-hairline)] px-2 text-[var(--color-ink)] hover:border-[var(--color-ink)]"
@@ -125,11 +193,11 @@ function ResourceCard({ resource }: { resource: Resource }) {
                   Open ↗
                 </a>
                 <a
-                  href={resource.file}
-                  download
+                  href={downloadHref}
+                  {...(isStatic ? { download: true } : {})}
                   className="t-caption inline-flex h-7 items-center border border-[var(--color-ink)] bg-[var(--color-ink)] px-2 text-[var(--color-canvas)] hover:bg-[var(--color-ink)]/90"
                 >
-                  Download ↓
+                  Download{isStatic ? " ↓" : " PDF ↓"}
                 </a>
               </>
             )}
