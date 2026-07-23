@@ -219,7 +219,7 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
 <style>
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box;}
   body{margin:0;font-family:'Nunito Sans',Helvetica,sans-serif;color:#141614;background:#FFFFFF;}
-  .page{padding:48px 56px;display:flex;flex-direction:column;background:#FFFFFF;}
+  .page{width:776px;margin:0 auto;padding:48px 56px;display:flex;flex-direction:column;background:#FFFFFF;}
   .cond{font-family:'Archivo Narrow',Arial,sans-serif;}
   .serif{font-family:'Bitter',Georgia,serif;font-weight:500;}
   .hdr{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #D9DAD9;padding-bottom:13px;}
