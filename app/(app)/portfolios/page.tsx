@@ -16,7 +16,7 @@ const PLATFORM_TABS: { slug: string; short: string; disabled?: boolean }[] = [
   { slug: "hsbc", short: "HSBC" },
   { slug: "fwd", short: "FWD" },
   { slug: "tmls", short: "TM" },
-  { slug: "gwm", short: "GWM", disabled: true },
+  { slug: "gwm", short: "GWM" },
 ];
 
 const STRATEGY_CHIPS: { key: string; label: string }[] = [

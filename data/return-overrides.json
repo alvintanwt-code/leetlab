@@ -1,6 +1,6 @@
 {
-  "_comment": "Monthly-derived returns for MAS-coded SG funds where Morningstar's MFsnapshot is empty. Scraped from lt.morningstar.com/api/rest.svc/timeseries_cumulativereturn (most entries) and tokiomarine.com fund-report pages (TMLS-only funds the timeseries feed doesn't expose). Refreshed by scripts/scrape-mas-returns.ts and scripts/scrape-tmls-page-returns.ts.",
-  "asOfRun": "2026-06-24",
+  "_comment": "Monthly-derived returns and 3Y stddev for MAS-coded SG funds where Morningstar's MFsnapshot is empty. Scraped from lt.morningstar.com/api/rest.svc/timeseries_cumulativereturn (most entries) and tokiomarine.com fund-report pages (TMLS-only funds the timeseries feed doesn't expose). Refreshed by scripts/scrape-mas-returns.ts, scripts/scrape-tmls-page-returns.ts, and scripts/backfill-tmls-stddev.ts (stddev-only pass over previously-scraped raw files).",
+  "asOfRun": "2026-07-09",
   "overrides": {
     "SG9999003826": {
       "msid": "F0HKG062LS",
@@ -507,7 +507,8 @@
           "d": "2026-05-31",
           "cum": 132.6326
         }
-      ]
+      ],
+      "stddev3y": 9.11
     },
     "SG9999019392": {
       "msid": "F000017085",
@@ -908,7 +909,8 @@
           "d": "2026-05-31",
           "cum": 23.169
         }
-      ]
+      ],
+      "stddev3y": 9.86
     },
     "SG9999019384": {
       "msid": "F000017084",
@@ -1313,7 +1315,8 @@
           "d": "2026-05-31",
           "cum": 12.8728
         }
-      ]
+      ],
+      "stddev3y": 6.71
     },
     "SG9999002083": {
       "msid": "F0HKG062MZ",
@@ -1820,7 +1823,8 @@
           "d": "2026-05-31",
           "cum": 112.0839
         }
-      ]
+      ],
+      "stddev3y": 14.42
     },
     "SG9999002067": {
       "msid": "F0HKG062MY",
@@ -2327,7 +2331,8 @@
           "d": "2026-05-31",
           "cum": 54.6096
         }
-      ]
+      ],
+      "stddev3y": 8.8
     },
     "SG9999005961": {
       "msid": "F000002QK7",
@@ -3341,7 +3346,8 @@
           "d": "2026-05-31",
           "cum": 258.6515
         }
-      ]
+      ],
+      "stddev3y": 12.11
     },
     "SG9999003297": {
       "msid": "F0HKG062P3",
@@ -4862,7 +4868,8 @@
           "d": "2026-05-31",
           "cum": 18.7227
         }
-      ]
+      ],
+      "stddev3y": 3.88
     },
     "SG9999009989": {
       "msid": "F0HKG062JH",
@@ -6303,7 +6310,7 @@
         "2024": 12.54,
         "2025": 8.52
       },
-      "stddev3y": 17
+      "stddev3y": 17.34
     },
     "SG9999010490": {
       "msid": "F00000Q3EG",
@@ -6325,7 +6332,7 @@
         "2024": 17.92,
         "2025": 28.38
       },
-      "stddev3y": 14
+      "stddev3y": 13.9
     },
     "SG9999000186": {
       "msid": "F0HKG062N4",
@@ -6347,7 +6354,7 @@
         "2024": 19.11,
         "2025": -11.1
       },
-      "stddev3y": 15
+      "stddev3y": 15.31
     },
     "SG9999017628": {
       "msid": "F00000ZTFI",
@@ -6366,7 +6373,7 @@
         "2024": 9.86,
         "2025": 6.56
       },
-      "stddev3y": 6
+      "stddev3y": 5.68
     },
     "SG9999010037": {
       "msid": "F00000WIU0",
@@ -6388,7 +6395,7 @@
         "2024": 15.77,
         "2025": 2.84
       },
-      "stddev3y": 8
+      "stddev3y": 7.93
     },
     "SG9999006779": {
       "msid": "F00000LNTM",
@@ -6410,7 +6417,7 @@
         "2024": 17.37,
         "2025": 10.3
       },
-      "stddev3y": 11
+      "stddev3y": 11.24
     },
     "SG9999001143": {
       "msid": "F0HKG062UL",
@@ -6432,7 +6439,7 @@
         "2024": 6.37,
         "2025": 131.44
       },
-      "stddev3y": 30
+      "stddev3y": 30.5
     },
     "SG9999001382": {
       "msid": "F0HKG062HX",
@@ -6454,7 +6461,7 @@
         "2024": 4.07,
         "2025": 3.58
       },
-      "stddev3y": 4
+      "stddev3y": 3.96
     },
     "SG9999014864": {
       "msid": "F00000XOR0",
@@ -6475,7 +6482,139 @@
         "2024": 9.61,
         "2025": -0.28
       },
-      "stddev3y": 7
+      "stddev3y": 6.88
+    },
+    "LU0943347566": {
+      "msid": "F00000Q4B0",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 9.23
+    },
+    "LU0689472784": {
+      "msid": "F00000NDK5",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 9.26
+    },
+    "LU1451583386": {
+      "msid": "F00000XL30",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 5.42
+    },
+    "SGXZ58547654": {
+      "msid": "F000017086",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 14.62
+    },
+    "IE00BKYBTW37": {
+      "msid": "F000014I56",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 21.84
+    },
+    "IE00BD1DSB51": {
+      "msid": "F000011NRJ",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 20.35
+    },
+    "IE00BK70ZP28": {
+      "msid": "F000014LH7",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 17.17
+    },
+    "IE00BK70YW20": {
+      "msid": "F000014LH9",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 23.69
+    },
+    "IE00BFXG5M61": {
+      "msid": "F000011JB4",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 10.33
+    },
+    "IE00B3BRDK12": {
+      "msid": "F000002JJQ",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 9.55
+    },
+    "LU2521040209": {
+      "msid": "F00001ECXT",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 8.7
+    },
+    "LU1295551573": {
+      "msid": "F00000WDS1",
+      "asOf": "2026-06",
+      "ytd": null,
+      "ann1y": null,
+      "ann3y": null,
+      "ann5y": null,
+      "ann10y": null,
+      "calendar": {},
+      "stddev3y": 11.24
     }
   }
 }

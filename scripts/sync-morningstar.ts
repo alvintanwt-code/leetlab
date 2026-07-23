@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import {
   fetchUniverse,
   fetchFundSnapshotByAny,
+  fetchScreenerByIsin,
   type UniverseFund,
 } from "../lib/morningstar/api";
 import { parseMorningstarSnapshot, parseScreenerRow } from "../lib/morningstar/parse";
@@ -59,6 +60,13 @@ const PROVIDERS: Provider[] = [
     detailUrl: (secId) =>
       `https://www.tokiomarine.com/sg/en/life/resources/fund-centre/fundreport.html?universeid=FOALL$$ALL_4556&currencyId=SGD#?id=${secId}`,
     source: { kind: "universe", universeId: "FOALL$$ALL_4556" },
+  },
+  {
+    slug: "gwm",
+    label: "GWM (POEMS / FAME)",
+    detailUrl: (secId) =>
+      `https://www.morningstar.com.sg/sg/funds/snapshot/snapshot.aspx?id=${secId}`,
+    source: { kind: "seed", file: "data/seed/gwm-funds.json" },
   },
 ];
 
@@ -136,16 +144,24 @@ async function syncProvider(p: Provider, sample: number | null): Promise<void> {
           (snapshotJson as { Id?: string }).Id ?? entry.secId ?? entry.isin ?? "";
         const url = p.detailUrl(externalId, entry.isin ?? "");
         parsed = parseMorningstarSnapshot(snapshotJson, externalId, url);
-      } else if (entry.screenerRow) {
+      } else {
         // Fallback path: MAS-coded SG funds whose MFsnapshot returns []. Use
         // the extended screener row directly — gives us identity + returns +
         // risk + fund house. NAV and allocations stay null.
-        const externalId = entry.secId ?? entry.isin ?? "";
+        //
+        // For seed-mode providers the screener row isn't fetched upfront, so
+        // we look it up lazily by ISIN against the SG country-of-sale universe.
+        let screenerRow = entry.screenerRow;
+        if (!screenerRow && entry.isin) {
+          screenerRow = await fetchScreenerByIsin(entry.isin);
+        }
+        if (!screenerRow) {
+          throw new Error("empty MFsnapshot and no screener fallback available");
+        }
+        const externalId = screenerRow.secId ?? entry.secId ?? entry.isin ?? "";
         const url = p.detailUrl(externalId, entry.isin ?? "");
-        parsed = parseScreenerRow(entry.screenerRow, externalId, url);
+        parsed = parseScreenerRow(screenerRow, externalId, url);
         viaScreener = true;
-      } else {
-        throw new Error("empty MFsnapshot and no screener fallback available");
       }
 
       const fundId = await upsertFund(providerId, parsed.fund);

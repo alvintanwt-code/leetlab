@@ -69,6 +69,32 @@ export async function fetchUniverse(universeId: string): Promise<UniverseFund[]>
   return data.rows ?? [];
 }
 
+/**
+ * Look up a fund in the SG country-of-sale universe by its ISIN. Falls back
+ * path for seed-mode providers when MFsnapshot-by-ISIN returns empty (some
+ * SG9999-coded and POEMS-only funds don't respond on the direct snapshot but
+ * do appear in the SG screener).
+ */
+export async function fetchScreenerByIsin(isin: string): Promise<UniverseFund | null> {
+  const params = new URLSearchParams({
+    universeIds: "FOSGP$$ALL",
+    languageId: "en-GB",
+    outputType: "json",
+    securityDataPoints:
+      "secId,Name,Isin,LegalName,Currency,CategoryName,InceptionDate," +
+      "BrandingCompanyName,FundCompanyName,OngoingCharge,ManagementFee," +
+      "ReturnM12,ReturnM36,ReturnM60,ReturnM120,CalculatedSRRI,CollectedSRRI",
+    term: isin,
+    page: "1",
+    pageSize: "3",
+  });
+  const url = `${BASE_URL}/security/screener?${params}`;
+  const res = await fetchWithRetry(url);
+  if (!res.ok) return null;
+  const data = (await res.json()) as { rows?: UniverseFund[] };
+  return data.rows?.[0] ?? null;
+}
+
 export type IdType = "isin" | "msid";
 
 /**
