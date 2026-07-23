@@ -353,12 +353,12 @@ export async function fundsInspectorForProvider(providerSlug: string): Promise<F
       f.fund_size, f.fund_size_currency, f.dealing_frequency, f.benchmark,
       f.sfdr_classification, f.expense_ratio, f.management_fee,
       f.morningstar_rating, f.investment_objective,
-      s.nav, s.as_of AS nav_as_of, s.change_pct,
+      s.nav, s.as_of AS nav_as_of, s.change_pct, s.ytd,
       s.ann_1y, s.ann_3y, s.ann_5y, s.ann_10y, s.stddev_3y
     FROM funds f
     JOIN providers p ON p.id = f.provider_id
     LEFT JOIN LATERAL (
-      SELECT nav, as_of, change_pct, ann_1y, ann_3y, ann_5y, ann_10y, stddev_3y
+      SELECT nav, as_of, change_pct, ytd, ann_1y, ann_3y, ann_5y, ann_10y, stddev_3y
       FROM fund_snapshots WHERE fund_id = f.id ORDER BY as_of DESC LIMIT 1
     ) s ON true
     WHERE p.slug = ${providerSlug}
