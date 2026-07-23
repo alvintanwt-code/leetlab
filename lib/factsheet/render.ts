@@ -218,8 +218,9 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Bitter:wght@400;500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap">
 <style>
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box;}
-  body{margin:0;font-family:'Nunito Sans',Helvetica,sans-serif;color:#141614;background:#FFFFFF;}
-  .page{width:776px;margin:0 auto;padding:48px 56px;display:flex;flex-direction:column;background:#FFFFFF;}
+  body{margin:0;font-family:'Nunito Sans',Helvetica,sans-serif;color:#141614;background:#faf9f5;padding:32px 0;}
+  .page{width:776px;margin:0 auto 24px;padding:48px 56px;display:flex;flex-direction:column;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 12px rgba(0,0,0,0.05);}
+  .page:last-of-type{margin-bottom:0;}
   .cond{font-family:'Archivo Narrow',Arial,sans-serif;}
   .serif{font-family:'Bitter',Georgia,serif;font-weight:500;}
   .hdr{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #D9DAD9;padding-bottom:13px;}
@@ -236,7 +237,11 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
   .fill{height:9px;background:#00B4BE;}
   .foot{margin-top:auto;border-top:1px solid #D9DAD9;padding-top:9px;font-size:9px;line-height:1.5;color:#838483;}
   @page{size:letter;margin:0;}
-  @media print{.page{page-break-after:always;min-height:auto;} .page:last-of-type{page-break-after:auto;}}
+  @media print{
+    body{background:#FFFFFF;padding:0;}
+    .page{margin:0;box-shadow:none;page-break-after:always;min-height:auto;}
+    .page:last-of-type{page-break-after:auto;}
+  }
 </style>
 </head>
 <body>
@@ -247,7 +252,7 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
   <div style="margin-top:32px;">
     <div style="width:32px;height:3px;background:#E20C10;"></div>
     <div class="cond" style="font-size:11px;letter-spacing:0.12em;color:#E20C10;margin-top:8px;">${esc(portfolio.name.toUpperCase())} · MODEL PORTFOLIO · SINGAPORE</div>
-    <h1 class="serif" style="font-size:31px;line-height:1.12;margin:11px 0 0;max-width:540px;">Returns come from <em>staying invested</em>.</h1>
+    <h1 class="serif" style="font-size:31px;line-height:1.12;margin:11px 0 0;max-width:540px;">${portfolio.category === "dividend_income" ? "Generating income with a <em>peace of mind</em>." : "Returns come from <em>staying invested</em>."}</h1>
   </div>
 
   <div style="display:flex;align-items:flex-end;gap:32px;margin-top:30px;">
