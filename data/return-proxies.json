@@ -36,10 +36,6 @@
     "LU1914381329": {
       "proxy": "GB00BYQ91V66",
       "reason": "Allianz Best Styles Global Eq ET H2 SGD (FWD Aggressive) → Allianz Best Styles Global AC Eq I Acc GBP (2015 inception)"
-    },
-    "SG9999001176": {
-      "proxy": "LU1057294990",
-      "reason": "United Global Healthcare SGD Acc (MAS-coded, no monthly NAV from Morningstar widget) → BGF World Healthscience A2 SGD H (2014 inception, real GrowthOf10K back to Dec 2016, same asset class + SGD currency profile)"
     }
   }
 }
