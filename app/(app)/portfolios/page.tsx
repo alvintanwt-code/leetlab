@@ -8,7 +8,7 @@ import {
 import { PortfolioCard, PortfolioRow, type PortfolioCardData } from "@/components/PortfolioCard";
 import { computeAssetMix, computeRiskRating, parseXray } from "@/lib/portfolio-derive";
 import { blendPortfolioSeries, blendPortfolioYield } from "@/lib/portfolio-performance";
-import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/portfolio-mandates";
+import { CATEGORY_ORDER } from "@/lib/portfolio-mandates";
 
 export const dynamic = "force-dynamic";
 
@@ -19,20 +19,13 @@ const PLATFORM_TABS: { slug: string; short: string; disabled?: boolean }[] = [
   { slug: "gwm", short: "GWM" },
 ];
 
-const STRATEGY_CHIPS: { key: string; label: string }[] = [
-  { key: "all", label: "All" },
-  ...CATEGORY_ORDER.map((k) => ({ key: k, label: CATEGORY_LABELS[k] })),
-];
-
 function buildHref(params: {
   platform?: string;
-  strategy?: string;
   view?: string;
   confirmed?: string | null;
 }): string {
   const sp = new URLSearchParams();
   if (params.platform) sp.set("platform", params.platform);
-  if (params.strategy && params.strategy !== "all") sp.set("strategy", params.strategy);
   if (params.view && params.view !== "card") sp.set("view", params.view);
   if (params.confirmed) sp.set("confirmed", params.confirmed);
   const q = sp.toString();
@@ -44,11 +37,9 @@ export default async function ModelPortfoliosIndex({
 }: {
   searchParams: Promise<{
     platform?: string;
-    strategy?: string;
     view?: string;
     confirmed?: string;
     provider?: string; // legacy
-    category?: string; // legacy
   }>;
 }) {
   const sp = await searchParams;
@@ -73,26 +64,17 @@ export default async function ModelPortfoliosIndex({
     ?? PLATFORM_TABS.find((t) => !t.disabled)!.slug;
   const activePlatform = isValid(requested) ? requested! : fallback;
 
-  // Resolve active strategy — supports legacy ?category=.
-  const requestedStrategy = sp.strategy ?? sp.category ?? "all";
-  const activeStrategy =
-    requestedStrategy === "all" || CATEGORY_ORDER.includes(requestedStrategy) ? requestedStrategy : "all";
-
   const activeView = sp.view === "row" ? "row" : "card";
 
-  // Filter portfolios — latest version per (platform, category).
+  // Latest version per (platform, category), rendered in canonical category order.
   const platformPortfolios = allPortfolios.filter((p) => p.provider_slug === activePlatform);
   const latestByCategory = new Map<string, ConfirmedPortfolio>();
   for (const p of platformPortfolios) {
     if (!latestByCategory.has(p.category)) latestByCategory.set(p.category, p);
   }
-  const filtered: ConfirmedPortfolio[] = (() => {
-    const list = [...latestByCategory.values()];
-    const inOrder = CATEGORY_ORDER.map((k) => list.find((p) => p.category === k)).filter(
-      (p): p is ConfirmedPortfolio => p != null,
-    );
-    return activeStrategy === "all" ? inOrder : inOrder.filter((p) => p.category === activeStrategy);
-  })();
+  const filtered: ConfirmedPortfolio[] = CATEGORY_ORDER.map((k) =>
+    latestByCategory.get(k),
+  ).filter((p): p is ConfirmedPortfolio => p != null);
 
   // Build the per-card data: holdings → asset mix, xray, series.
   const cardData: PortfolioCardData[] = await Promise.all(
@@ -161,7 +143,7 @@ export default async function ModelPortfoliosIndex({
               return (
                 <Link
                   key={t.slug}
-                  href={buildHref({ platform: t.slug, strategy: "all", view: activeView })}
+                  href={buildHref({ platform: t.slug, view: activeView })}
                   className={`${cls} ${
                     active
                       ? "border-[var(--color-ink)] font-medium text-[var(--color-ink)]"
@@ -176,31 +158,9 @@ export default async function ModelPortfoliosIndex({
               );
             })}
           </div>
-        </div>
-
-        <div className="flex items-center gap-6">
-          <p className="t-micro-cap w-20 shrink-0 py-2">Strategy</p>
-          <div className="flex flex-1 items-center gap-1 overflow-x-auto">
-            {STRATEGY_CHIPS.map((c) => {
-              const active = c.key === activeStrategy;
-              return (
-                <Link
-                  key={c.key}
-                  href={buildHref({ platform: activePlatform, strategy: c.key, view: activeView })}
-                  className={`inline-flex shrink-0 items-center whitespace-nowrap border-b-2 px-3 py-3 -mb-px t-caption transition-colors ${
-                    active
-                      ? "border-[var(--color-ink)] font-medium text-[var(--color-ink)]"
-                      : "border-transparent text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
-                  }`}
-                >
-                  {c.label}
-                </Link>
-              );
-            })}
-          </div>
           <div className="flex shrink-0 items-center gap-0.5 py-2">
             <Link
-              href={buildHref({ platform: activePlatform, strategy: activeStrategy, view: "card" })}
+              href={buildHref({ platform: activePlatform, view: "card" })}
               aria-label="Card view"
               className={`flex h-7 w-7 items-center justify-center border ${
                 activeView === "card"
@@ -215,7 +175,7 @@ export default async function ModelPortfoliosIndex({
               </svg>
             </Link>
             <Link
-              href={buildHref({ platform: activePlatform, strategy: activeStrategy, view: "row" })}
+              href={buildHref({ platform: activePlatform, view: "row" })}
               aria-label="Row view"
               className={`flex h-7 w-7 items-center justify-center border ${
                 activeView === "row"
@@ -240,7 +200,7 @@ export default async function ModelPortfoliosIndex({
             Nothing saved for this filter yet.
           </h2>
           <p className="t-body-md mx-auto mt-3 max-w-md text-[var(--color-ink-mute)]">
-            Build one in the Portfolio Builder, or change platform / strategy above.
+            Build one in the Portfolio Builder, or switch platform above.
           </p>
           <Link
             href={`/construction/${activePlatform}/picker`}
