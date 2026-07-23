@@ -105,16 +105,14 @@ export default async function ResourcesPage() {
         Client-facing documents. Open renders inline; Download saves the PDF. Fact sheets re-render from the latest monthly archive on each click.
       </p>
 
-      {/* Fact sheets — 4-column grid of smaller cards */}
+      {/* Market commentary — standalone row up top */}
       <section className="mb-16">
         <div className="mb-5 flex items-baseline justify-between">
-          <p className="t-micro-cap text-[var(--color-ink)]">Fact sheets</p>
-          <p className="t-caption text-[var(--color-ink-mute)]">
-            {factsheets.length} · one per confirmed model portfolio
-          </p>
+          <p className="t-micro-cap text-[var(--color-ink)]">Market commentary</p>
+          <p className="t-caption text-[var(--color-ink-mute)]">Quarterly + event-driven notes</p>
         </div>
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-          {factsheets.map((r) => (
+          {STATIC_RESOURCES.map((r) => (
             <ResourceCard key={r.slug} resource={r} />
           ))}
         </div>
@@ -123,14 +121,16 @@ export default async function ResourcesPage() {
       {/* Hairline divider */}
       <div className="mb-16 border-t border-[var(--color-hairline)]" aria-hidden />
 
-      {/* Market commentary — standalone row */}
+      {/* Fact sheets — 4-column grid of smaller cards */}
       <section>
         <div className="mb-5 flex items-baseline justify-between">
-          <p className="t-micro-cap text-[var(--color-ink)]">Market commentary</p>
-          <p className="t-caption text-[var(--color-ink-mute)]">Quarterly + event-driven notes</p>
+          <p className="t-micro-cap text-[var(--color-ink)]">Fact sheets</p>
+          <p className="t-caption text-[var(--color-ink-mute)]">
+            {factsheets.length} · one per confirmed model portfolio
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-          {STATIC_RESOURCES.map((r) => (
+          {factsheets.map((r) => (
             <ResourceCard key={r.slug} resource={r} />
           ))}
         </div>
