@@ -25,7 +25,7 @@ export default async function PortfolioDetailPage({
   return (
     <div className="mx-auto w-full max-w-[1280px] px-10 py-10">
       <Link
-        href="/portfolios"
+        href={`/portfolios?platform=${portfolio.provider_slug}`}
         className="t-caption inline-flex items-center gap-1 text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
       >
         &larr; Back to Model Portfolios
