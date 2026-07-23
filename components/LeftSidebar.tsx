@@ -155,10 +155,10 @@ export function LeftSidebar({
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <ul className="flex flex-col gap-0.5">
-          <NavItem href="/resources" label="Resources" icon={<DocsIcon />} active={isResources} collapsed={collapsed} />
           <NavItem href={defaultBuilderHref} label="Build" icon={<BlocksIcon />} active={isBuilder} locked collapsed={collapsed} />
           <NavItem href="/portfolios?view=all" label="Model portfolio" icon={<ChartIcon />} active={isModels} collapsed={collapsed} />
           <NavItem href="/switch" label="Fund switch" icon={<SwapIcon />} active={isSwitch} collapsed={collapsed} />
+          <NavItem href="/resources" label="Resources" icon={<DocsIcon />} active={isResources} collapsed={collapsed} />
         </ul>
       </nav>
 
