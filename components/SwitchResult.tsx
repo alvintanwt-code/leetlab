@@ -370,7 +370,7 @@ function SwitchOrderTables({ order }: { order: SwitchOrder }) {
                       </span>
                     </td>
                     <td className="nowrap right">
-                      <span className="num text-[var(--color-ink)]">{r.pctOfFund.toFixed(1)}%</span>
+                      <span className="num text-[var(--color-ink)]">{r.pctOfFund.toFixed(2)}%</span>
                     </td>
                   </tr>
                 ))
@@ -425,7 +425,7 @@ function SwitchOrderTables({ order }: { order: SwitchOrder }) {
                       <span className="name text-[var(--color-ink)]" title={r.fund}>{r.fund}</span>
                     </td>
                     <td className="nowrap right">
-                      <span className="num text-[var(--color-ink)]">{r.pct}</span>
+                      <span className="num text-[var(--color-ink)]">{r.pct.toFixed(2)}</span>
                     </td>
                   </tr>
                 ))
@@ -436,7 +436,7 @@ function SwitchOrderTables({ order }: { order: SwitchOrder }) {
                 <tr>
                   <td className="text-[var(--color-ink-mute)]">Total</td>
                   <td className="nowrap right">
-                    <span className="num font-medium text-[var(--color-ink)]">{totalIn}</span>
+                    <span className="num font-medium text-[var(--color-ink)]">{totalIn.toFixed(2)}</span>
                   </td>
                 </tr>
               </tfoot>

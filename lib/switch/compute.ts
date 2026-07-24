@@ -374,19 +374,23 @@ function computeSwitchOrder(args: {
   }
 
   const totalNetBuySgd = netIncreases.reduce((s, r) => s + r.sgd, 0) || 1;
+  // Two-decimal precision so 40.74 / 29.69 / 29.57 lands cleanly instead of
+  // 41 / 30 / 30 with a hidden reconciliation add-on. The switch form's
+  // per-row precision is what matters for the advisor filling it out.
+  const round2 = (n: number) => Math.round(n * 100) / 100;
   const switchIn: SwitchOrderInRow[] = netIncreases.map((r) => ({
     fund: r.fund,
-    pct: Math.round((r.sgd / totalNetBuySgd) * 100),
+    pct: round2((r.sgd / totalNetBuySgd) * 100),
   })).filter((r) => r.pct > 0);
 
   if (switchIn.length > 0) {
     const sum = switchIn.reduce((s, r) => s + r.pct, 0);
-    if (sum !== 100) {
+    if (Math.abs(sum - 100) > 0.001) {
       let maxIdx = 0;
       for (let i = 1; i < switchIn.length; i++) {
         if (switchIn[i].pct > switchIn[maxIdx].pct) maxIdx = i;
       }
-      switchIn[maxIdx].pct += 100 - sum;
+      switchIn[maxIdx].pct = round2(switchIn[maxIdx].pct + (100 - sum));
     }
   }
   switchIn.sort((a, b) => b.pct - a.pct);

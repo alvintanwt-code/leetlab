@@ -18,20 +18,11 @@ import {
   RiskText,
   type PortfolioCardData,
 } from "@/components/PortfolioCard";
-import { CATEGORY_LABELS, PORTFOLIO_MANDATES } from "@/lib/portfolio-mandates";
+import { PORTFOLIO_MANDATES } from "@/lib/portfolio-mandates";
 import {
   ExistingPortfolioSummary,
   type ValidHolding,
 } from "@/components/ExistingPortfolioSummary";
-
-// Editorial provider names for the target-model row title — distinct from
-// the compact nav labels in PROVIDER_SHORT above.
-const PROVIDER_FULL: Record<string, string> = {
-  hsbc: "HSBC Life",
-  fwd: "FWD",
-  tmls: "Tokio Marine",
-  gwm: "GWM",
-};
 
 type Provider = { slug: string; name: string };
 
@@ -900,7 +891,8 @@ function SwitchModelRow({
   onSelect: () => void;
 }) {
   const { portfolio, assetMix, xray, risk } = data;
-  const title = `${PROVIDER_FULL[portfolio.provider_slug] ?? portfolio.provider_name} ${CATEGORY_LABELS[portfolio.category] ?? portfolio.category}`;
+  // portfolio.name is the source of truth (e.g. "HSBC Life Global Alpha").
+  const title = portfolio.name;
   const r3y = xray?.r3y ?? null;
 
   return (
