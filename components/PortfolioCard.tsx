@@ -2,15 +2,8 @@ import Link from "next/link";
 import type { ConfirmedPortfolio } from "@/lib/db/queries";
 import type { AssetBucket, AssetChip, PortfolioXray } from "@/lib/portfolio-derive";
 import type { BlendedSeries } from "@/lib/portfolio-performance";
-import { CATEGORY_LABELS, PORTFOLIO_MANDATES } from "@/lib/portfolio-mandates";
+import { PORTFOLIO_MANDATES } from "@/lib/portfolio-mandates";
 import { PortfolioMiniChart } from "@/components/PortfolioMiniChart";
-
-const PROVIDER_SHORT: Record<string, string> = {
-  hsbc: "HSBC Life",
-  tmls: "Tokio Marine",
-  fwd: "FWD",
-  gwm: "GWM",
-};
 
 export type PortfolioCardData = {
   portfolio: ConfirmedPortfolio;
@@ -112,7 +105,11 @@ export function AssetChips({ chips }: { chips: AssetChip[] }) {
 export function PortfolioCard({ data }: { data: PortfolioCardData }) {
   const { portfolio, assetMix, xray, risk, series, yieldPct } = data;
   const mandate = PORTFOLIO_MANDATES[portfolio.category];
-  const title = `${PROVIDER_SHORT[portfolio.provider_slug] ?? portfolio.provider_name} ${CATEGORY_LABELS[portfolio.category] ?? portfolio.category}`;
+  // Use the stored portfolio name directly — the DB now carries the
+  // full display string (e.g. "HSBC Life Global Alpha"), so the old
+  // provider+category concat would render redundant "HSBC HSBC Life
+  // Global Alpha" style labels.
+  const title = portfolio.name;
   const isIncome = portfolio.category === "dividend_income";
 
   return (
@@ -163,7 +160,11 @@ export function PortfolioCard({ data }: { data: PortfolioCardData }) {
 export function PortfolioRowBody({ data }: { data: PortfolioCardData }) {
   const { portfolio, assetMix, xray, risk, series, yieldPct } = data;
   const mandate = PORTFOLIO_MANDATES[portfolio.category];
-  const title = `${PROVIDER_SHORT[portfolio.provider_slug] ?? portfolio.provider_name} ${CATEGORY_LABELS[portfolio.category] ?? portfolio.category}`;
+  // Use the stored portfolio name directly — the DB now carries the
+  // full display string (e.g. "HSBC Life Global Alpha"), so the old
+  // provider+category concat would render redundant "HSBC HSBC Life
+  // Global Alpha" style labels.
+  const title = portfolio.name;
   const isIncome = portfolio.category === "dividend_income";
 
   return (
