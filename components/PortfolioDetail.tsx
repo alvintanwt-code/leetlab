@@ -9,6 +9,11 @@ type ChartData = {
   model: { points: { d: string; v: number }[]; terminal: number };
   commonStart: string;
   commonEnd: string;
+  /**
+   * Weight-blended calendar-year returns from NewWealth's per-fund
+   * YR_ReturnM12 fields. Preferred over NAV-derived when non-empty.
+   */
+  annualReturns?: { year: number; return_pct: number; is_partial: boolean }[];
   skipped: number;
 };
 
@@ -257,10 +262,18 @@ export function PortfolioDetail({
 
   // Performance strip — computed once, reused by the cells above the chart
   // and the Annual Total Returns chart below.
+  //
+  // Prefer the server-computed blend (from NewWealth's YR_ReturnM12
+  // fields, i.e. fund-house-reported calendar-year returns) when the
+  // route returns it. Falls back to deriving from the rebased/blended
+  // NAV series for pre-NewWealth deployments or portfolios where no
+  // fund has YR data (rare — LU/IE UCITS on HSBC/TMLS shelves all do).
   const annualReturns =
-    chart && chart.model.points.length >= 2
-      ? computeAnnualReturns(chart.model.points)
-      : [];
+    chart?.annualReturns && chart.annualReturns.length > 0
+      ? chart.annualReturns
+      : chart && chart.model.points.length >= 2
+        ? computeAnnualReturns(chart.model.points)
+        : [];
   // Best / worst only makes sense across full calendar years; a partial
   // (year-to-date) bar would otherwise dominate when it happens to lead
   // or lag the rest of the record.

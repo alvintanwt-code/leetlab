@@ -23,6 +23,7 @@ type ChartData = {
   model: { points: { d: string; v: number }[]; terminal: number };
   commonStart: string;
   commonEnd: string;
+  annualReturns?: { year: number; return_pct: number; is_partial: boolean }[];
   skipped: number;
 };
 
@@ -269,8 +270,16 @@ export function BuildReview({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, basket]);
 
+  // Prefer server-computed blend from NewWealth's per-fund
+  // YR_ReturnM12 (fund-house-reported CY returns). Falls back to
+  // deriving from the blended NAV series when the server didn't return
+  // annualReturns.
   const annualReturns =
-    chart && chart.model.points.length >= 2 ? computeAnnualReturns(chart.model.points) : [];
+    chart?.annualReturns && chart.annualReturns.length > 0
+      ? chart.annualReturns
+      : chart && chart.model.points.length >= 2
+        ? computeAnnualReturns(chart.model.points)
+        : [];
   const endYear = chart ? parseInt(chart.commonEnd.slice(0, 4), 10) : null;
   const rangeLabel = (yearsBack: number): string =>
     endYear ? `${endYear - yearsBack} - ${endYear}` : "—";

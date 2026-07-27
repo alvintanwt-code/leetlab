@@ -200,6 +200,29 @@ export async function POST(req: Request) {
     v: fundsOut.reduce((s, f) => s + (f.weight / totalWeight) * f.points[j].v, 0),
   }));
 
+  // Weight-blended calendar-year returns from NewWealth's YR_ReturnM12
+  // fields. These are the fund-house-reported CY returns (in fund ccy) —
+  // more accurate than deriving from the rebased/intersected NAV series,
+  // and covers years the NAV intersection would drop (e.g. 2021 when one
+  // fund's history only starts 2022).
+  //
+  // Emitted only when EVERY usable fund reports YR data for a year;
+  // partial coverage would misrepresent the blend. Clients fall back to
+  // deriving from `model.points` when this field is empty.
+  const nwByIsin = new Map(
+    (await Promise.all(usable.map(async (f) => [f.isin, await fetchNewWealthByIsin(f.isin)] as const)))
+      .filter(([, nw]) => nw != null && nw.calendarYearReturns.length > 0),
+  );
+  const yearsPerFund = fundsOut.map((f) => new Map((nwByIsin.get(f.isin)?.calendarYearReturns ?? []).map((r) => [r.year, r.return_pct])));
+  const allYears = [...new Set(yearsPerFund.flatMap((m) => [...m.keys()]))].sort();
+  const annualReturns = allYears
+    .filter((y) => yearsPerFund.every((m) => m.has(y)))
+    .map((y) => ({
+      year: y,
+      return_pct: fundsOut.reduce((s, f, i) => s + (f.weight / totalWeight) * (yearsPerFund[i].get(y) ?? 0), 0),
+      is_partial: false,
+    }));
+
   const skipped = parsed.components.length - usable.length;
 
   return NextResponse.json({
@@ -207,6 +230,7 @@ export async function POST(req: Request) {
     model: { points: modelPoints, terminal: modelPoints[modelPoints.length - 1].v },
     commonStart: common[0],
     commonEnd: common[common.length - 1],
+    annualReturns,
     skipped,
   });
 }

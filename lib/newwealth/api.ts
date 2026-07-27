@@ -51,10 +51,7 @@ const CONFIG_TTL_MS = 24 * 60 * 60 * 1000; // 24h — the key itself expires in 
 const SERIES_TTL_MS = 6 * 60 * 60 * 1000; // 6h — matches Morningstar module
 
 const CONFIG_CACHE = new Map<Tenant, { ts: number; cfg: TypesenseConfig }>();
-const SERIES_CACHE = new Map<
-  string,
-  { ts: number; source: Tenant; points: SeriesPoint[]; yield12m: number | null; distFreq: string | null }
->();
+const SERIES_CACHE = new Map<string, SeriesCacheEntry>();
 
 async function fetchTypesenseConfig(tenant: Tenant): Promise<TypesenseConfig | null> {
   const cached = CONFIG_CACHE.get(tenant);
@@ -86,6 +83,13 @@ type FundMeta = {
   secId: string;
   yield12m: number | null;
   distFreq: string | null;
+  /**
+   * Last N complete calendar-year returns from Morningstar via the
+   * Typesense doc's `YR_ReturnM12_1..5` fields. Anchored to the doc's
+   * `EndDate` — if EndDate is 2025-12-30, YR_ReturnM12_1 is CY2025.
+   * Always sorted oldest → newest so consumers can iterate naturally.
+   */
+  calendarYearReturns: { year: number; return_pct: number }[];
 };
 
 /**
@@ -110,7 +114,9 @@ async function searchIsinInTenant(tenant: Tenant, isin: string): Promise<FundMet
         q: "*",
         filter_by: `ISIN:=${isin}`,
         per_page: 1,
-        include_fields: "SecId,ISIN,DividendYield,DividendDistributionFrequency",
+        include_fields:
+          "SecId,ISIN,DividendYield,DividendDistributionFrequency,EndDate," +
+          "YR_ReturnM12_1,YR_ReturnM12_2,YR_ReturnM12_3,YR_ReturnM12_4,YR_ReturnM12_5",
       },
     ],
   });
@@ -131,6 +137,12 @@ async function searchIsinInTenant(tenant: Tenant, isin: string): Promise<FundMet
             ISIN?: string;
             DividendYield?: number;
             DividendDistributionFrequency?: string;
+            EndDate?: number;
+            YR_ReturnM12_1?: number;
+            YR_ReturnM12_2?: number;
+            YR_ReturnM12_3?: number;
+            YR_ReturnM12_4?: number;
+            YR_ReturnM12_5?: number;
           };
         }>;
       }>;
@@ -141,10 +153,29 @@ async function searchIsinInTenant(tenant: Tenant, isin: string): Promise<FundMet
     // through so consumers can render "0.0%" rather than an unknown "—";
     // only drop the field when it's actually missing.
     const y = typeof hit.DividendYield === "number" ? hit.DividendYield : null;
+
+    // Calendar-year returns. EndDate is a Unix-seconds timestamp; use its
+    // year as the anchor for YR_ReturnM12_1. If it's missing we fall back
+    // to (now - 1), which is right for most of the year but may be off by
+    // one right at a year boundary until Morningstar refreshes.
+    const anchorYear = hit.EndDate
+      ? new Date(hit.EndDate * 1000).getUTCFullYear()
+      : new Date().getUTCFullYear() - 1;
+    const yrs = [hit.YR_ReturnM12_1, hit.YR_ReturnM12_2, hit.YR_ReturnM12_3, hit.YR_ReturnM12_4, hit.YR_ReturnM12_5];
+    const calendarYearReturns: { year: number; return_pct: number }[] = [];
+    for (let i = 0; i < yrs.length; i++) {
+      const v = yrs[i];
+      if (typeof v === "number" && Number.isFinite(v)) {
+        calendarYearReturns.push({ year: anchorYear - i, return_pct: v });
+      }
+    }
+    calendarYearReturns.sort((a, b) => a.year - b.year);
+
     return {
       secId: hit.SecId,
       yield12m: y,
       distFreq: hit.DividendDistributionFrequency ?? null,
+      calendarYearReturns,
     };
   } catch {
     return null;
@@ -199,6 +230,8 @@ export type NewWealthResult = {
   yield12m: number | null;
   /** e.g. "Monthly" / "Quarterly" / "Annual" — null when unavailable. */
   distFreq: string | null;
+  /** Last N complete calendar-year returns (oldest → newest). */
+  calendarYearReturns: { year: number; return_pct: number }[];
 } | null;
 
 type SeriesCacheEntry = {
@@ -207,6 +240,7 @@ type SeriesCacheEntry = {
   points: SeriesPoint[];
   yield12m: number | null;
   distFreq: string | null;
+  calendarYearReturns: { year: number; return_pct: number }[];
 };
 
 /**
@@ -217,10 +251,16 @@ type SeriesCacheEntry = {
  * ISINs within the window.
  */
 export async function fetchByIsin(isin: string): Promise<NewWealthResult> {
-  const cached = SERIES_CACHE.get(isin) as SeriesCacheEntry | undefined;
+  const cached = SERIES_CACHE.get(isin);
   if (cached && Date.now() - cached.ts < SERIES_TTL_MS) {
     return cached.points.length >= 2
-      ? { points: cached.points, source: cached.source, yield12m: cached.yield12m, distFreq: cached.distFreq }
+      ? {
+          points: cached.points,
+          source: cached.source,
+          yield12m: cached.yield12m,
+          distFreq: cached.distFreq,
+          calendarYearReturns: cached.calendarYearReturns,
+        }
       : null;
   }
   for (const tenant of ["hsbc", "tmls"] as const) {
@@ -234,8 +274,15 @@ export async function fetchByIsin(isin: string): Promise<NewWealthResult> {
         points,
         yield12m: meta.yield12m,
         distFreq: meta.distFreq,
-      } as SeriesCacheEntry);
-      return { points, source: tenant, yield12m: meta.yield12m, distFreq: meta.distFreq };
+        calendarYearReturns: meta.calendarYearReturns,
+      });
+      return {
+        points,
+        source: tenant,
+        yield12m: meta.yield12m,
+        distFreq: meta.distFreq,
+        calendarYearReturns: meta.calendarYearReturns,
+      };
     }
   }
   // Negative cache so uncovered ISINs (POEMS-only, MAS-coded, etc.) don't
@@ -246,6 +293,7 @@ export async function fetchByIsin(isin: string): Promise<NewWealthResult> {
     points: [],
     yield12m: null,
     distFreq: null,
-  } as SeriesCacheEntry);
+    calendarYearReturns: [],
+  });
   return null;
 }
