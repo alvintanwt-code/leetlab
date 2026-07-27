@@ -285,6 +285,16 @@
     "status": "Active"
   },
   {
+    "name": "Neuberger Berman EM DbtHrdCcy SGD AMnDis",
+    "isin": "IE00B99K3R14",
+    "status": "Active"
+  },
+  {
+    "name": "Neuberger Berman Strat Inc SGD A Mn Dis",
+    "isin": "IE00BRJFZM13",
+    "status": "Active"
+  },
+  {
     "name": "Nordea 1 - Alpha 10 MA Fd HM SGD",
     "isin": "LU1555763322",
     "status": "Active"
