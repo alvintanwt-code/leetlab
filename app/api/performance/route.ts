@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { syntheticGrowth10K } from "@/lib/return-overrides";
 import { loadProxies, spliceProxyPrefix } from "@/lib/return-proxy-splice";
+import { fetchByIsin as fetchNewWealthByIsin } from "@/lib/newwealth/api";
 import { neon } from "@neondatabase/serverless";
 
 // Server-side proxy + cache for Morningstar's public security_details endpoint.
@@ -74,6 +75,18 @@ async function fetchDbTrailing(isin: string): Promise<{ ann_1y: number | null; a
 async function fetchSeries(isin: string): Promise<SeriesPoint[]> {
   const cached = CACHE.get(isin);
   if (cached && Date.now() - cached.ts < TTL_MS) return cached.points;
+
+  // Morningstar's tools.morningstar.co.uk widget API was sunset in mid-2026
+  // and now 301s to their marketing site. NewWealth (HSBC + TMLS Typesense
+  // + timeseries endpoints) is the new primary NAV source, covering ~250
+  // ISINs with real observed monthly history. Fall through to the legacy
+  // Morningstar block if NewWealth doesn't cover the ISIN — kept for the
+  // rare case the widget API comes back and for tests to inspect.
+  const nw = await fetchNewWealthByIsin(isin);
+  if (nw && nw.points.length >= 2) {
+    CACHE.set(isin, { ts: Date.now(), points: nw.points });
+    return nw.points;
+  }
 
   const url = `https://tools.morningstar.co.uk/api/rest.svc/klr5zyak8x/security_details/${encodeURIComponent(isin)}?idtype=isin&languageId=en-GB&responseViewFormat=json&viewId=MFsnapshot`;
   let points: SeriesPoint[] = [];

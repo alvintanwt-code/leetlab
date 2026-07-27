@@ -14,6 +14,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { syntheticGrowth10K } from "@/lib/return-overrides";
+import { fetchByIsin as fetchNewWealthByIsin } from "@/lib/newwealth/api";
 
 type SeriesPoint = { d: string; v: number };
 
@@ -59,23 +60,44 @@ function overrideOnlySnapshot(isin: string): Snapshot {
 export async function fetchSnapshot(isin: string): Promise<Snapshot> {
   const cached = CACHE.get(isin);
   if (cached && Date.now() - cached.ts < TTL_MS) return cached.snap;
-  const empty: Snapshot = overrideOnlySnapshot(isin);
+
+  // Primary NAV source: NewWealth (HSBC + TMLS tenants). Covers ~250
+  // funds by ISIN and returns real observed monthly NAV. Morningstar's
+  // widget API — the original primary — was sunset in mid-2026; the
+  // block below is kept as a graceful path for the rare case it comes
+  // back up, but in practice we now expect it to return empty and the
+  // NewWealth result to drive both series and (when available) yield.
+  const nw = await fetchNewWealthByIsin(isin);
+
+  const overrideYield = loadYieldOverrides()[isin]?.yieldPct ?? null;
   const url = `https://tools.morningstar.co.uk/api/rest.svc/klr5zyak8x/security_details/${encodeURIComponent(
     isin,
   )}?idtype=isin&languageId=en-GB&responseViewFormat=json&viewId=MFsnapshot`;
   try {
     const r = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8_000) });
-    if (!r.ok) return empty;
+    if (!r.ok) {
+      // Morningstar unreachable — take whatever NewWealth returned; fall
+      // back to override-only synth otherwise.
+      const snap: Snapshot = nw
+        ? { points: nw.points, yield12m: overrideYield, distFreq: null }
+        : overrideOnlySnapshot(isin);
+      CACHE.set(isin, { ts: Date.now(), snap });
+      return snap;
+    }
     const j = (await r.json()) as unknown;
     const arr = Array.isArray(j) ? j[0] : j;
-    if (!arr || typeof arr !== "object") return empty;
-    const obj = arr as {
+    const obj = (arr && typeof arr === "object" ? arr : {}) as {
       GrowthOf10K?: Array<{ HistoryDetails?: Array<{ EndDate: string; Value: number }> }>;
       YieldHistory?: { Type?: string; Value?: number } | Array<{ Type?: string; Value?: number }>;
       DividendDistributionFrequency?: string;
     };
 
     // -------- series --------
+    // Priority: Morningstar GrowthOf10K (if still available) → NewWealth
+    // (HSBC/TMLS live NAV) → syntheticGrowth10K override → empty. Since
+    // mid-2026 Morningstar's widget API has been retired and the block
+    // above almost always returns empty, so NewWealth ends up driving
+    // most funds in practice.
     const g = obj.GrowthOf10K;
     let points: SeriesPoint[] = [];
     if (Array.isArray(g) && g.length > 0) {
@@ -87,7 +109,9 @@ export async function fetchSnapshot(isin: string): Promise<Snapshot> {
         .filter((p) => p.v > 0);
       if (points.length < 2) points = [];
     }
-    // Fallback for MAS-coded SG funds — same idea as the yield override below.
+    if (points.length < 2 && nw && nw.points.length >= 2) {
+      points = nw.points;
+    }
     if (points.length < 2) {
       const synth = syntheticGrowth10K(isin);
       if (synth.length >= 2) points = synth;
@@ -100,10 +124,7 @@ export async function fetchSnapshot(isin: string): Promise<Snapshot> {
     const t52 = yhList.find((p) => String(p.Type) === "52" && typeof p.Value === "number");
     if (t52?.Value != null) yield12m = t52.Value;
     // Fall back to the override file (platform-scraped) when Morningstar is blank.
-    if (yield12m == null) {
-      const ov = loadYieldOverrides()[isin];
-      if (ov && typeof ov.yieldPct === "number") yield12m = ov.yieldPct;
-    }
+    if (yield12m == null) yield12m = overrideYield;
 
     const snap: Snapshot = {
       points,
@@ -113,7 +134,13 @@ export async function fetchSnapshot(isin: string): Promise<Snapshot> {
     CACHE.set(isin, { ts: Date.now(), snap });
     return snap;
   } catch {
-    return empty;
+    // Both Morningstar paths failed. NewWealth's series (if any) is our
+    // best shot; otherwise fall back to the synth-only snapshot.
+    const snap: Snapshot = nw
+      ? { points: nw.points, yield12m: overrideYield, distFreq: null }
+      : overrideOnlySnapshot(isin);
+    CACHE.set(isin, { ts: Date.now(), snap });
+    return snap;
   }
 }
 
