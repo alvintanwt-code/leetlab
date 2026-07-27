@@ -79,7 +79,11 @@ export async function fetchSnapshot(isin: string): Promise<Snapshot> {
       // Morningstar unreachable — take whatever NewWealth returned; fall
       // back to override-only synth otherwise.
       const snap: Snapshot = nw
-        ? { points: nw.points, yield12m: overrideYield, distFreq: null }
+        ? {
+            points: nw.points,
+            yield12m: nw.yield12m ?? overrideYield,
+            distFreq: nw.distFreq,
+          }
         : overrideOnlySnapshot(isin);
       CACHE.set(isin, { ts: Date.now(), snap });
       return snap;
@@ -118,18 +122,21 @@ export async function fetchSnapshot(isin: string): Promise<Snapshot> {
     }
 
     // -------- yield (trailing 12m, Type code "52") --------
+    // Priority: Morningstar → NewWealth `DividendYield` → override file.
+    // Same fallback ladder as the series: since Morningstar's widget went
+    // dark, NewWealth ends up carrying most funds' yield in practice.
     let yield12m: number | null = null;
     const yh = obj.YieldHistory;
     const yhList = Array.isArray(yh) ? yh : yh ? [yh] : [];
     const t52 = yhList.find((p) => String(p.Type) === "52" && typeof p.Value === "number");
     if (t52?.Value != null) yield12m = t52.Value;
-    // Fall back to the override file (platform-scraped) when Morningstar is blank.
+    if (yield12m == null && nw?.yield12m != null) yield12m = nw.yield12m;
     if (yield12m == null) yield12m = overrideYield;
 
     const snap: Snapshot = {
       points,
       yield12m,
-      distFreq: obj.DividendDistributionFrequency ?? null,
+      distFreq: obj.DividendDistributionFrequency ?? nw?.distFreq ?? null,
     };
     CACHE.set(isin, { ts: Date.now(), snap });
     return snap;
@@ -137,7 +144,11 @@ export async function fetchSnapshot(isin: string): Promise<Snapshot> {
     // Both Morningstar paths failed. NewWealth's series (if any) is our
     // best shot; otherwise fall back to the synth-only snapshot.
     const snap: Snapshot = nw
-      ? { points: nw.points, yield12m: overrideYield, distFreq: null }
+      ? {
+          points: nw.points,
+          yield12m: nw.yield12m ?? overrideYield,
+          distFreq: nw.distFreq,
+        }
       : overrideOnlySnapshot(isin);
     CACHE.set(isin, { ts: Date.now(), snap });
     return snap;

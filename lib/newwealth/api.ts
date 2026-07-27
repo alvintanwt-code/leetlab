@@ -51,7 +51,10 @@ const CONFIG_TTL_MS = 24 * 60 * 60 * 1000; // 24h — the key itself expires in 
 const SERIES_TTL_MS = 6 * 60 * 60 * 1000; // 6h — matches Morningstar module
 
 const CONFIG_CACHE = new Map<Tenant, { ts: number; cfg: TypesenseConfig }>();
-const SERIES_CACHE = new Map<string, { ts: number; source: Tenant; points: SeriesPoint[] }>();
+const SERIES_CACHE = new Map<
+  string,
+  { ts: number; source: Tenant; points: SeriesPoint[]; yield12m: number | null; distFreq: string | null }
+>();
 
 async function fetchTypesenseConfig(tenant: Tenant): Promise<TypesenseConfig | null> {
   const cached = CONFIG_CACHE.get(tenant);
@@ -74,11 +77,25 @@ async function fetchTypesenseConfig(tenant: Tenant): Promise<TypesenseConfig | n
 }
 
 /**
- * Look up a fund by ISIN in a tenant's Typesense `funds` collection.
- * Returns the Morningstar `SecId` (e.g. `F00001SMUV`) needed for the NAV
- * fetch, or null if the fund isn't in that tenant's universe.
+ * Metadata pulled straight from the Typesense doc alongside the SecId
+ * lookup. Same doc we already need to fetch to get the SecId — so no
+ * extra network call. `yield12m` maps to Morningstar's Type-52 trailing
+ * 12-month yield (that's how NewWealth's ETL derives `DividendYield`).
  */
-async function searchIsinInTenant(tenant: Tenant, isin: string): Promise<string | null> {
+type FundMeta = {
+  secId: string;
+  yield12m: number | null;
+  distFreq: string | null;
+};
+
+/**
+ * Look up a fund by ISIN in a tenant's Typesense `funds` collection.
+ * Returns the Morningstar `SecId` needed for the NAV fetch plus the
+ * yield/dist-frequency metadata (both used to be sourced from
+ * Morningstar's MFsnapshot which is now dead). Null when the fund
+ * isn't in that tenant's universe.
+ */
+async function searchIsinInTenant(tenant: Tenant, isin: string): Promise<FundMeta | null> {
   const cfg = await fetchTypesenseConfig(tenant);
   if (!cfg) return null;
   const url = `https://${cfg.host}/api/multi_search`;
@@ -93,7 +110,7 @@ async function searchIsinInTenant(tenant: Tenant, isin: string): Promise<string 
         q: "*",
         filter_by: `ISIN:=${isin}`,
         per_page: 1,
-        include_fields: "SecId,ISIN",
+        include_fields: "SecId,ISIN,DividendYield,DividendDistributionFrequency",
       },
     ],
   });
@@ -106,10 +123,29 @@ async function searchIsinInTenant(tenant: Tenant, isin: string): Promise<string 
       body,
     });
     if (!r.ok) return null;
-    const j = (await r.json()) as { results?: Array<{ hits?: Array<{ document?: { SecId?: string; ISIN?: string } }> }> };
+    const j = (await r.json()) as {
+      results?: Array<{
+        hits?: Array<{
+          document?: {
+            SecId?: string;
+            ISIN?: string;
+            DividendYield?: number;
+            DividendDistributionFrequency?: string;
+          };
+        }>;
+      }>;
+    };
     const hit = j.results?.[0]?.hits?.[0]?.document;
-    if (!hit || hit.ISIN !== isin) return null;
-    return hit.SecId ?? null;
+    if (!hit || hit.ISIN !== isin || !hit.SecId) return null;
+    // Accumulating funds legitimately report DividendYield: 0 — keep that
+    // through so consumers can render "0.0%" rather than an unknown "—";
+    // only drop the field when it's actually missing.
+    const y = typeof hit.DividendYield === "number" ? hit.DividendYield : null;
+    return {
+      secId: hit.SecId,
+      yield12m: y,
+      distFreq: hit.DividendDistributionFrequency ?? null,
+    };
   } catch {
     return null;
   }
@@ -159,7 +195,19 @@ async function fetchSeriesInTenant(tenant: Tenant, secId: string): Promise<Month
 export type NewWealthResult = {
   points: SeriesPoint[];
   source: Tenant;
+  /** Trailing 12-month yield in percent — null when not populated. */
+  yield12m: number | null;
+  /** e.g. "Monthly" / "Quarterly" / "Annual" — null when unavailable. */
+  distFreq: string | null;
 } | null;
+
+type SeriesCacheEntry = {
+  ts: number;
+  source: Tenant;
+  points: SeriesPoint[];
+  yield12m: number | null;
+  distFreq: string | null;
+};
 
 /**
  * Top-level lookup: given an ISIN, search HSBC first (larger universe of
@@ -169,21 +217,35 @@ export type NewWealthResult = {
  * ISINs within the window.
  */
 export async function fetchByIsin(isin: string): Promise<NewWealthResult> {
-  const cached = SERIES_CACHE.get(isin);
+  const cached = SERIES_CACHE.get(isin) as SeriesCacheEntry | undefined;
   if (cached && Date.now() - cached.ts < SERIES_TTL_MS) {
-    return cached.points.length >= 2 ? { points: cached.points, source: cached.source } : null;
+    return cached.points.length >= 2
+      ? { points: cached.points, source: cached.source, yield12m: cached.yield12m, distFreq: cached.distFreq }
+      : null;
   }
   for (const tenant of ["hsbc", "tmls"] as const) {
-    const secId = await searchIsinInTenant(tenant, isin);
-    if (!secId) continue;
-    const points = await fetchSeriesInTenant(tenant, secId);
+    const meta = await searchIsinInTenant(tenant, isin);
+    if (!meta) continue;
+    const points = await fetchSeriesInTenant(tenant, meta.secId);
     if (points.length >= 2) {
-      SERIES_CACHE.set(isin, { ts: Date.now(), source: tenant, points });
-      return { points, source: tenant };
+      SERIES_CACHE.set(isin, {
+        ts: Date.now(),
+        source: tenant,
+        points,
+        yield12m: meta.yield12m,
+        distFreq: meta.distFreq,
+      } as SeriesCacheEntry);
+      return { points, source: tenant, yield12m: meta.yield12m, distFreq: meta.distFreq };
     }
   }
   // Negative cache so uncovered ISINs (POEMS-only, MAS-coded, etc.) don't
   // hammer both tenants on every render for the next 6h.
-  SERIES_CACHE.set(isin, { ts: Date.now(), source: "hsbc", points: [] });
+  SERIES_CACHE.set(isin, {
+    ts: Date.now(),
+    source: "hsbc",
+    points: [],
+    yield12m: null,
+    distFreq: null,
+  } as SeriesCacheEntry);
   return null;
 }
