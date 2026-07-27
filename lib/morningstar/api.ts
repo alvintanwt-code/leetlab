@@ -2,7 +2,12 @@
 // Single public key (klr5zyak8x) works across all providers' fund universes.
 
 const API_KEY = "klr5zyak8x";
-const BASE_URL = `https://tools.morningstar.co.uk/api/rest.svc/${API_KEY}`;
+// Morningstar migrated the widget-key API from tools.morningstar.co.uk (which
+// now 301s to their marketing site) to lt.morningstar.com around mid-2026.
+// The klr5zyak8x key still works — same endpoints, same JSON shape, same
+// (lack of) auth. Discovered via FWD's fund-centre still hitting Morningstar
+// live at the new domain.
+const BASE_URL = `https://lt.morningstar.com/api/rest.svc/${API_KEY}`;
 const FETCH_TIMEOUT_MS = 20_000;
 
 export type UniverseFund = {

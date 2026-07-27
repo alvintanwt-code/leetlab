@@ -70,7 +70,7 @@ export async function fetchSnapshot(isin: string): Promise<Snapshot> {
   const nw = await fetchNewWealthByIsin(isin);
 
   const overrideYield = loadYieldOverrides()[isin]?.yieldPct ?? null;
-  const url = `https://tools.morningstar.co.uk/api/rest.svc/klr5zyak8x/security_details/${encodeURIComponent(
+  const url = `https://lt.morningstar.com/api/rest.svc/klr5zyak8x/security_details/${encodeURIComponent(
     isin,
   )}?idtype=isin&languageId=en-GB&responseViewFormat=json&viewId=MFsnapshot`;
   try {

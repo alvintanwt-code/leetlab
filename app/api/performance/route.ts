@@ -76,19 +76,19 @@ async function fetchSeries(isin: string): Promise<SeriesPoint[]> {
   const cached = CACHE.get(isin);
   if (cached && Date.now() - cached.ts < TTL_MS) return cached.points;
 
-  // Morningstar's tools.morningstar.co.uk widget API was sunset in mid-2026
-  // and now 301s to their marketing site. NewWealth (HSBC + TMLS Typesense
-  // + timeseries endpoints) is the new primary NAV source, covering ~250
-  // ISINs with real observed monthly history. Fall through to the legacy
-  // Morningstar block if NewWealth doesn't cover the ISIN — kept for the
-  // rare case the widget API comes back and for tests to inspect.
+  // Morningstar migrated the widget API to lt.morningstar.com in mid-2026
+  // (see lib/morningstar/api.ts for the discovery story). This block is
+  // once again the primary NAV source for LU/IE UCITS. NewWealth still
+  // wins when Morningstar is unreachable, and synth still wins for
+  // MAS-coded SG funds that Morningstar's SG country-of-sale universe
+  // doesn't cover.
   const nw = await fetchNewWealthByIsin(isin);
   if (nw && nw.points.length >= 2) {
     CACHE.set(isin, { ts: Date.now(), points: nw.points });
     return nw.points;
   }
 
-  const url = `https://tools.morningstar.co.uk/api/rest.svc/klr5zyak8x/security_details/${encodeURIComponent(isin)}?idtype=isin&languageId=en-GB&responseViewFormat=json&viewId=MFsnapshot`;
+  const url = `https://lt.morningstar.com/api/rest.svc/klr5zyak8x/security_details/${encodeURIComponent(isin)}?idtype=isin&languageId=en-GB&responseViewFormat=json&viewId=MFsnapshot`;
   let points: SeriesPoint[] = [];
   try {
     const r = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15_000) });
