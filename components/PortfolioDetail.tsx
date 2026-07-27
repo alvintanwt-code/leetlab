@@ -309,7 +309,7 @@ export function PortfolioDetail({
                   className="num text-[var(--color-ink)] text-[48px] sm:text-[56px]"
                   style={{ letterSpacing: "-0.03em" }}
                 >
-                  {Math.round(xray.r10y)}
+                  {xray.r10y.toFixed(1)}
                 </span>
                 <span
                   className={`text-[24px] sm:text-[28px] ${r10yCls}`}
