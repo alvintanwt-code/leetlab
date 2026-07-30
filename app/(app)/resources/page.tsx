@@ -46,7 +46,23 @@ const STATIC_RESOURCES: StaticResource[] = [
     file: "/resources/q3-2026-market-outlook.pdf",
     edition: "July 2026",
   },
+  {
+    kind: "static",
+    slug: "best-and-worst-years",
+    title: "Best and Worst Years",
+    subtitle: "Rolling-period best and worst returns for S&P 500, Global Aggregate Bond, and MSCI EM — for use in client conversations about volatility.",
+    category: "Conversation aid",
+    file: "/resources/best-and-worst-years.jpg",
+    edition: "June 2026",
+  },
 ];
+
+function fileExt(publicPath: string): string {
+  const m = publicPath.match(/\.([a-z0-9]+)$/i);
+  return (m?.[1] ?? "").toLowerCase();
+}
+
+const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "gif", "svg"]);
 
 const PROVIDER_SHORT: Record<string, string> = {
   hsbc: "HSBC",
@@ -147,7 +163,11 @@ function ResourceCard({ resource }: { resource: Resource }) {
     ? isMissing ? undefined : resource.file
     : resource.openHref;
   const downloadHref = isStatic ? resource.file : resource.downloadHref;
-  const isPdf = isStatic;
+  const ext = isStatic ? fileExt(resource.file) : "";
+  const isImage = isStatic && IMAGE_EXTS.has(ext);
+  const isPdf = isStatic && !isImage;
+  const badgeLabel = isImage ? "IMG" : isPdf ? "PDF" : "HTML · PDF";
+  const downloadLabel = isImage ? `${ext.toUpperCase()} ↓` : "PDF ↓";
   const accent = isStatic ? "#00B4BE" : "#E20C10";
 
   return (
@@ -189,7 +209,7 @@ function ResourceCard({ resource }: { resource: Resource }) {
           </div>
         </div>
         <span className="absolute right-3 top-3 text-[9px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/60">
-          {isPdf ? "PDF" : "HTML · PDF"}
+          {badgeLabel}
         </span>
       </a>
 
@@ -215,7 +235,7 @@ function ResourceCard({ resource }: { resource: Resource }) {
                   {...(isStatic ? { download: true } : {})}
                   className="inline-flex h-6 items-center border border-[var(--color-ink)] bg-[var(--color-ink)] px-1.5 text-[10px] text-[var(--color-canvas)] hover:bg-[var(--color-ink)]/90"
                 >
-                  {isStatic ? "PDF ↓" : "PDF ↓"}
+                  {downloadLabel}
                 </a>
               </>
             )}
