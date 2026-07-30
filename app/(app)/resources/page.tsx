@@ -91,6 +91,15 @@ const STATIC_RESOURCES: StaticResource[] = [
     file: "/resources/em-vs-dm-ratio.html",
     edition: "Live",
   },
+  {
+    kind: "static",
+    slug: "sp500-rolling-15yr",
+    title: "US Equities: 15-Year Rolling Returns",
+    subtitle: "50 rolling 15-year S&P 500 windows — total return, CAGR, and starting Shiller CAPE for each. For the \"time in the market\" conversation.",
+    category: "Conversation aid",
+    file: "/resources/sp500-rolling-15yr.html",
+    edition: "Study",
+  },
 ];
 
 function fileExt(publicPath: string): string {

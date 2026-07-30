@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S&P 500 — 50 Rolling 15-Year Windows</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; padding: 32px 24px; }
+  h1 { font-size: 22px; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 28px; }
+  .summary-row { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat-card { background: #1e2130; border: 1px solid #2d3148; border-radius: 10px; padding: 16px 20px; min-width: 160px; }
+  .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 700; }
+  .stat-value.green { color: #34d399; }
+  .stat-value.red { color: #f87171; }
+  .stat-value.blue { color: #60a5fa; }
+  .stat-value.amber { color: #fbbf24; }
+  .controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .controls label { font-size: 12px; color: #94a3b8; }
+  select { background: #1e2130; border: 1px solid #2d3148; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+
+  .section-divider td { padding: 6px 14px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; border-top: 2px solid; }
+  .section-best td { background: rgba(52,211,153,0.07); border-top-color: #34d399 !important; color: #34d399; }
+  .section-worst td { background: rgba(248,113,113,0.07); border-top-color: #f87171 !important; color: #f87171; }
+  .section-mean td { background: rgba(96,165,250,0.07); border-top-color: #60a5fa !important; color: #60a5fa; }
+  .section-rest td { background: rgba(100,116,139,0.05); border-top-color: #475569 !important; color: #475569; }
+
+  .row-best { background: rgba(52,211,153,0.05) !important; }
+  .row-worst { background: rgba(248,113,113,0.05) !important; }
+  .row-mean { background: rgba(96,165,250,0.05) !important; }
+  .row-best td.window { color: #34d399 !important; }
+  .row-worst td.window { color: #f87171 !important; }
+  .row-mean td.window { color: #60a5fa !important; }
+
+  .badge { font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-left: 6px; vertical-align: middle; }
+  .badge-best { background: rgba(52,211,153,0.2); color: #34d399; }
+  .badge-worst { background: rgba(248,113,113,0.2); color: #f87171; }
+  .badge-mean { background: rgba(96,165,250,0.2); color: #60a5fa; }
+
+  /* CAPE valuation pill */
+  .cape-pill { font-size: 10px; padding: 2px 7px; border-radius: 8px; font-weight: 700; display: inline-block; margin-left: 5px; vertical-align: middle; }
+  .cape-cheap   { background: rgba(52,211,153,0.18); color: #34d399; }
+  .cape-fair    { background: rgba(96,165,250,0.18); color: #60a5fa; }
+  .cape-elevated{ background: rgba(251,191,36,0.18); color: #fbbf24; }
+  .cape-expensive{ background: rgba(248,113,113,0.18); color: #f87171; }
+
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #2d3148; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: #1a1e2e; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; position: sticky; top: 0; z-index: 1; white-space: nowrap; }
+  tbody tr { border-top: 1px solid #1e2130; transition: background 0.15s; }
+  tbody tr:not(.section-divider):hover { background: #1e2130; }
+  td { padding: 9px 14px; white-space: nowrap; }
+  td.window { font-weight: 600; color: #94a3b8; }
+  td.annualised { font-weight: 700; font-size: 14px; }
+  td.positive { color: #34d399; }
+  td.negative { color: #f87171; }
+  td.neutral { color: #fbbf24; }
+  .year-cell { font-size: 11px; padding: 3px 5px; border-radius: 4px; display: inline-block; margin: 1px; }
+  .yr-pos { background: rgba(52,211,153,0.12); color: #34d399; }
+  .yr-neg { background: rgba(248,113,113,0.12); color: #f87171; }
+  .bar-wrap { width: 80px; height: 8px; background: #2d3148; border-radius: 4px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .legend { display: flex; gap: 16px; margin-top: 16px; font-size: 12px; color: #64748b; flex-wrap: wrap; align-items: center; }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-divider { width: 1px; height: 14px; background: #2d3148; }
+</style>
+</head>
+<body>
+
+<h1>S&P 500 — 50 Rolling 15-Year Windows</h1>
+<p class="subtitle">Each window shifts back one year. Total return = compounded. Annualised = CAGR. CAPE = Shiller PE at start of window (Jan 1). Data: total return (price + dividends reinvested). Source: Slickcharts, Multpl/Robert Shiller.</p>
+
+<div class="summary-row" id="summaryRow"></div>
+
+<div class="controls">
+  <label>Sort by:</label>
+  <select id="sortSelect" onchange="renderTable()">
+    <option value="window">Window (latest first)</option>
+    <option value="annualised_desc">Annualised Return ↓</option>
+    <option value="annualised_asc">Annualised Return ↑</option>
+    <option value="total_desc">Total Return ↓</option>
+    <option value="cape_desc">CAPE at Start ↓</option>
+    <option value="cape_asc">CAPE at Start ↑</option>
+  </select>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Window</th>
+        <th>CAPE at Start</th>
+        <th>Annualised (CAGR)</th>
+        <th>Total Return</th>
+        <th>Up Years</th>
+        <th>Down Years</th>
+        <th>Worst Year</th>
+        <th>Best Year</th>
+        <th>Years Breakdown</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<div class="legend">
+  <span><span class="dot" style="background:#34d399"></span> Positive year</span>
+  <span><span class="dot" style="background:#f87171"></span> Negative year</span>
+  <span class="legend-divider"></span>
+  <span><span class="cape-pill cape-cheap">Cheap</span> CAPE &lt; 15</span>
+  <span><span class="cape-pill cape-fair">Fair</span> CAPE 15–25</span>
+  <span><span class="cape-pill cape-elevated">Elevated</span> CAPE 25–35</span>
+  <span><span class="cape-pill cape-expensive">Expensive</span> CAPE &gt; 35</span>
+</div>
+
+<script>
+const annualReturns = {
+  1926:11.62,1927:37.49,1928:43.61,1929:-8.42,1930:-24.90,
+  1931:-43.34,1932:-8.19,1933:53.99,1934:-1.44,1935:47.67,
+  1936:33.92,1937:-35.03,1938:31.12,1939:-0.41,1940:-9.78,
+  1941:-11.59,1942:20.34,1943:25.90,1944:19.75,1945:36.44,
+  1946:-8.07,1947:5.71,1948:5.50,1949:18.79,1950:31.71,
+  1951:24.02,1952:18.37,1953:-0.99,1954:52.62,1955:31.56,
+  1956:6.56,1957:-10.78,1958:43.36,1959:11.96,1960:0.47,
+  1961:26.89,1962:-8.73,1963:22.80,1964:16.48,1965:12.45,
+  1966:-10.06,1967:23.98,1968:11.06,1969:-8.50,1970:4.01,
+  1971:14.31,1972:18.98,1973:-14.66,1974:-26.47,1975:37.20,
+  1976:23.84,1977:-7.18,1978:6.56,1979:18.44,1980:32.42,
+  1981:-4.91,1982:21.55,1983:22.56,1984:6.27,1985:31.73,
+  1986:18.67,1987:5.25,1988:16.61,1989:31.69,1990:-3.10,
+  1991:30.47,1992:7.62,1993:10.08,1994:1.32,1995:37.58,
+  1996:22.96,1997:33.36,1998:28.58,1999:21.04,2000:-9.10,
+  2001:-11.89,2002:-22.10,2003:28.68,2004:10.88,2005:4.91,
+  2006:15.79,2007:5.49,2008:-37.00,2009:26.46,2010:15.06,
+  2011:2.11,2012:16.00,2013:32.39,2014:13.69,2015:1.38,
+  2016:11.96,2017:21.83,2018:-4.38,2019:31.49,2020:18.40,
+  2021:28.71,2022:-18.11,2023:26.29,2024:25.02,2025:17.88
+};
+
+// Shiller CAPE at Jan 1 of each year (Robert Shiller via Multpl)
+const capeByYear = {
+  1926:11.34,1927:13.19,1928:18.81,1929:27.08,1930:22.31,
+  1931:16.71,1932:9.31,1933:8.73,1934:13.03,1935:11.50,
+  1936:17.09,1937:21.62,1938:13.51,1939:15.60,1940:16.38,
+  1941:13.90,1942:10.10,1943:10.15,1944:11.05,1945:11.96,
+  1946:15.62,1947:11.47,1948:10.42,1949:10.25,1950:10.75,
+  1951:11.90,1952:12.53,1953:13.01,1954:12.00,1955:15.99,
+  1956:18.29,1957:16.72,1958:13.79,1959:17.98,1960:18.34,
+  1961:18.47,1962:21.20,1963:19.26,1964:21.63,1965:23.27,
+  1966:24.06,1967:20.43,1968:21.51,1969:21.19,1970:17.09,
+  1971:16.46,1972:17.26,1973:18.71,1974:13.53,1975:8.92,
+  1976:11.19,1977:11.44,1978:9.24,1979:9.26,1980:8.85,
+  1981:9.26,1982:7.39,1983:8.76,1984:9.89,1985:10.00,
+  1986:11.72,1987:14.92,1988:13.90,1989:15.09,1990:17.05,
+  1991:15.61,1992:19.77,1993:20.32,1994:21.41,1995:20.22,
+  1996:24.76,1997:28.33,1998:32.86,1999:40.57,2000:43.77,
+  2001:36.98,2002:30.28,2003:22.90,2004:27.66,2005:26.59,
+  2006:26.47,2007:27.21,2008:24.02,2009:15.17,2010:20.53,
+  2011:22.98,2012:21.21,2013:21.90,2014:24.86,2015:26.49,
+  2016:24.21,2017:28.06,2018:33.31,2019:28.38,2020:30.99,
+  2021:34.51,2022:36.94,2023:28.34,2024:31.97,2025:37.14,
+  2026:40.03
+};
+
+function capeLabel(cape) {
+  if (cape < 15) return { label: 'Cheap', cls: 'cape-cheap' };
+  if (cape < 25) return { label: 'Fair', cls: 'cape-fair' };
+  if (cape < 35) return { label: 'Elevated', cls: 'cape-elevated' };
+  return { label: 'Expensive', cls: 'cape-expensive' };
+}
+
+const windows = [];
+for (let i = 0; i < 50; i++) {
+  const endYear = 2025 - i;
+  const startYear = endYear - 14;
+  const years = [];
+  for (let y = startYear; y <= endYear; y++) years.push(y);
+  let compound = 1;
+  years.forEach(y => { compound *= (1 + annualReturns[y] / 100); });
+  const totalReturn = (compound - 1) * 100;
+  const cagr = (Math.pow(compound, 1/15) - 1) * 100;
+  const upYears = years.filter(y => annualReturns[y] >= 0).length;
+  const downYears = years.filter(y => annualReturns[y] < 0).length;
+  const worstYear = years.reduce((a, b) => annualReturns[a] < annualReturns[b] ? a : b);
+  const bestYear = years.reduce((a, b) => annualReturns[a] > annualReturns[b] ? a : b);
+  const cape = capeByYear[startYear] || null;
+  windows.push({ startYear, endYear, years, totalReturn, cagr, upYears, downYears, worstYear, bestYear, cape });
+}
+
+const allCagrs = windows.map(w => w.cagr);
+const avg = allCagrs.reduce((a,b)=>a+b,0)/allCagrs.length;
+const positive = windows.filter(w => w.totalReturn > 0).length;
+const sorted_by_cagr = [...windows].sort((a,b) => b.cagr - a.cagr);
+const top3 = new Set(sorted_by_cagr.slice(0,3).map(w => w.startYear+'-'+w.endYear));
+const bot3 = new Set(sorted_by_cagr.slice(-3).map(w => w.startYear+'-'+w.endYear));
+const meanWindow = windows.reduce((a,b) => Math.abs(a.cagr-avg) < Math.abs(b.cagr-avg) ? a : b);
+const meanKey = meanWindow.startYear+'-'+meanWindow.endYear;
+const best3 = sorted_by_cagr.slice(0,3);
+const worst3 = sorted_by_cagr.slice(-3);
+
+// CAPE correlation insight
+const withCape = windows.filter(w => w.cape);
+const avgCapeTop3 = best3.filter(w=>w.cape).reduce((s,w)=>s+w.cape,0)/best3.filter(w=>w.cape).length;
+const avgCapeBot3 = worst3.filter(w=>w.cape).reduce((s,w)=>s+w.cape,0)/worst3.filter(w=>w.cape).length;
+
+function setSummary() {
+  const el = document.getElementById('summaryRow');
+  el.innerHTML = `
+    <div class="stat-card"><div class="stat-label">Avg CAGR (50 windows)</div><div class="stat-value blue">${avg.toFixed(2)}%</div></div>
+    <div class="stat-card"><div class="stat-label">#1 Best CAGR</div><div class="stat-value green">${best3[0].cagr.toFixed(2)}% <span style="font-size:13px;font-weight:400;color:#94a3b8">${best3[0].startYear}–${best3[0].endYear}</span></div></div>
+    <div class="stat-card"><div class="stat-label">#2 Best CAGR</div><div class="stat-value green" style="font-size:18px">${best3[1].cagr.toFixed(2)}% <span style="font-size:13px;font-weight:400;color:#94a3b8">${best3[1].startYear}–${best3[1].endYear}</span></div></div>
+    <div class="stat-card"><div class="stat-label">#3 Best CAGR</div><div class="stat-value green" style="font-size:18px">${best3[2].cagr.toFixed(2)}% <span style="font-size:13px;font-weight:400;color:#94a3b8">${best3[2].startYear}–${best3[2].endYear}</span></div></div>
+    <div class="stat-card"><div class="stat-label">#1 Worst CAGR</div><div class="stat-value red">${worst3[2].cagr.toFixed(2)}% <span style="font-size:13px;font-weight:400;color:#94a3b8">${worst3[2].startYear}–${worst3[2].endYear}</span></div></div>
+    <div class="stat-card"><div class="stat-label">#2 Worst CAGR</div><div class="stat-value red" style="font-size:18px">${worst3[1].cagr.toFixed(2)}% <span style="font-size:13px;font-weight:400;color:#94a3b8">${worst3[1].startYear}–${worst3[1].endYear}</span></div></div>
+    <div class="stat-card"><div class="stat-label">#3 Worst CAGR</div><div class="stat-value red" style="font-size:18px">${worst3[0].cagr.toFixed(2)}% <span style="font-size:13px;font-weight:400;color:#94a3b8">${worst3[0].startYear}–${worst3[0].endYear}</span></div></div>
+    <div class="stat-card"><div class="stat-label">Closest to Mean</div><div class="stat-value blue" style="font-size:18px">${meanWindow.cagr.toFixed(2)}% <span style="font-size:13px;font-weight:400;color:#94a3b8">${meanWindow.startYear}–${meanWindow.endYear}</span></div></div>
+    <div class="stat-card"><div class="stat-label">Avg CAPE — Top 3 starts</div><div class="stat-value green" style="font-size:18px">${avgCapeTop3.toFixed(1)}x</div></div>
+    <div class="stat-card"><div class="stat-label">Avg CAPE — Bot 3 starts</div><div class="stat-value red" style="font-size:18px">${avgCapeBot3.toFixed(1)}x</div></div>
+    <div class="stat-card"><div class="stat-label">Windows Positive</div><div class="stat-value amber">${positive} / 50</div></div>
+  `;
+}
+
+function getTag(w) {
+  const key = w.startYear+'-'+w.endYear;
+  if (top3.has(key)) return 'best';
+  if (bot3.has(key)) return 'worst';
+  if (key === meanKey) return 'mean';
+  return 'rest';
+}
+
+function colorClass(cagr) {
+  if (cagr >= 10) return 'positive';
+  if (cagr < 5) return 'negative';
+  return 'neutral';
+}
+
+function buildRow(w, idx, tag) {
+  const maxCagr = Math.max(...allCagrs);
+  const minCagr = Math.min(...allCagrs);
+  const range = maxCagr - minCagr;
+  const barPct = ((w.cagr - minCagr) / range * 100).toFixed(1);
+  const barColor = w.cagr >= 10 ? '#34d399' : w.cagr >= 5 ? '#fbbf24' : '#f87171';
+  const yearChips = w.years.map(y => {
+    const r = annualReturns[y];
+    const cls = r >= 0 ? 'yr-pos' : 'yr-neg';
+    return `<span class="year-cell ${cls}">${y}<br><b>${r > 0 ? '+' : ''}${r.toFixed(1)}%</b></span>`;
+  }).join('');
+
+  let badgeHtml = '';
+  if (tag === 'best') badgeHtml = `<span class="badge badge-best">Top 3</span>`;
+  else if (tag === 'worst') badgeHtml = `<span class="badge badge-worst">Bot 3</span>`;
+  else if (tag === 'mean') badgeHtml = `<span class="badge badge-mean">≈ Mean</span>`;
+
+  const rowClass = tag === 'best' ? 'row-best' : tag === 'worst' ? 'row-worst' : tag === 'mean' ? 'row-mean' : '';
+
+  let capeHtml = '—';
+  if (w.cape) {
+    const { label, cls } = capeLabel(w.cape);
+    capeHtml = `<span style="font-weight:600">${w.cape.toFixed(1)}x</span> <span class="cape-pill ${cls}">${label}</span>`;
+  }
+
+  return `<tr class="${rowClass}">
+    <td style="color:#475569">${idx}</td>
+    <td class="window">${w.startYear}–${w.endYear}${badgeHtml}</td>
+    <td>${capeHtml}</td>
+    <td class="annualised ${colorClass(w.cagr)}">
+      ${w.cagr.toFixed(2)}%
+      <div class="bar-wrap"><div class="bar-fill" style="width:${barPct}%;background:${barColor}"></div></div>
+    </td>
+    <td class="${w.totalReturn >= 0 ? 'positive' : 'negative'}">${w.totalReturn >= 0 ? '+' : ''}${w.totalReturn.toFixed(1)}%</td>
+    <td style="color:#34d399">${w.upYears}</td>
+    <td style="color:#f87171">${w.downYears}</td>
+    <td style="color:#f87171">${w.worstYear} (${annualReturns[w.worstYear].toFixed(1)}%)</td>
+    <td style="color:#34d399">${w.bestYear} (+${annualReturns[w.bestYear].toFixed(1)}%)</td>
+    <td>${yearChips}</td>
+  </tr>`;
+}
+
+function dividerRow(label, cls) {
+  return `<tr class="section-divider ${cls}"><td colspan="10">${label}</td></tr>`;
+}
+
+function renderTable() {
+  const sort = document.getElementById('sortSelect').value;
+  let sorted = [...windows];
+  if (sort === 'annualised_desc') sorted.sort((a,b) => b.cagr - a.cagr);
+  else if (sort === 'annualised_asc') sorted.sort((a,b) => a.cagr - b.cagr);
+  else if (sort === 'total_desc') sorted.sort((a,b) => b.totalReturn - a.totalReturn);
+  else if (sort === 'cape_desc') sorted.sort((a,b) => (b.cape||0) - (a.cape||0));
+  else if (sort === 'cape_asc') sorted.sort((a,b) => (a.cape||0) - (b.cape||0));
+
+  const tbody = document.getElementById('tableBody');
+
+  if (sort === 'window') {
+    const bestRows = sorted.filter(w => getTag(w) === 'best');
+    const meanRows = sorted.filter(w => getTag(w) === 'mean');
+    const worstRows = sorted.filter(w => getTag(w) === 'worst');
+    const restRows = sorted.filter(w => getTag(w) === 'rest');
+    let html = '';
+    html += dividerRow('🏆 Top 3 Windows by CAGR', 'section-best');
+    bestRows.sort((a,b)=>b.cagr-a.cagr).forEach((w,i) => { html += buildRow(w, i+1, 'best'); });
+    html += dividerRow('≈ Closest to Mean (' + avg.toFixed(2) + '%)', 'section-mean');
+    meanRows.forEach((w,i) => { html += buildRow(w, i+1, 'mean'); });
+    html += dividerRow('📉 Bottom 3 Windows by CAGR', 'section-worst');
+    worstRows.sort((a,b)=>a.cagr-b.cagr).forEach((w,i) => { html += buildRow(w, i+1, 'worst'); });
+    html += dividerRow('All Other Windows (latest first)', 'section-rest');
+    restRows.forEach((w,i) => { html += buildRow(w, i+1, 'rest'); });
+    tbody.innerHTML = html;
+  } else {
+    tbody.innerHTML = sorted.map((w, idx) => buildRow(w, idx+1, getTag(w))).join('');
+  }
+}
+
+setSummary();
+renderTable();
+</script>
+</body>
+</html>
