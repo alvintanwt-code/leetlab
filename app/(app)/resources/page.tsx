@@ -168,7 +168,11 @@ function ResourceCard({ resource }: { resource: Resource }) {
   const isPdf = isStatic && !isImage;
   const badgeLabel = isImage ? "IMG" : isPdf ? "PDF" : "HTML · PDF";
   const downloadLabel = isImage ? `${ext.toUpperCase()} ↓` : "PDF ↓";
-  const accent = isStatic ? "#00B4BE" : "#E20C10";
+  const isConversationAid = resource.category === "Conversation aid";
+  const accent = isConversationAid ? "#0d253d" : isStatic ? "#00B4BE" : "#E20C10";
+  const heroBg = isConversationAid ? "#f5e9d4" : "#0d253d";
+  const heroFg = isConversationAid ? "#0d253d" : "#ffffff";
+  const heroMeta = isConversationAid ? "#64748d" : "rgba(246,249,252,0.7)";
 
   return (
     <article
@@ -180,13 +184,14 @@ function ResourceCard({ resource }: { resource: Resource }) {
         href={openHref}
         target={openHref ? "_blank" : undefined}
         rel="noopener"
-        className="relative block h-[200px] bg-[var(--color-ink)] p-4 text-[var(--color-canvas)]"
+        className="relative block h-[200px] p-4"
+        style={{ background: heroBg, color: heroFg }}
         aria-disabled={isMissing}
       >
         <div className="flex h-full flex-col justify-between">
           <div>
             <div className="mb-1 h-[2px] w-6" style={{ background: accent }} />
-            <p className="text-[9px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/70">
+            <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: heroMeta }}>
               {resource.category}
               {!isStatic && (
                 <>
@@ -197,7 +202,7 @@ function ResourceCard({ resource }: { resource: Resource }) {
             </p>
           </div>
           <div>
-            <p className="text-[9px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/70 mb-1.5">
+            <p className="text-[9px] uppercase tracking-[0.14em] mb-1.5" style={{ color: heroMeta }}>
               {resource.edition}
             </p>
             <h3
@@ -208,7 +213,7 @@ function ResourceCard({ resource }: { resource: Resource }) {
             </h3>
           </div>
         </div>
-        <span className="absolute right-3 top-3 text-[9px] uppercase tracking-[0.14em] text-[var(--color-canvas-soft)]/60">
+        <span className="absolute right-3 top-3 text-[9px] uppercase tracking-[0.14em]" style={{ color: heroMeta }}>
           {badgeLabel}
         </span>
       </a>
