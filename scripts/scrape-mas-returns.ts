@@ -167,7 +167,7 @@ async function main() {
           SELECT DISTINCT f.external_id, f.isin, f.name
           FROM funds f
           JOIN providers p ON p.id = f.provider_id
-          WHERE p.slug IN ('fwd', 'tmls', 'hsbc', 'gwm') AND f.isin LIKE 'SG9999%'
+          WHERE p.slug IN ('fwd', 'tmls', 'hsbc', 'gwm', 'manulife') AND f.isin LIKE 'SG9999%'
           ORDER BY f.name
         `;
 

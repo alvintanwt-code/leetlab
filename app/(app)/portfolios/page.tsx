@@ -17,6 +17,7 @@ const PLATFORM_TABS: { slug: string; short: string; disabled?: boolean }[] = [
   { slug: "fwd", short: "FWD" },
   { slug: "tmls", short: "TM" },
   { slug: "gwm", short: "GWM" },
+  { slug: "manulife", short: "Manulife" },
 ];
 
 function buildHref(params: {

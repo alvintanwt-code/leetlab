@@ -68,6 +68,13 @@ const PROVIDERS: Provider[] = [
       `https://www.morningstar.com.sg/sg/funds/snapshot/snapshot.aspx?id=${secId}`,
     source: { kind: "seed", file: "data/seed/gwm-funds.json" },
   },
+  {
+    slug: "manulife",
+    label: "Manulife Singapore",
+    detailUrl: (secId) =>
+      `https://www.manulife.com.sg/en/funds/funds-pb.html/fund-detail?id=${secId}`,
+    source: { kind: "seed", file: "data/seed/manulife-funds.json" },
+  },
 ];
 
 type SeedFund = { name: string; isin: string; status: string };

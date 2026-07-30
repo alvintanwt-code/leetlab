@@ -1,0 +1,1047 @@
+[
+  {
+    "name": "abrdn Global Emerging Markets Fund (AGEM)",
+    "isin": "SG9999002042",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Europe Equity Growth AT H2 SGD (AEEG)",
+    "isin": "LU0827474353",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz European Equity Dividend AM H2-SGD Dis (AEED)",
+    "isin": "LU1046248800",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Income and Growth AMi3 (H2-SGD) (AIGA)",
+    "isin": "LU0943347566",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Income and Growth AM USD (AIGU)",
+    "isin": "LU0820561818",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Income and Growth AMgi23 (H2-SGD) (AIGB)",
+    "isin": "LU1551013425",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Asian Tiger Bond Fund A2 SGD H (BATB)",
+    "isin": "LU0540000063",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Asian Tiger Bond Fund A6 USD (BATU)",
+    "isin": "LU0764618053",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Dynamic High Income A6 SGD H (BDHI)",
+    "isin": "LU1564329461",
+    "status": "Active"
+  },
+  {
+    "name": "BGF European Equity Income Fund A6 USD H (BEIU)",
+    "isin": "LU1019632923",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Global Allocation Fund A2 SGD Hedged (BGAS)",
+    "isin": "LU0308772762",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Global Allocation Fund A2 USD (BGAU)",
+    "isin": "LU0072462426",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Global Equity Income Fund A2 SGD H (BGEI) [Closed for new monies]",
+    "isin": "LU0661495795",
+    "status": "Closed"
+  },
+  {
+    "name": "BGF Global Multi-Asset Income A6 SGD H (BGMA)",
+    "isin": "LU0949170426",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Global Multi-Asset Income Fund A6 USD (BMAU)",
+    "isin": "LU0784384876",
+    "status": "Active"
+  },
+  {
+    "name": "BGF World Energy Fund A2 SGD H (BWES)",
+    "isin": "LU0368265418",
+    "status": "Active"
+  },
+  {
+    "name": "BGF World Gold Fund A2 SGD H (BWGF)",
+    "isin": "LU0368265764",
+    "status": "Active"
+  },
+  {
+    "name": "BGF World Gold Fund A2 USD (BWGU)",
+    "isin": "LU0055631609",
+    "status": "Active"
+  },
+  {
+    "name": "BGF World Healthscience Fund A2 SGD H (BWHF)",
+    "isin": "LU1057294990",
+    "status": "Active"
+  },
+  {
+    "name": "BGF World Mining A2 SGD Hedged (BWMF)",
+    "isin": "LU0330918003",
+    "status": "Active"
+  },
+  {
+    "name": "BGF World Technology A2 SGD H (BWTF)",
+    "isin": "LU1852331112",
+    "status": "Active"
+  },
+  {
+    "name": "BGF World Technology Fund A2 USD (BWTU)",
+    "isin": "LU0056508442",
+    "status": "Active"
+  },
+  {
+    "name": "Eastspring Inv - Asian High Yield Bond ASDM SGD H (EAHY) [Closed for new monies]",
+    "isin": "LU0756522594",
+    "status": "Closed"
+  },
+  {
+    "name": "Eastspring Inv Funds - Monthly Income Plan Class M (EMIP) [Closed for new monies]",
+    "isin": "SG9999002968",
+    "status": "Closed"
+  },
+  {
+    "name": "Eastspring Inv UT - Singapore Select Bond Fund AD (ESSB)",
+    "isin": "SG9999007462",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity America Fund A SGD (H) (FAME)",
+    "isin": "LU0742534661",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity ASEAN Fund A Dis SGD (FASE)",
+    "isin": "LU0251143029",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Funds – Asia Equity ESG Fund (FAFF)",
+    "isin": "LU0251144936",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Asian Smaller Companies Fund A-ACC-SGD (FASC)",
+    "isin": "LU1166156734",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity China Focus Fund A Dis SGD (FCFF)",
+    "isin": "LU0287142896",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Emerging Markets Fund A-Acc-USD (FEMU)",
+    "isin": "LU0261950470",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Emerging Markets Fund A-SGD (FEMA)",
+    "isin": "LU0251143458",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity European Growth Fund A-SGD (FEGA)",
+    "isin": "LU0550127509",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Global Dividend Fund A-MINCOME(G)-SGD (FGDA)",
+    "isin": "LU0731783394",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Global Dividend Fund A-MINCOME(G)-USD (FGDU)",
+    "isin": "LU0731783048",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Global Multi Asset Income A-MInc(G)-USD (FMAU) [Closed for ILP new monies]",
+    "isin": "LU0905234141",
+    "status": "Closed"
+  },
+  {
+    "name": "Fidelity Global Multi Asset Income Fund A QINCOMEG SGD (FGMA) [Closed for ILP new monies]",
+    "isin": "LU0905234570",
+    "status": "Closed"
+  },
+  {
+    "name": "Fidelity Global Multi Asset Income Fund A-MINCOME (G)-SGD (H) (FGMI) [Closed for ILP new monies]",
+    "isin": "LU1391767313",
+    "status": "Closed"
+  },
+  {
+    "name": "First Eagle Amundi Income Builder Fund SGD Hedged A2HSMD (FEAI)",
+    "isin": "LU1412470343",
+    "status": "Active"
+  },
+  {
+    "name": "FSSA Asia Opportunities Fund (FSAO)",
+    "isin": "SG9999000152",
+    "status": "Active"
+  },
+  {
+    "name": "First Sentier Bridge Fund A Dist Monthly Fund (FSBM)",
+    "isin": "SG9999019137",
+    "status": "Active"
+  },
+  {
+    "name": "First Sentier Bridge Fund A Dist Semi-Annual Fund (FSBR)",
+    "isin": "SG9999002067",
+    "status": "Active"
+  },
+  {
+    "name": "FSSA Dividend Advantage Fund (FSDA)",
+    "isin": "SG9999002083",
+    "status": "Active"
+  },
+  {
+    "name": "FSSA Regional China Fund (FSRC)",
+    "isin": "SG9999000194",
+    "status": "Active"
+  },
+  {
+    "name": "FSSA Regional India Fund (FSRI)",
+    "isin": "SG9999000186",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Biotechnology Discovery A (acc) USD (FBDU)",
+    "isin": "LU0109394709",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Biotechnology Discovery Fund A (acc) SGD (FBIO)",
+    "isin": "LU0320765992",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Global Sukuk A Mdis SGD (FGSA)",
+    "isin": "LU0923116197",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin India Fund A (acc) SGD (FIND)",
+    "isin": "LU0536402901",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin US Opportunities Fund A (acc) SGD-H1 (FUSO)",
+    "isin": "LU0672654240",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin US Opportunities Fund A (acc) USD (FUOU)",
+    "isin": "LU0109391861",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC GIF India Fixed Income AM3OSGD (HIFI)",
+    "isin": "LU1560771351",
+    "status": "Active"
+  },
+  {
+    "name": "HSBC GIF RMB Fixed Income AM3OSGD (HRFI)",
+    "isin": "LU1560771609",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Asia Pac Inv Grade Bond MDIS (MAPD)",
+    "isin": "SG9999011142",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Asia Pacific Investment Grade Bond Fund A (MAPI)",
+    "isin": "SG9999011134",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife SGD Income Fund A-MDis SGD (AIEF)",
+    "isin": "SG9999015762",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife SGD Income Fund A-SGD (MSIN)",
+    "isin": "SG9999015754",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Singapore Bond Fund A (MSBA)",
+    "isin": "SG9999006258",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Singapore Equity Fund A (MSEA)",
+    "isin": "SG9999006266",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Global Equity Fund Class AA USD (MGEU)",
+    "isin": "LU0314106906",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Global Equity Fund Class AA SGD (MGGE)",
+    "isin": "LU1506573853",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Asia Pac REIT Fund S H MDIS G (MARH)",
+    "isin": "LU1935355344",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Asia Pac REIT FUND S MDIS G (MARD)",
+    "isin": "LU1935355260",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Preferred Securities Inc AA (SGD H) MDIST (G) (MPSI)",
+    "isin": "LU1850216372",
+    "status": "Active"
+  },
+  {
+    "name": "Neuberger Berman EM Debt Hard Currency SGD A MD (NEMD)",
+    "isin": "IE00B99K3R14",
+    "status": "Active"
+  },
+  {
+    "name": "Neuberger Berman US MultiCap Opps SGD A Acc (NUMC)",
+    "isin": "IE00B3S45H60",
+    "status": "Active"
+  },
+  {
+    "name": "Neuberger Berman US MultiCap Opps USD A Acc (NMOU)",
+    "isin": "IE00B775SV38",
+    "status": "Active"
+  },
+  {
+    "name": "Amova Japan Dividend Equity Fund SGD Hedged (NAJD)",
+    "isin": "SG9999010490",
+    "status": "Active"
+  },
+  {
+    "name": "Amova Japan Dividend Equity Fund USD Hedged (NJDU)",
+    "isin": "SG9999010466",
+    "status": "Active"
+  },
+  {
+    "name": "Amova Investment Funds - Amova Multi Sector Credit Fund SGD Acc (NSGB)",
+    "isin": "SG9999003743",
+    "status": "Active"
+  },
+  {
+    "name": "Amova Investment Funds - Amova Singapore Dividend Equity Fund SGD (NSAD)",
+    "isin": "SG9999003826",
+    "status": "Active"
+  },
+  {
+    "name": "PIMCO GIS EM Bond Fund E SGD Hdg Acc (PEMB)",
+    "isin": "IE00B1LHWT95",
+    "status": "Active"
+  },
+  {
+    "name": "PIMCO GIS Global High Yield Bond Fund E Inc SGD H (PGHY)",
+    "isin": "IE00BYZWMV33",
+    "status": "Active"
+  },
+  {
+    "name": "PIMCO GIS Income Fund E Inc SGD H (PGIF)",
+    "isin": "IE00B9HH6X13",
+    "status": "Active"
+  },
+  {
+    "name": "PineBridge Acorns of Asia Balanced Fund (PAAB)",
+    "isin": "SG9999011746",
+    "status": "Active"
+  },
+  {
+    "name": "PineBridge Asia ex Jpn Sm Cap Equity Fund A5 SGD (PAJE)",
+    "isin": "IE00BYTNYN87",
+    "status": "Active"
+  },
+  {
+    "name": "PineBridge India Equity Fund A5 SGD (PIEF)",
+    "isin": "IE00BYTNYM70",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Asian Equity Yield A (SAEY)",
+    "isin": "SG9999001846",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Asian Growth Fund SGD (SAGF)",
+    "isin": "SG9999000327",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Asian Growth Fund USD (SAGU)",
+    "isin": "SG9999001689",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Asian Income Fund SGD (SAIS)",
+    "isin": "SG9999007991",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Asian Income Fund USD-Hedged A Inc (SAIU)",
+    "isin": "SG9999013353",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Global Emerging Market Opps Fund SGD (SGEM)",
+    "isin": "SG9999006852",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder ISF European Value Fund A Acc SGD H (SEVF)",
+    "isin": "LU1309081286",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Singapore Trust Class A (SSTC)",
+    "isin": "SG9999000343",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Singapore Trust Class A Acc (SSTA)",
+    "isin": "SG9999016042",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder Singapore Trust USD A Acc (SSTU)",
+    "isin": "SG9999016059",
+    "status": "Active"
+  },
+  {
+    "name": "Templeton Shariah Global Equity Fund A Acc SGD (TSGE)",
+    "isin": "LU0889566641",
+    "status": "Active"
+  },
+  {
+    "name": "United Asia Pacific Real Estate Income Fund (UAPR)",
+    "isin": "SG9999010052",
+    "status": "Active"
+  },
+  {
+    "name": "United Global Healthcare Fund - Class SGD (UGHF)",
+    "isin": "SG9999001176",
+    "status": "Active"
+  },
+  {
+    "name": "United High Grade Corporate Bond Fund A SGD Acc (UHGC)",
+    "isin": "SG9999006399",
+    "status": "Active"
+  },
+  {
+    "name": "United SGD Fund Class A SGD (USFS)",
+    "isin": "SG9999001382",
+    "status": "Active"
+  },
+  {
+    "name": "UOB GrowthPath 2030 (UG30)",
+    "isin": "SG9999001333",
+    "status": "Active"
+  },
+  {
+    "name": "UOB GrowthPath 2040 (UG40)",
+    "isin": "SG9999001341",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz China A-Shares AT SGD Acc (ACAS)",
+    "isin": "LU1997245094",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Technology Fund A Acc SGD-H1 (FTAS)",
+    "isin": "LU1803068979",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Global Multi-Asset Diversified Income Fund AA (SGD Hedged) MDIST (G) (MGMD)",
+    "isin": "LU1935043536",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Sustainable Asia Bond Fund AA (SGD Hedged) MDIST (G) (MSAB)",
+    "isin": "LU2097395698",
+    "status": "Active"
+  },
+  {
+    "name": "United Global Quality Growth Fund SGD Acc (Hedged) (UGQG) [Closed for new monies]",
+    "isin": "SG9999018857",
+    "status": "Closed"
+  },
+  {
+    "name": "Allianz China A-Shares AT USD Acc (ACAU)",
+    "isin": "LU1997245177",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Europe Equity Growth AT H2-USD Acc (AEEM)",
+    "isin": "LU0857590862",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz European Equity Dividend AM H2-USD Dis (AEEU)",
+    "isin": "LU0971552673",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Technology Fund A Acc USD (FTAU)",
+    "isin": "LU0109392836",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Asia Pacific REIT Fund AA (USD) MDIST (G) (MARU)",
+    "isin": "LU1813982136",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Global Multi-Asset Diversified Income Fund AA (USD) MDIST (G) (MGDU)",
+    "isin": "LU1935043023",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Preferred Securities Income Fund AA (USD) MDIST (G) (MPSU)",
+    "isin": "LU1813986715",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Sustainable Asia Bond Fund AA (USD) MDIST (G) (MSAU)",
+    "isin": "LU2097395342",
+    "status": "Active"
+  },
+  {
+    "name": "Neuberger Berman Emerging Market Debt - Hard Currency Fund USD A Monthly Dis (NEMU)",
+    "isin": "IE00B986J720",
+    "status": "Active"
+  },
+  {
+    "name": "PIMCO GIS Income Fund E Inc USD (PGIU)",
+    "isin": "IE00B8K7V925",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder ISF Global Emerging Market Opportunities A Acc USD (SGEU)",
+    "isin": "LU0269904917",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder ISF Greater China A Acc USD (SGCU)",
+    "isin": "LU0140636845",
+    "status": "Active"
+  },
+  {
+    "name": "United Global Quality Growth Fund USD Acc (UGQU) [Closed for new monies]",
+    "isin": "SG9999014906",
+    "status": "Closed"
+  },
+  {
+    "name": "Allianz Thematica AT H2 SGD Acc (ATAS)",
+    "isin": "LU2023250843",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Asian Tiger Bond Fund A6 SGD H (BATD)",
+    "isin": "LU1149717156",
+    "status": "Active"
+  },
+  {
+    "name": "BGF European Equity Income Fund A6 SGD H (BEIS)",
+    "isin": "LU1019634622",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group New Economy Fund SGD (CNES)",
+    "isin": "LU2211194449",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Dragon Growth Fund AA SGD H MDIST (G) (MDGS)",
+    "isin": "LU2039709279",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - India Equity Fund AA SGD H INC (MIES)",
+    "isin": "LU2039709600",
+    "status": "Active"
+  },
+  {
+    "name": "Ninety One Global Gold A Acc SGD (NGGS)",
+    "isin": "LU1858852160",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Thematica AT USD Acc (ATAU)",
+    "isin": "LU1917777945",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group New Economy Fund USD (CNEU)",
+    "isin": "LU2211193391",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Dragon Growth Fund AA USD (MDGU)",
+    "isin": "LU1328277881",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - India Equity Fund AA USD (MIEU)",
+    "isin": "LU0274383263",
+    "status": "Active"
+  },
+  {
+    "name": "Ninety One Global Gold A Acc USD (NGGU)",
+    "isin": "LU0345780281",
+    "status": "Active"
+  },
+  {
+    "name": "JPM Global Bond Opportunities A (acc) USD (JGBU)",
+    "isin": "LU0867954264",
+    "status": "Active"
+  },
+  {
+    "name": "JPM Global Bond Opportunities A (mth) SGD H (JGBO)",
+    "isin": "LU1823572190",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Next Generation Technology Fund A2 SGD H (BNGT)",
+    "isin": "LU1861220033",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Sustainable Energy Fund A2 SGD H (BSES)",
+    "isin": "LU1978683503",
+    "status": "Active"
+  },
+  {
+    "name": "JPM China A-Share Opportunities A (acc) SGD (JCAS)",
+    "isin": "LU1655091616",
+    "status": "Active"
+  },
+  {
+    "name": "FTGF Brandywine Global Income Optimiser Fund A SGD Dis (M) H Plus (E) (LGIO)",
+    "isin": "IE00BNGJQ474",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Asian High Yield Fund AA SGD H MDIST (G) (MAHY)",
+    "isin": "LU2230239324",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Asian Short Duration Bond Fund AA SGD H ACC (MASD)",
+    "isin": "LU2350834698",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Next Generation Technology Fund A2 USD (BNGU)",
+    "isin": "LU1861215975",
+    "status": "Active"
+  },
+  {
+    "name": "BGF Sustainable Energy Fund A2 USD (BSEU)",
+    "isin": "LU0124384867",
+    "status": "Active"
+  },
+  {
+    "name": "JPM China A-Share Opportunities A (acc) USD (JCAU)",
+    "isin": "LU1255011170",
+    "status": "Active"
+  },
+  {
+    "name": "FTGF Brandywine Global Income Optimiser Fund A USD Acc (LGIU)",
+    "isin": "IE00BBT3JP45",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Asian High Yield Fund AA USD ACC (MAHU)",
+    "isin": "LU2037335697",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Asian Short Duration Bond Fund AA USD ACC (MASU)",
+    "isin": "LU2350833880",
+    "status": "Active"
+  },
+  {
+    "name": "abrdn SICAV I - Global Dynamic Dividend Fund A Gross MInc SGD H (AGDD)",
+    "isin": "LU2237443549",
+    "status": "Active"
+  },
+  {
+    "name": "AB Low Volatility Equity Portfolio A SGD H (ABLV)",
+    "isin": "LU0965509101",
+    "status": "Active"
+  },
+  {
+    "name": "BGF World Financials Fund A2 SGD H (BWFF)",
+    "isin": "LU1668664300",
+    "status": "Active"
+  },
+  {
+    "name": "JPM Income Fund A (mth) SGD H (JIFS)",
+    "isin": "LU2044937824",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Healthcare Fund AA SGD H ACC (MGHC)",
+    "isin": "LU2468319806",
+    "status": "Active"
+  },
+  {
+    "name": "Ninety One Emerging Market Local Currency Total Return Debt Fund A Acc SGD (NTRD)",
+    "isin": "LU2112459305",
+    "status": "Active"
+  },
+  {
+    "name": "Wellington Credit Income Fund A SGD H Dis (WCIS)",
+    "isin": "LU2361428332",
+    "status": "Active"
+  },
+  {
+    "name": "Wellington US Quality Growth Fund A SGD H Acc (WUQG)",
+    "isin": "LU2361044865",
+    "status": "Active"
+  },
+  {
+    "name": "abrdn SICAV I - Global Dynamic Dividend Fund A Gross MInc USD (AGDU)",
+    "isin": "LU2237443382",
+    "status": "Active"
+  },
+  {
+    "name": "AB Low Volatility Equity Portfolio A USD (ABLU)",
+    "isin": "LU0861579265",
+    "status": "Active"
+  },
+  {
+    "name": "BGF World Financials Fund A2 USD (BWFU)",
+    "isin": "LU0106831901",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - Healthcare Fund AA USD ACC (MGHU)",
+    "isin": "LU2089984988",
+    "status": "Active"
+  },
+  {
+    "name": "Ninety One Emerging Market Local Currency Total Return Debt Fund A Acc USD (NTRU)",
+    "isin": "LU2112458679",
+    "status": "Active"
+  },
+  {
+    "name": "Wellington Credit Income Fund A USD Dis (WCIU)",
+    "isin": "LU2361429496",
+    "status": "Active"
+  },
+  {
+    "name": "Wellington US Quality Growth Fund A USD Acc (WUQU)",
+    "isin": "LU2361045086",
+    "status": "Active"
+  },
+  {
+    "name": "United SGD Money Market Fund - A1 SGD ACC (USMM)",
+    "isin": "SGXZ56370984",
+    "status": "Active"
+  },
+  {
+    "name": "Goldman Sachs Japan Equity Partners Portfolio Other Currency (ACC.) (SGD-Hedged) (GSJP)",
+    "isin": "LU2464814230",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group New Perspective Fund (LUX) Bh-SGD (CGNP)",
+    "isin": "LU1295552977",
+    "status": "Active"
+  },
+  {
+    "name": "JPMorgan Funds - America Equity Fund A (ACC) - SGD (JPAE)",
+    "isin": "LU2487616109",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - ASEAN Equity Fund AA (SGD Hedged) ACC (MAEF)",
+    "isin": "LU2699160102",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Funds - Global Technology Fund A-ACC-SGD (FGTF)",
+    "isin": "LU1823568750",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group New Perspective Fund (LUX) B USD (CGNU)",
+    "isin": "LU1295551573",
+    "status": "Active"
+  },
+  {
+    "name": "JPMorgan Funds - America Equity Fund A (ACC) - USD (JPAU)",
+    "isin": "LU0210528500",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Global Fund - ASEAN Equity Fund Class AA ACC USD (MAEU)",
+    "isin": "LU2089983584",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Funds - Global Technology Fund A-ACC-USD (FGTU)",
+    "isin": "LU1046421795",
+    "status": "Active"
+  },
+  {
+    "name": "Amova Global Equity Fund SGD (NAGE)",
+    "isin": "LU2237957811",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Oriental Income Fund Class AT SGD (AOIF)",
+    "isin": "LU0417516571",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder ISF Latin American Fund SGD A ACC (SLAF)",
+    "isin": "LU0256859116",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife GF Sustainable Asia Equity Fund AA (SGD) ACC (MSAE)",
+    "isin": "LU2449936058",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz Oriental Income Fund Class AT USD (AOIU)",
+    "isin": "LU0348784397",
+    "status": "Active"
+  },
+  {
+    "name": "Schroder ISF Latin American Fund A ACC (SLAU)",
+    "isin": "LU0106259046",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife GF Sustainable Asia Equity Fund AA ACC (MSUF)",
+    "isin": "LU2089983824",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife GF USD Income Fund - AA (SGD H) MDIST (G) (MUIF)",
+    "isin": "LU2746669782",
+    "status": "Active"
+  },
+  {
+    "name": "T. Rowe Price Global Focused Growth Equity Fund Class An (SGD) (TGFG)",
+    "isin": "LU2462591277",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife GF USD Income Fund - AA (USD) ACC (MUIU)",
+    "isin": "LU2089985878",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife GF Dynamic Leaders Fund - AA (USD) ACC (MDLU)",
+    "isin": "LU2746668461",
+    "status": "Active"
+  },
+  {
+    "name": "T. Rowe Price Global Focused Growth Equity Fund A (USD) (TGFU)",
+    "isin": "LU0143551892",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife GF Dynamic Leaders Fund - AA (SGD H) ACC (MDLF)",
+    "isin": "LU2746668974",
+    "status": "Active"
+  },
+  {
+    "name": "AB Emerging Markets Multi-Asset Portfolio AD SGD H (ABEM)",
+    "isin": "LU0965506933",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Fundsmith Equity Fund A-SGD (MFEF)",
+    "isin": "SGXZ55209126",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Fundsmith Equity Fund A-SGD Hedged (MFEH)",
+    "isin": "SGXZ44467041",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz US Short Duration High Income Bond AMi H2-SGD (ASDH)",
+    "isin": "LU2969692909",
+    "status": "Active"
+  },
+  {
+    "name": "AB Emerging Markets Multi-Asset Portfolio A USD (ABEU)",
+    "isin": "LU0633140560",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Fundsmith Equity Fund A-USD (MFEU)",
+    "isin": "SGXZ59868471",
+    "status": "Active"
+  },
+  {
+    "name": "Allianz US Short Duration High Income Bond AM USD (ASDU)",
+    "isin": "LU1322973634",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Funds - Global Technology Fund A-ACC-SGD Hedged (FGTS)",
+    "isin": "LU2682081513",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Funds - Global Technology Fund A-ACC-USD Hedged (FTSU)",
+    "isin": "LU1235294995",
+    "status": "Active"
+  },
+  {
+    "name": "Amova Global Equity Fund - Class F USD (NGEU)",
+    "isin": "LU2237957902",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group American Balanced Fund (Lux) Bfydmh-SGD (CABF)",
+    "isin": "LU2521041199",
+    "status": "Active"
+  },
+  {
+    "name": "PIMCO GIS Income Fund Admin SGD Hedged Inc (PGIA)",
+    "isin": "IE00B91RQ825",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Funds - Global Dividend Fund A-MCDIST(G)-SGD hedged (FGDM)",
+    "isin": "LU2375672263",
+    "status": "Active"
+  },
+  {
+    "name": "T. Rowe Price Funds SICAV - Global Focused Growth Equity Fund A4p (SGD) (TGFP)",
+    "isin": "LU2999663052",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group American Balanced Fund (Lux) B USD (CABU)",
+    "isin": "LU2343843681",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity America A USD (FIAP)",
+    "isin": "LU0048573561",
+    "status": "Active"
+  },
+  {
+    "name": "Amova Investment Funds - Amova Singapore Dividend Equity Fund USD Class (NSDU)",
+    "isin": "SG9999003925",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin India Fund A Acc USD (FINU)",
+    "isin": "LU0231203729",
+    "status": "Active"
+  },
+  {
+    "name": "First Eagle Amundi Income Builder Fund - A2U-MD (D) (FEAU)",
+    "isin": "LU1412470004",
+    "status": "Active"
+  },
+  {
+    "name": "PIMCO GIS Income Fund Admin USD Inc (PIAU)",
+    "isin": "IE00B91X6F72",
+    "status": "Active"
+  },
+  {
+    "name": "Fidelity Funds - Asia Equity ESG Fund A-USD (FAEU)",
+    "isin": "LU0048597586",
+    "status": "Active"
+  },
+  {
+    "name": "MGF Global Semiconductor Opportunities Fund AA Acc (MGSU)",
+    "isin": "LU2089985449",
+    "status": "Active"
+  },
+  {
+    "name": "MGF Global Semiconductor Opportunities Fund AA (SGD Hedged) Acc (MGSO)",
+    "isin": "LU2931357623",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Singapore Opportunities Income Fund A MDis SGD (MSOI)",
+    "isin": "SGXZ44547263",
+    "status": "Active"
+  },
+  {
+    "name": "MGF Healthcare Fund F (SGD Hedged) MDIST (G) (MGHF)",
+    "isin": "LU3274802605",
+    "status": "Active"
+  },
+  {
+    "name": "MGF Dynamic Leaders Fund F (SGD Hedged) MDIST (G) (MDFF)",
+    "isin": "LU3274802514",
+    "status": "Active"
+  },
+  {
+    "name": "Manulife Singapore Opportunities Income Fund A MDis USD Hedged (MSOU)",
+    "isin": "SGXZ91548958",
+    "status": "Active"
+  },
+  {
+    "name": "Capital Group American Balanced Fund (LUX) Bfydm USD (CADU)",
+    "isin": "LU2521040894",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Shariah Technology A Acc SGD (FSTA)",
+    "isin": "LU2458330169",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Shariah Technology A Acc SGD-H1 (FSTS)",
+    "isin": "LU2458330243",
+    "status": "Active"
+  },
+  {
+    "name": "Neuberger Berman Commodities Fund SGDH A Acc (NBCF)",
+    "isin": "IE000RQRMKM1",
+    "status": "Active"
+  },
+  {
+    "name": "Franklin Shariah Technology A Acc USD (FSTU)",
+    "isin": "LU2458330086",
+    "status": "Active"
+  },
+  {
+    "name": "Neuberger Berman Commodities Fund USD A Acc (NBCU)",
+    "isin": "IE0004O7KK00",
+    "status": "Active"
+  }
+]

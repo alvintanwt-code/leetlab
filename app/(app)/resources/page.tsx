@@ -114,6 +114,7 @@ const PROVIDER_SHORT: Record<string, string> = {
   fwd: "FWD",
   tmls: "Tokio Marine",
   gwm: "GWM",
+  manulife: "Manulife",
 };
 
 function fileMeta(publicPath: string): { available: boolean; sizeLabel: string | null } {

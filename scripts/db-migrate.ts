@@ -42,7 +42,8 @@ async function main() {
     ('hsbc', 'HSBC Life Singapore', 'https://fundprices.insurance.hsbc.com.sg/'),
     ('tmls', 'Tokio Marine Life Singapore', 'https://www.tokiomarine.com/sg/en/life/resources/fund-centre/fundsearch.html'),
     ('fwd', 'FWD Singapore', 'https://www.fwd.com.sg/personalised-financial-advice/funds/'),
-    ('gwm', 'GWM', 'internal')
+    ('gwm', 'GWM', 'internal'),
+    ('manulife', 'Manulife Singapore', 'https://www.manulife.com.sg/en/funds/funds-pb.html')
   ON CONFLICT (slug) DO NOTHING`;
 
   const providers = await sql`SELECT slug, name FROM providers ORDER BY id`;

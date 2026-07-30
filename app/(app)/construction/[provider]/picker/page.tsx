@@ -44,12 +44,13 @@ export default async function PickerPage({ params }: { params: Promise<{ provide
   });
 
   // Canonical platform order + short labels shared with /portfolios and /switch.
-  const PROVIDER_ORDER = ["hsbc", "fwd", "tmls", "gwm"];
+  const PROVIDER_ORDER = ["hsbc", "fwd", "tmls", "gwm", "manulife"];
   const SHORT_NAMES: Record<string, string> = {
     hsbc: "HSBC",
     fwd: "FWD",
     tmls: "TM",
     gwm: "GWM",
+    manulife: "Manulife",
   };
   const providerTabs = allProviders
     .map((p) => ({

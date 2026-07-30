@@ -65,12 +65,13 @@ type WorkspaceState = Record<string, PerPlatform>;
 const STORAGE_KEY = "fundswitch:v3";
 
 // Canonical order + short labels shared with the build page and /portfolios.
-const PROVIDER_ORDER = ["hsbc", "fwd", "tmls", "gwm"];
+const PROVIDER_ORDER = ["hsbc", "fwd", "tmls", "gwm", "manulife"];
 const PROVIDER_SHORT: Record<string, string> = {
   hsbc: "HSBC",
   fwd: "FWD",
   tmls: "TM",
   gwm: "GWM",
+  manulife: "Manulife",
 };
 
 function newRow(): Holding {
