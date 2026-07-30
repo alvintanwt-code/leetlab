@@ -82,6 +82,15 @@ const STATIC_RESOURCES: StaticResource[] = [
     file: "/resources/intra-decline.jpg",
     edition: "June 2026",
   },
+  {
+    kind: "static",
+    slug: "em-vs-dm-ratio",
+    title: "Emerging vs Developed Markets",
+    subtitle: "Live long-run ratio of MSCI EM to MSCI World — the cycle between EM and DM leadership.",
+    category: "Conversation aid",
+    file: "/resources/em-vs-dm-ratio.html",
+    edition: "Live",
+  },
 ];
 
 function fileExt(publicPath: string): string {
@@ -192,14 +201,16 @@ function ResourceCard({ resource }: { resource: Resource }) {
   const downloadHref = isStatic ? resource.file : resource.downloadHref;
   const ext = isStatic ? fileExt(resource.file) : "";
   const isImage = isStatic && IMAGE_EXTS.has(ext);
-  const isPdf = isStatic && !isImage;
-  const badgeLabel = isImage ? "IMG" : isPdf ? "PDF" : "HTML · PDF";
+  const isHtml = isStatic && (ext === "html" || ext === "htm");
+  const isPdf = isStatic && !isImage && !isHtml;
+  const hasDownload = isStatic ? !isHtml : true;
+  const badgeLabel = isImage ? "IMG" : isHtml ? "LIVE" : isPdf ? "PDF" : "HTML · PDF";
   const downloadLabel = isImage ? `${ext.toUpperCase()} ↓` : "PDF ↓";
   const isConversationAid = resource.category === "Conversation aid";
   const accent = isConversationAid ? "#0d253d" : isStatic ? "#00B4BE" : "#E20C10";
-  const heroBg = isConversationAid ? "#f5e9d4" : "#0d253d";
+  const heroBg = isConversationAid ? "#e3e8ee" : "#0d253d";
   const heroFg = isConversationAid ? "#0d253d" : "#ffffff";
-  const heroMeta = isConversationAid ? "#64748d" : "rgba(246,249,252,0.7)";
+  const heroMeta = isConversationAid ? "#273951" : "rgba(246,249,252,0.7)";
 
   return (
     <article
@@ -262,13 +273,15 @@ function ResourceCard({ resource }: { resource: Resource }) {
                 >
                   Open ↗
                 </a>
-                <a
-                  href={downloadHref}
-                  {...(isStatic ? { download: true } : {})}
-                  className="inline-flex h-6 items-center border border-[var(--color-ink)] bg-[var(--color-ink)] px-1.5 text-[10px] text-[var(--color-canvas)] hover:bg-[var(--color-ink)]/90"
-                >
-                  {downloadLabel}
-                </a>
+                {hasDownload && (
+                  <a
+                    href={downloadHref}
+                    {...(isStatic ? { download: true } : {})}
+                    className="inline-flex h-6 items-center border border-[var(--color-ink)] bg-[var(--color-ink)] px-1.5 text-[10px] text-[var(--color-canvas)] hover:bg-[var(--color-ink)]/90"
+                  >
+                    {downloadLabel}
+                  </a>
+                )}
               </>
             )}
           </div>
