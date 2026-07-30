@@ -231,13 +231,22 @@ export async function computeTrailingReturns(holdings: ConfirmedPortfolioHolding
   const proxied_5y_weight = resolved.reduce((s, r) => (r.usedProxy5y ? s + r.weight : s), 0) / totalWeight;
   const proxied_10y_weight = resolved.reduce((s, r) => (r.usedProxy10y ? s + r.weight : s), 0) / totalWeight;
 
+  // Strict full-coverage rule for client-facing horizons — a trailing
+  // annualised figure only reports when EVERY holding backs that horizon
+  // (either from its own fund_snapshots row or via a registered proxy).
+  // Partial coverage silently renormalised across covering funds would
+  // present an inflated / unrepresentative number in the fact sheet;
+  // this is the compliance guardrail for going live.
+  const FULL = 0.999;
+  const strict = (v: number | null, cov: number) => (cov >= FULL ? v : null);
+
   return {
-    ytd: ytd.value,
-    ann_1y: r1y.value,
-    ann_3y: r3y.value,
-    ann_5y: r5y.value,
-    ann_10y: r10y.value,
-    stddev_3y: stddev.value,
+    ytd: strict(ytd.value, ytd.coverage),
+    ann_1y: strict(r1y.value, r1y.coverage),
+    ann_3y: strict(r3y.value, r3y.coverage),
+    ann_5y: strict(r5y.value, r5y.coverage),
+    ann_10y: strict(r10y.value, r10y.coverage),
+    stddev_3y: strict(stddev.value, stddev.coverage),
     coverage: {
       ytd: ytd.coverage,
       ann_1y: r1y.coverage,

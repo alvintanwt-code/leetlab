@@ -249,14 +249,22 @@ export function PortfolioDetail({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Ending value assumes the 10Y CAGR compounded from S$100. Same conceit as
-  // PhillipCapital's "S$348.65 grown from S$100" hero metric.
+  // Hero KPI — pick the LONGEST horizon every fund can back (with proxy).
+  // computeTrailingReturns already nulls a horizon when coverage is partial,
+  // so any non-null value here means every holding contributed.
+  const HERO_LADDER: { years: number; value: number | null; label: string }[] = [
+    { years: 10, value: xray.r10y ?? null, label: "10-year annualised total return" },
+    { years: 5, value: xray.r5y ?? null, label: "5-year annualised total return" },
+    { years: 3, value: xray.r3y ?? null, label: "3-year annualised total return" },
+    { years: 1, value: xray.r1y ?? null, label: "1-year total return" },
+  ];
+  const hero = HERO_LADDER.find((h) => h.value != null) ?? null;
   const endingFrom100 =
-    xray.r10y != null ? (100 * Math.pow(1 + xray.r10y / 100, 10)).toFixed(2) : null;
-  const r10yCls =
-    xray.r10y != null && xray.r10y > 0
+    hero ? (100 * Math.pow(1 + hero.value! / 100, hero.years)).toFixed(2) : null;
+  const heroCls =
+    hero && hero.value! > 0
       ? "text-[var(--color-positive)]"
-      : xray.r10y != null && xray.r10y < 0
+      : hero && hero.value! < 0
         ? "text-[var(--color-negative)]"
         : "text-[var(--color-ink-mute)]";
 
@@ -315,23 +323,23 @@ export function PortfolioDetail({
           >
             {portfolio.name}
           </h1>
-          {xray.r10y != null && (
+          {hero && (
             <div className="text-right">
               <p className="font-medium leading-[0.9]">
                 <span
                   className="num text-[var(--color-ink)] text-[48px] sm:text-[56px]"
                   style={{ letterSpacing: "-0.03em" }}
                 >
-                  {xray.r10y.toFixed(1)}
+                  {hero.value!.toFixed(1)}
                 </span>
                 <span
-                  className={`text-[24px] sm:text-[28px] ${r10yCls}`}
+                  className={`text-[24px] sm:text-[28px] ${heroCls}`}
                   style={{ letterSpacing: "-0.02em" }}
                 >
                   %
                 </span>
               </p>
-              <p className="t-micro-cap mt-2.5">10-year annualised total return</p>
+              <p className="t-micro-cap mt-2.5">{hero.label}</p>
             </div>
           )}
         </div>
@@ -404,13 +412,13 @@ export function PortfolioDetail({
                 <p className="t-micro-cap mt-1.5">Ending value</p>
               </div>
             )}
-            {xray.r10y != null && (
+            {hero && (
               <div>
-                <p className={`num text-[20px] font-medium leading-none ${r10yCls}`}>
-                  {xray.r10y > 0 ? "+" : ""}
-                  {xray.r10y.toFixed(1)}%
+                <p className={`num text-[20px] font-medium leading-none ${heroCls}`}>
+                  {hero.value! > 0 ? "+" : ""}
+                  {hero.value!.toFixed(1)}%
                 </p>
-                <p className="t-micro-cap mt-1.5">CAGR</p>
+                <p className="t-micro-cap mt-1.5">{hero.years}Y CAGR</p>
               </div>
             )}
             <button
