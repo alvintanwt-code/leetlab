@@ -55,6 +55,33 @@ const STATIC_RESOURCES: StaticResource[] = [
     file: "/resources/best-and-worst-years.jpg",
     edition: "June 2026",
   },
+  {
+    kind: "static",
+    slug: "fund-flows",
+    title: "Highest Selling Occurs During Market Crashes",
+    subtitle: "Fund-flow evidence that retail investors sell hardest at market lows — the case for staying invested.",
+    category: "Conversation aid",
+    file: "/resources/fund-flows.jpg",
+    edition: "June 2026",
+  },
+  {
+    kind: "static",
+    slug: "stock-gains-after-decline",
+    title: "Stock Gains Add Up After Decline",
+    subtitle: "How cumulative equity returns compound after major drawdowns — for reframing loss aversion.",
+    category: "Conversation aid",
+    file: "/resources/stock-gains-after-decline.jpg",
+    edition: "June 2026",
+  },
+  {
+    kind: "static",
+    slug: "intra-decline",
+    title: "Annual vs Intra-Year Decline",
+    subtitle: "Calendar-year returns plotted against the deepest intra-year drop — normalising the volatility clients feel.",
+    category: "Conversation aid",
+    file: "/resources/intra-decline.jpg",
+    edition: "June 2026",
+  },
 ];
 
 function fileExt(publicPath: string): string {
