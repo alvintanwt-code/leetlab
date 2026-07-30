@@ -263,11 +263,11 @@ export function PortfolioDetail({
   // Performance strip — computed once, reused by the cells above the chart
   // and the Annual Total Returns chart below.
   //
-  // Prefer the server-computed blend (from NewWealth's YR_ReturnM12
-  // fields, i.e. fund-house-reported calendar-year returns) when the
-  // route returns it. Falls back to deriving from the rebased/blended
-  // NAV series for pre-NewWealth deployments or portfolios where no
-  // fund has YR data (rare — LU/IE UCITS on HSBC/TMLS shelves all do).
+  // Prefer the server-computed blend, which now merges each fund's own
+  // NAV-derived CY returns (as far back as Morningstar's monthly series
+  // goes — typically 10-20y for LU/IE UCITS) with NewWealth's five
+  // YR_ReturnM12 fields as a backstop. Falls back to deriving from the
+  // rebased/blended NAV series for pre-blend deployments.
   const annualReturns =
     chart?.annualReturns && chart.annualReturns.length > 0
       ? chart.annualReturns

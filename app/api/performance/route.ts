@@ -200,20 +200,63 @@ export async function POST(req: Request) {
     v: fundsOut.reduce((s, f) => s + (f.weight / totalWeight) * f.points[j].v, 0),
   }));
 
-  // Weight-blended calendar-year returns from NewWealth's YR_ReturnM12
-  // fields. These are the fund-house-reported CY returns (in fund ccy) —
-  // more accurate than deriving from the rebased/intersected NAV series,
-  // and covers years the NAV intersection would drop (e.g. 2021 when one
-  // fund's history only starts 2022).
+  // Weight-blended calendar-year returns — merged from two sources:
+  //   1. NAV-derived from each fund's own monthly series (per-fund CY
+  //      return computed on year-end/prior-year-end, then weight-blended).
+  //      Goes back as far as every fund has its own history — for LU/IE
+  //      UCITS on Morningstar this is typically 10-20+ years.
+  //   2. NewWealth's YR_ReturnM12_1..5 fields as a 5-year backstop for
+  //      years the NAV path can't cover (e.g. a fund with no Morningstar
+  //      monthly series but with NW-published YR data).
   //
-  // Emitted only when EVERY usable fund reports YR data for a year;
-  // partial coverage would misrepresent the blend. Clients fall back to
-  // deriving from `model.points` when this field is empty.
+  // NAV-derived wins where both exist — it matches the growth-of-100
+  // chart above bar-for-bar. NW fills any earlier gaps. Emitted only
+  // when EVERY usable fund contributes for a given year; partial
+  // coverage would misrepresent the blend.
   const nwByIsin = new Map(
     (await Promise.all(usable.map(async (f) => [f.isin, await fetchNewWealthByIsin(f.isin)] as const)))
       .filter(([, nw]) => nw != null && nw.calendarYearReturns.length > 0),
   );
-  const yearsPerFund = fundsOut.map((f) => new Map((nwByIsin.get(f.isin)?.calendarYearReturns ?? []).map((r) => [r.year, r.return_pct])));
+
+  // Per-fund NAV-derived CY returns, from that fund's own (non-rebased)
+  // monthly map. Full calendar years only — a year is only emitted when
+  // the fund has a December (or January-of-next-year) end-of-year point
+  // AND a matching prior year-end. This mirrors computeAnnualReturns() on
+  // the client but per-fund rather than on the blended series.
+  const navYearsPerFund = usable.map((f, i) => {
+    const map = maps[i];
+    const dates = Object.keys(map).sort();
+    const yearEnd = new Map<number, { d: string; v: number }>();
+    for (const d of dates) yearEnd.set(parseInt(d.slice(0, 4), 10), { d, v: map[d] });
+    const years = [...yearEnd.keys()].sort((a, b) => a - b);
+    const cy = new Map<number, number>();
+    for (let k = 1; k < years.length; k++) {
+      const end = yearEnd.get(years[k])!;
+      const start = yearEnd.get(years[k - 1])!;
+      // Both endpoints must be December — start-year Dec → end-year Dec
+      // is a true CY return. Skip partial trailing years and portfolios
+      // whose earliest year starts mid-year (that first year's return
+      // would be a partial period).
+      if (end.d.slice(5, 7) !== "12") continue;
+      if (start.d.slice(5, 7) !== "12") continue;
+      // Skip gaps where the "prior year" is actually further back.
+      if (years[k] - years[k - 1] !== 1) continue;
+      cy.set(years[k], (end.v / start.v - 1) * 100);
+    }
+    return cy;
+  });
+
+  const nwYearsPerFund = fundsOut.map((f) => new Map((nwByIsin.get(f.isin)?.calendarYearReturns ?? []).map((r) => [r.year, r.return_pct])));
+
+  // For each year, take NAV-derived per fund where available, otherwise
+  // NW. A year survives only if EVERY fund has a value from one source
+  // or the other.
+  const yearsPerFund = fundsOut.map((_, i) => {
+    const merged = new Map<number, number>();
+    for (const [y, v] of nwYearsPerFund[i]) merged.set(y, v);
+    for (const [y, v] of navYearsPerFund[i]) merged.set(y, v); // NAV wins
+    return merged;
+  });
   const allYears = [...new Set(yearsPerFund.flatMap((m) => [...m.keys()]))].sort();
   const annualReturns = allYears
     .filter((y) => yearsPerFund.every((m) => m.has(y)))
