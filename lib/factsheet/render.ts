@@ -156,6 +156,10 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
 
   const heroPct = returns.ann_10y ?? returns.ann_5y ?? returns.ann_3y ?? returns.ann_1y ?? null;
   const heroWindow = returns.ann_10y != null ? "10-YEAR" : returns.ann_5y != null ? "5-YEAR" : returns.ann_3y != null ? "3-YEAR" : "1-YEAR";
+  // 1-year is a raw total return; only 3y/5y/10y are true annualised
+  // figures. Keeps the caption honest whichever horizon the coverage
+  // rule lets survive.
+  const heroCaption = heroWindow === "1-YEAR" ? "1-YEAR TOTAL RETURN" : `${heroWindow} ANNUALISED TOTAL RETURN`;
 
   const asOfLong = fmtLastDayOfMonth(asOfMonth);
   const asOfShort = fmtLastDayShort(asOfMonth);
@@ -265,7 +269,7 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
   <div style="display:flex;align-items:flex-end;gap:32px;margin-top:30px;">
     <div>
       <div class="serif" style="font-size:72px;line-height:1;color:#00818B;letter-spacing:-0.01em;">${fmtPct(heroPct, 1, false)}</div>
-      <div class="cond" style="font-size:11px;letter-spacing:0.1em;color:#545553;margin-top:8px;white-space:nowrap;">${heroWindow} ANNUALISED TOTAL RETURN · TO ${esc(asOfShort)}</div>
+      <div class="cond" style="font-size:11px;letter-spacing:0.1em;color:#545553;margin-top:8px;white-space:nowrap;">${heroCaption} · TO ${esc(asOfShort)}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);flex:1;border-left:1px solid #D9DAD9;">
       <div style="padding:0 0 4px 18px;"><div class="serif" style="font-size:21px;${returns.ann_1y != null && returns.ann_1y < 0 ? "color:#E20C10;" : ""}">${fmtPct(returns.ann_1y)}</div><div class="cond" style="font-size:10px;letter-spacing:0.08em;color:#838483;margin-top:3px;white-space:nowrap;">1 YEAR</div></div>
