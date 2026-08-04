@@ -432,26 +432,6 @@ export function StudioShell({
     setLoadingEditId(p.id);
     setEditError(null);
     try {
-      // If the portfolio belongs to a different provider than the one
-      // this builder is scoped to, route to that provider's build page —
-      // its fund catalogue is different, so we can't load foreign
-      // holdings into the current basket. Hand off via sessionStorage so
-      // the target page hydrates the basket on mount (same channel the
-      // /construction/[provider]/picker → builder pre-seed already uses).
-      if (p.provider_slug !== providerSlug) {
-        const res = await fetch(`/api/portfolios/${p.id}`);
-        if (!res.ok) {
-          const d = await res.json().catch(() => ({}));
-          throw new Error(d?.error ?? `HTTP ${res.status}`);
-        }
-        const data = (await res.json()) as {
-          holdings: Array<{ fundId: number; weightBps: number }>;
-        };
-        const key = `build-basket:v1:${p.provider_slug}`;
-        sessionStorage.setItem(key, JSON.stringify({ holdings: data.holdings }));
-        router.push(`/construction/${p.provider_slug}`);
-        return;
-      }
       const res = await fetch(`/api/portfolios/${p.id}`);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -460,10 +440,13 @@ export function StudioShell({
       const data = (await res.json()) as {
         holdings: Array<{ fundId: number; weightBps: number }>;
       };
-      // Replace the basket with this portfolio's holdings.
-      setBasket(data.holdings);
-      setShowManage(false);
-      setDeleteTarget(null);
+      // Always route to the source platform's /review page with the
+      // exact holdings preloaded — even for same-platform edits.
+      // BuildReview reads the build-basket:v1:{slug} sessionStorage key
+      // on mount and hydrates the basket with preserved weights.
+      const key = `build-basket:v1:${p.provider_slug}`;
+      sessionStorage.setItem(key, JSON.stringify({ holdings: data.holdings }));
+      router.push(`/construction/${p.provider_slug}/review`);
     } catch (e) {
       setEditError(`Couldn't load ${p.name}: ${(e as Error).message}`);
     } finally {
@@ -931,7 +914,6 @@ export function StudioShell({
                         <ul className="flex flex-col">
                           {list.map((p) => {
                             const isTarget = deleteTarget?.id === p.id;
-                            const isCrossProvider = p.provider_slug !== providerSlug;
                             return (
                               <li
                                 key={p.id}
@@ -953,9 +935,9 @@ export function StudioShell({
                                 onClick={() => loadSavedIntoBasket(p)}
                                 disabled={loadingEditId != null}
                                 className="t-caption px-2 py-1 text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)] disabled:opacity-50"
-                                title={isCrossProvider ? `Opens ${p.provider_name}'s builder` : "Load into current basket"}
+                                title={`Opens ${p.provider_name}'s review page with this basket preloaded`}
                               >
-                                {loadingEditId === p.id ? "Loading…" : isCrossProvider ? "Edit ↗" : "Edit"}
+                                {loadingEditId === p.id ? "Loading…" : "Edit ↗"}
                               </button>
                               <button
                                 onClick={() => { setDeleteTarget(p); setDeleteInput(""); setDeleteError(null); }}

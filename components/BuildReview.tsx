@@ -105,10 +105,25 @@ export function BuildReview({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Seed from the picker's sessionStorage drop. Equal-weights on mount; we
-  // keep the storage key so Edit-inputs preserves the staged selection.
+  // Seed from sessionStorage — two possible hand-offs, in priority order:
+  //   1. build-basket:v1:{slug} — full holdings payload (weights preserved)
+  //      pushed by the "Edit" button in StudioShell's manage modal. Loads
+  //      the exact basket for a saved portfolio.
+  //   2. build-picker:v1:{slug} — id-only from the picker page; equal-
+  //      weight distribution on mount.
   useEffect(() => {
     try {
+      const basketRaw = sessionStorage.getItem(`build-basket:v1:${providerSlug}`);
+      if (basketRaw) {
+        const parsed = JSON.parse(basketRaw) as { holdings?: Array<{ fundId: number; weightBps: number }> };
+        const holdings = (parsed.holdings ?? []).filter((h) => fundsById.has(h.fundId));
+        sessionStorage.removeItem(`build-basket:v1:${providerSlug}`);
+        if (holdings.length > 0) {
+          setBasket(holdings);
+          setHydrated(true);
+          return;
+        }
+      }
       const raw = sessionStorage.getItem(`build-picker:v1:${providerSlug}`);
       if (raw) {
         const parsed = JSON.parse(raw) as { ids?: number[] };
