@@ -294,11 +294,9 @@ export async function buildFactsheetForPortfolio(portfolioId: number, asOfMonth?
     holdings.map(async (h) => {
       if (!h.isin) return;
       const cfg = proxies[h.isin];
+      const targetSnap = await fetchSnapshot(h.isin);
       if (cfg) {
-        const [targetSnap, proxySnap] = await Promise.all([
-          fetchSnapshot(h.isin),
-          fetchSnapshot(cfg.proxy),
-        ]);
+        const proxySnap = await fetchSnapshot(cfg.proxy);
         // If the proxy is itself a MAS-coded fund with no GrowthOf10K
         // (e.g. Infinity Global Stock Index USD), fall back to synthesising
         // the proxy's series from its own trailing returns before splicing.
@@ -313,8 +311,15 @@ export async function buildFactsheetForPortfolio(portfolioId: number, asOfMonth?
           return;
         }
       }
-      const synth = synthesiseSeriesFromTrailing(h);
-      if (synth.length >= 3) supplementalSeries.set(h.isin, synth);
+      // Synth only as a last-resort backup — must never override real
+      // observed monthly NAV that Morningstar/NewWealth already returned.
+      // Otherwise the chart replaces a real jagged NAV path with a
+      // log-interpolated smooth curve (was the source of the "chart
+      // looks like a straight line" bug).
+      if (targetSnap.points.length < 3) {
+        const synth = synthesiseSeriesFromTrailing(h);
+        if (synth.length >= 3) supplementalSeries.set(h.isin, synth);
+      }
     }),
   );
   const series = await blendPortfolioSeries(components, 120, supplementalSeries);
