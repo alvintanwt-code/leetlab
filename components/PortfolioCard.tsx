@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { ConfirmedPortfolio } from "@/lib/db/queries";
 import type { AssetBucket, AssetChip, PortfolioXray } from "@/lib/portfolio-derive";
 import type { BlendedSeries } from "@/lib/portfolio-performance";
-import { PORTFOLIO_MANDATES } from "@/lib/portfolio-mandates";
 import { PortfolioMiniChart } from "@/components/PortfolioMiniChart";
 
 export type PortfolioCardData = {
@@ -104,13 +103,7 @@ export function AssetChips({ chips }: { chips: AssetChip[] }) {
 
 export function PortfolioCard({ data }: { data: PortfolioCardData }) {
   const { portfolio, assetMix, xray, risk, series, yieldPct } = data;
-  const mandate = PORTFOLIO_MANDATES[portfolio.category];
-  // Use the stored portfolio name directly — the DB now carries the
-  // full display string (e.g. "HSBC Life Global Alpha"), so the old
-  // provider+category concat would render redundant "HSBC HSBC Life
-  // Global Alpha" style labels.
   const title = portfolio.name;
-  const isIncome = portfolio.category === "dividend_income";
 
   return (
     <Link
@@ -122,14 +115,6 @@ export function PortfolioCard({ data }: { data: PortfolioCardData }) {
       <h2 className="mt-4 text-[20px] font-medium leading-tight tracking-[-0.01em] text-[var(--color-ink)]">
         {title}
       </h2>
-      {mandate && (
-        <>
-          <p className="t-body-md mt-1 text-[var(--color-ink-2)]">{mandate.tagline}</p>
-          <p className="t-body-md mt-3 leading-[1.55] text-[var(--color-ink-mute)]">
-            {mandate.objective} {mandate.suitability}
-          </p>
-        </>
-      )}
 
       <p className="t-micro-cap mt-4">
         <span className="num">{portfolio.holding_count}</span> {portfolio.holding_count === 1 ? "fund" : "funds"}
@@ -142,9 +127,7 @@ export function PortfolioCard({ data }: { data: PortfolioCardData }) {
         <div className="grid grid-cols-2 gap-x-6 gap-y-4">
           <Kpi label="3Y ann."><ReturnText value={xray?.r3y ?? null} /></Kpi>
           <Kpi label="OCF p.a."><PctText value={xray?.expense ?? null} /></Kpi>
-          <Kpi label={isIncome ? "Yield p.a." : "Dividends"}>
-            {isIncome ? <PctText value={yieldPct} /> : <span className="text-[var(--color-ink-mute)]">—</span>}
-          </Kpi>
+          <Kpi label="Yield p.a."><PctText value={yieldPct} /></Kpi>
           <Kpi label="Funds"><span className="text-[var(--color-ink)]">{portfolio.holding_count}</span></Kpi>
         </div>
       </div>
@@ -159,25 +142,16 @@ export function PortfolioCard({ data }: { data: PortfolioCardData }) {
 // FundSwitchWorkspace's SwitchModelRow — same visual, different chrome.
 export function PortfolioRowBody({ data }: { data: PortfolioCardData }) {
   const { portfolio, assetMix, xray, risk, series, yieldPct } = data;
-  const mandate = PORTFOLIO_MANDATES[portfolio.category];
-  // Use the stored portfolio name directly — the DB now carries the
-  // full display string (e.g. "HSBC Life Global Alpha"), so the old
-  // provider+category concat would render redundant "HSBC HSBC Life
-  // Global Alpha" style labels.
   const title = portfolio.name;
-  const isIncome = portfolio.category === "dividend_income";
 
   return (
     <>
-      {/* Left — chips + title + mandate */}
+      {/* Left — chips + title */}
       <div className="min-w-0">
         <AssetChips chips={assetMix} />
         <h3 className="mt-2 text-[17px] font-medium leading-tight tracking-[-0.005em] text-[var(--color-ink)]">
           {title}
         </h3>
-        {mandate && (
-          <p className="t-body-md mt-1 truncate text-[var(--color-ink-mute)]">{mandate.tagline}</p>
-        )}
         <p className="t-micro-cap mt-2">
           <span className="num">{portfolio.holding_count}</span> {portfolio.holding_count === 1 ? "fund" : "funds"}
           <span className="mx-1.5 text-[var(--color-hairline)]">·</span>
@@ -192,9 +166,7 @@ export function PortfolioRowBody({ data }: { data: PortfolioCardData }) {
       <div className="grid grid-cols-4 gap-x-6">
         <Kpi label="3Y ann."><ReturnText value={xray?.r3y ?? null} /></Kpi>
         <Kpi label="OCF p.a."><PctText value={xray?.expense ?? null} /></Kpi>
-        <Kpi label={isIncome ? "Yield p.a." : "Dividends"}>
-          {isIncome ? <PctText value={yieldPct} /> : <span className="text-[var(--color-ink-mute)]">—</span>}
-        </Kpi>
+        <Kpi label="Yield p.a."><PctText value={yieldPct} /></Kpi>
         <Kpi label="Funds"><span className="text-[var(--color-ink)]">{portfolio.holding_count}</span></Kpi>
       </div>
     </>

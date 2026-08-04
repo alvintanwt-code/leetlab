@@ -8,7 +8,6 @@ import {
 import { PortfolioCard, PortfolioRow, type PortfolioCardData } from "@/components/PortfolioCard";
 import { computeAssetMix, computeRiskRating, parseXray } from "@/lib/portfolio-derive";
 import { blendPortfolioSeries, blendPortfolioYield } from "@/lib/portfolio-performance";
-import { CATEGORY_ORDER } from "@/lib/portfolio-mandates";
 
 export const dynamic = "force-dynamic";
 
@@ -67,15 +66,13 @@ export default async function ModelPortfoliosIndex({
 
   const activeView = sp.view === "row" ? "row" : "card";
 
-  // Latest version per (platform, category), rendered in canonical category order.
-  const platformPortfolios = allPortfolios.filter((p) => p.provider_slug === activePlatform);
-  const latestByCategory = new Map<string, ConfirmedPortfolio>();
-  for (const p of platformPortfolios) {
-    if (!latestByCategory.has(p.category)) latestByCategory.set(p.category, p);
-  }
-  const filtered: ConfirmedPortfolio[] = CATEGORY_ORDER.map((k) =>
-    latestByCategory.get(k),
-  ).filter((p): p is ConfirmedPortfolio => p != null);
+  // Every confirmed portfolio for this platform, newest confirmation first
+  // (that's the default order out of listConfirmedPortfolios). No category-
+  // driven dedup — advisors can run more than one strategy per shelf, and
+  // the portfolio name is what they picked to distinguish them.
+  const filtered: ConfirmedPortfolio[] = allPortfolios.filter(
+    (p) => p.provider_slug === activePlatform,
+  );
 
   // Build the per-card data: holdings → asset mix, xray, series.
   const cardData: PortfolioCardData[] = await Promise.all(
@@ -86,10 +83,12 @@ export default async function ModelPortfoliosIndex({
       const components = holdings
         .filter((h) => !!h.isin)
         .map((h) => ({ isin: h.isin as string, weight: h.weight_bps / totalBps }));
-      const isIncome = portfolio.category === "dividend_income";
+      // Compute yield for every portfolio — category no longer gates the
+      // KPI, and equity-heavy portfolios naturally return a near-zero
+      // yield which the card renders as "—".
       const [series, yieldBlend] = await Promise.all([
         blendPortfolioSeries(components, 36),
-        isIncome ? blendPortfolioYield(components) : Promise.resolve(null),
+        blendPortfolioYield(components),
       ]);
       return {
         portfolio,

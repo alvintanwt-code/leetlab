@@ -4,14 +4,6 @@ import { listConfirmedPortfolios } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
-const CATEGORY_LABEL: Record<string, string> = {
-  aggressive: "Aggressive",
-  balanced: "Balanced",
-  conservative: "Conservative",
-  growth: "Growth",
-  dividend_income: "Income",
-};
-
 type StaticResource = {
   kind: "static";
   slug: string;
@@ -133,26 +125,20 @@ function editionLabel(iso: string): string {
 
 export default async function ResourcesPage() {
   const portfolios = await listConfirmedPortfolios();
-  const seen = new Set<string>();
-  const factsheets: FactsheetResource[] = [];
-  for (const p of portfolios) {
-    const key = `${p.provider_slug}-${p.category}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const cat = CATEGORY_LABEL[p.category] ?? p.category;
+  const factsheets: FactsheetResource[] = portfolios.map((p) => {
     const provider = PROVIDER_SHORT[p.provider_slug] ?? p.provider_name;
-    factsheets.push({
+    return {
       kind: "factsheet",
-      slug: `factsheet-${p.provider_slug}-${p.category}`,
+      slug: `factsheet-${p.id}`,
       title: p.name,
-      subtitle: `${cat} model portfolio · composite performance, holdings, and allocations for ${provider}.`,
+      subtitle: `Composite performance, holdings, and allocations for ${provider}.`,
       category: "Fact sheet",
       provider,
       edition: editionLabel(new Date().toISOString().slice(0, 7)),
       openHref: `/api/factsheet/${p.id}`,
       downloadHref: `/api/factsheet/${p.id}?download=1&format=pdf`,
-    });
-  }
+    };
+  });
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-20 pb-16">

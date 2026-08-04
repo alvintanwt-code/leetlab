@@ -80,15 +80,6 @@ type ChartData = {
 type Holding = { fundId: number; weightBps: number };
 type DocByFund = Record<number, { type: string; label: string }[]>;
 
-const CATEGORIES = [
-  { key: "conservative", label: "Conservative" },
-  { key: "balanced", label: "Balanced" },
-  { key: "growth", label: "Growth" },
-  { key: "aggressive", label: "Aggressive" },
-  { key: "dividend_income", label: "Dividend income" },
-] as const;
-type CategoryKey = (typeof CATEGORIES)[number]["key"];
-
 const ASSET_COLORS: Record<string, string> = {
   E: "var(--color-primary)",
   F: "var(--color-positive)",
@@ -153,7 +144,6 @@ export function StudioShell({
   const [inspectFundId, setInspectFundId] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmName, setConfirmName] = useState("");
-  const [confirmCategory, setConfirmCategory] = useState<CategoryKey>("balanced");
   const [confirmNotes, setConfirmNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -368,8 +358,8 @@ export function StudioShell({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           providerSlug,
-          category: confirmCategory,
-          name: confirmName.trim() || `${providerName} ${confirmCategory} ${new Date().toISOString().slice(0, 10)}`,
+          category: "custom",
+          name: confirmName.trim() || `${providerName} ${new Date().toISOString().slice(0, 10)}`,
           notes: confirmNotes.trim() || null,
           holdings: basket,
           xray,
@@ -418,14 +408,9 @@ export function StudioShell({
       }
       const data = (await res.json()) as {
         holdings: Array<{ fundId: number; weightBps: number }>;
-        category: string;
       };
-      // Replace the basket with this portfolio's holdings. Also pre-fill the
-      // mandate selector so the advisor keeps continuity on save.
+      // Replace the basket with this portfolio's holdings.
       setBasket(data.holdings);
-      if (data.category && CATEGORIES.some((c) => c.key === data.category)) {
-        setConfirmCategory(data.category as CategoryKey);
-      }
       setShowManage(false);
       setDeleteTarget(null);
     } catch (e) {
@@ -811,21 +796,11 @@ export function StudioShell({
             <p className="t-body-md mt-1 text-[var(--color-ink-mute)]">{providerName} &middot; {basket.length} funds &middot; weights total 100%.</p>
             <div className="mt-5 flex flex-col gap-4">
               <label className="flex flex-col gap-1">
-                <span className="t-caption text-[var(--color-ink-mute)]">Category</span>
-                <select
-                  value={confirmCategory}
-                  onChange={(e) => setConfirmCategory(e.target.value as CategoryKey)}
-                  className="t-body-md rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-2 outline-none focus:border-[var(--color-primary)]"
-                >
-                  {CATEGORIES.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="t-caption text-[var(--color-ink-mute)]">Name (optional)</span>
+                <span className="t-caption text-[var(--color-ink-mute)]">Name</span>
                 <input
                   value={confirmName}
                   onChange={(e) => setConfirmName(e.target.value)}
-                  placeholder={`${providerName} ${CATEGORIES.find((c) => c.key === confirmCategory)?.label} v1`}
+                  placeholder={`${providerName} Global Alpha v1`}
                   className="t-body-md rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-2 outline-none focus:border-[var(--color-primary)]"
                 />
               </label>
@@ -886,7 +861,6 @@ export function StudioShell({
                 <ul className="flex flex-col">
                   {savedPortfolios.map((p) => {
                     const isTarget = deleteTarget?.id === p.id;
-                    const categoryLabel = CATEGORIES.find((c) => c.key === p.category)?.label ?? p.category;
                     return (
                       <li
                         key={p.id}
@@ -898,7 +872,7 @@ export function StudioShell({
                               {p.name}
                             </p>
                             <p className="t-caption mt-0.5 text-[var(--color-ink-mute)]">
-                              {categoryLabel} &middot; v<span className="num">{p.version}</span> &middot;{" "}
+                              v<span className="num">{p.version}</span> &middot;{" "}
                               <span className="num">{p.holding_count}</span> {p.holding_count === 1 ? "fund" : "funds"}
                             </p>
                           </div>

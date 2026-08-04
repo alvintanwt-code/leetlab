@@ -7,7 +7,10 @@ import { auth } from "@/auth";
 
 const Body = z.object({
   providerSlug: z.string(),
-  category: z.enum(["conservative", "balanced", "growth", "aggressive", "dividend_income"]),
+  // Category is no longer surfaced in the UI (advisors distinguish portfolios
+  // by name), but the column stays in the schema for legacy rows. Accept any
+  // string; new confirms send "custom".
+  category: z.string().max(40).default("custom"),
   name: z.string().min(1).max(120),
   notes: z.string().max(2000).nullable().optional(),
   holdings: z.array(z.object({ fundId: z.number().int().positive(), weightBps: z.number().int().min(0).max(10000) })).min(1),
@@ -43,7 +46,7 @@ export async function POST(req: Request) {
   const versionRows = await db().execute(sql`
     SELECT COALESCE(MAX(version), 0)::int AS v
     FROM model_portfolios
-    WHERE provider_id = ${provider.id} AND category = ${parsed.category} AND name = ${parsed.name}
+    WHERE provider_id = ${provider.id} AND name = ${parsed.name}
   `) as unknown as { v: number }[];
   const version = (versionRows[0]?.v ?? 0) + 1;
 

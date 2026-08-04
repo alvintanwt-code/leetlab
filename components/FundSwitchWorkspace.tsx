@@ -18,7 +18,6 @@ import {
   RiskText,
   type PortfolioCardData,
 } from "@/components/PortfolioCard";
-import { PORTFOLIO_MANDATES } from "@/lib/portfolio-mandates";
 import {
   ExistingPortfolioSummary,
   type ValidHolding,

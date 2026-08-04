@@ -17,14 +17,6 @@ import type { TrailingReturns } from "./build";
  * different portfolio never touches this file.
  */
 
-const CATEGORY_LABEL: Record<string, string> = {
-  conservative: "Conservative",
-  balanced: "Balanced",
-  growth: "Growth",
-  aggressive: "Aggressive",
-  dividend_income: "Income",
-};
-
 // Five mandate lines per the reference template — italic emphasis stripped
 // so the plain-serif reading matches the reference (no <em> in the source).
 const MANDATE_LINES = [
@@ -163,7 +155,6 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
 
   const asOfLong = fmtLastDayOfMonth(asOfMonth);
   const asOfShort = fmtLastDayShort(asOfMonth);
-  const categoryLabel = CATEGORY_LABEL[portfolio.category] ?? portfolio.category;
 
   const weightedExpense = holdings.reduce((s, h) => (h.expense_ratio == null ? s : s + (h.weight_bps / totalBps) * h.expense_ratio), 0);
 
@@ -263,7 +254,7 @@ export function renderFactsheetHtml(input: FactsheetInput): string {
   <div style="margin-top:32px;">
     <div style="width:32px;height:3px;background:#E20C10;"></div>
     <div class="cond" style="font-size:11px;letter-spacing:0.12em;color:#E20C10;margin-top:8px;">${esc(portfolio.name.toUpperCase())} · MODEL PORTFOLIO · SINGAPORE</div>
-    <h1 class="serif" style="font-size:31px;line-height:1.12;margin:11px 0 0;max-width:540px;">${portfolio.category === "dividend_income" ? "Generating income with a <em>peace of mind</em>." : "Returns come from <em>staying invested</em>."}</h1>
+    <h1 class="serif" style="font-size:31px;line-height:1.12;margin:11px 0 0;max-width:540px;">Returns come from <em>staying invested</em>.</h1>
   </div>
 
   <div style="display:flex;align-items:flex-end;gap:32px;margin-top:30px;">

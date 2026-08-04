@@ -65,7 +65,7 @@ export async function GET(
     }
   }
 
-  const stem = `factsheet-${portfolio.provider_slug}-${portfolio.category}-${asOfMonthKey}`;
+  const stem = `factsheet-${portfolio.provider_slug}-${portfolio.id}-${asOfMonthKey}`;
 
   if (format === "pdf") {
     try {

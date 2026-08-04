@@ -32,14 +32,15 @@ export default async function FundSwitchPage() {
       const holdings = await getPortfolioHoldings(portfolio.id);
       const xray = parseXray(portfolio);
       const totalBps = holdings.reduce((s, h) => s + h.weight_bps, 0) || 1;
-      const isIncome = portfolio.category === "dividend_income";
-      const yieldBlend = isIncome
-        ? await blendPortfolioYield(
-            holdings
-              .filter((h) => !!h.isin)
-              .map((h) => ({ isin: h.isin as string, weight: h.weight_bps / totalBps })),
-          )
-        : null;
+      // Compute yield for every portfolio — category is no longer the
+      // gate since it's no longer surfaced in the UI. Yield only renders
+      // in the switch row when non-zero, so equity-heavy portfolios just
+      // show "—" naturally.
+      const yieldBlend = await blendPortfolioYield(
+        holdings
+          .filter((h) => !!h.isin)
+          .map((h) => ({ isin: h.isin as string, weight: h.weight_bps / totalBps })),
+      );
       return {
         portfolio,
         assetMix: computeAssetMix(holdings),

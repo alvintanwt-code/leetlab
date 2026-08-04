@@ -30,14 +30,6 @@ type XRay = {
   holdings?: { label: string; weight_pct: number }[];
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  conservative: "Conservative",
-  balanced: "Balanced",
-  growth: "Growth",
-  aggressive: "Aggressive",
-  dividend_income: "Income",
-};
-
 function fmtPct(v: number | null | undefined, places = 2): { text: string; cls: string } {
   if (v == null) return { text: "—", cls: "text-[var(--color-ink-mute)]" };
   if (v === 0) return { text: "0.00%", cls: "text-[var(--color-ink)]" };
@@ -299,12 +291,11 @@ export function PortfolioDetail({
   return (
     <>
       <header className="mt-5">
-        {/* Eyebrow — provider · category · risk */}
+        {/* Eyebrow — provider · risk */}
         <div className="mb-4 flex items-center gap-2.5">
           <span className="inline-block h-2.5 w-2.5 bg-[var(--color-primary)]" aria-hidden />
           <p className="t-micro-cap">
-            {portfolio.provider_name.toUpperCase()} <span className="mx-1.5 text-[var(--color-hairline)]">·</span>{" "}
-            {(CATEGORY_LABEL[portfolio.category] ?? portfolio.category).toUpperCase()}
+            {portfolio.provider_name.toUpperCase()}
             {xray.risk != null && (
               <>
                 {" "}

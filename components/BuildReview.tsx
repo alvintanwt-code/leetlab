@@ -27,15 +27,6 @@ type ChartData = {
   skipped: number;
 };
 
-const CATEGORIES = [
-  { key: "conservative", label: "Conservative" },
-  { key: "balanced", label: "Balanced" },
-  { key: "growth", label: "Growth" },
-  { key: "aggressive", label: "Aggressive" },
-  { key: "dividend_income", label: "Dividend income" },
-] as const;
-type CategoryKey = (typeof CATEGORIES)[number]["key"];
-
 type ClassKey = "E" | "F" | "A" | "L" | "C" | "M";
 const CLASS_LABEL: Record<ClassKey, string> = {
   E: "Equity",
@@ -109,7 +100,6 @@ export function BuildReview({
 
   // Save-build modal state — same fields as the StudioShell wizard.
   const [showSave, setShowSave] = useState(false);
-  const [saveCategory, setSaveCategory] = useState<CategoryKey>("balanced");
   const [saveName, setSaveName] = useState("");
   const [saveNotes, setSaveNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -312,10 +302,10 @@ export function BuildReview({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           providerSlug,
-          category: saveCategory,
+          category: "custom",
           name:
             saveName.trim() ||
-            `${providerName} ${saveCategory} ${new Date().toISOString().slice(0, 10)}`,
+            `${providerName} ${new Date().toISOString().slice(0, 10)}`,
           notes: saveNotes.trim() || null,
           holdings: basket,
           xray,
@@ -570,25 +560,11 @@ export function BuildReview({
             </p>
             <div className="mt-5 flex flex-col gap-4">
               <label className="flex flex-col gap-1">
-                <span className="t-caption text-[var(--color-ink-mute)]">Category</span>
-                <select
-                  value={saveCategory}
-                  onChange={(e) => setSaveCategory(e.target.value as CategoryKey)}
-                  className="t-body-md rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-2 outline-none focus:border-[var(--color-primary)]"
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.key} value={c.key}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="t-caption text-[var(--color-ink-mute)]">Name (optional)</span>
+                <span className="t-caption text-[var(--color-ink-mute)]">Name</span>
                 <input
                   value={saveName}
                   onChange={(e) => setSaveName(e.target.value)}
-                  placeholder={`${providerName} ${CATEGORIES.find((c) => c.key === saveCategory)?.label} v1`}
+                  placeholder={`${providerName} Global Alpha v1`}
                   className="t-body-md rounded-md border border-[var(--color-hairline-input)] bg-[var(--color-canvas)] px-3 py-2 outline-none focus:border-[var(--color-primary)]"
                 />
               </label>

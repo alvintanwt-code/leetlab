@@ -1,13 +1,5 @@
 import type { SwitchMemo, WhyRow } from "@/lib/switch/types";
 
-const CATEGORY_LABEL: Record<string, string> = {
-  conservative: "Conservative",
-  balanced: "Balanced",
-  growth: "Growth",
-  aggressive: "Aggressive",
-  dividend_income: "Income",
-};
-
 function fmtSignedPct(v: number | null | undefined, places = 1): string {
   if (v == null || !Number.isFinite(v)) return "—";
   if (Math.abs(v) < 0.05 && places <= 1) return "—";
@@ -176,9 +168,6 @@ export function FundSwitchMemo({ memo, onEdit }: { memo: SwitchMemo; onEdit: () 
           <h2 className="t-display-md text-[var(--color-ink)]" style={{ letterSpacing: "-0.025em" }}>
             Current → {memo.modelName}
           </h2>
-          <p className="t-micro-cap mt-2 text-[var(--color-ink-mute)]">
-            {(CATEGORY_LABEL[memo.modelCategory] ?? memo.modelCategory).toUpperCase()}
-          </p>
         </div>
         <div className="text-right">
           <p className={`num text-[40px] leading-none ${signCls(expReturnDelta)}`} style={{ fontWeight: 300, letterSpacing: "-0.02em" }}>
