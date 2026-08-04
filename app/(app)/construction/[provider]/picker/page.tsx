@@ -3,6 +3,7 @@ import {
   fundsInspectorForProvider,
   detailedAllocationsForProvider,
   listProvidersWithCounts,
+  countAllConfirmedPortfolios,
 } from "@/lib/db/queries";
 import { getReturnOverride } from "@/lib/return-overrides";
 import { BuildPicker } from "@/components/BuildPicker";
@@ -21,9 +22,10 @@ export default async function PickerPage({ params }: { params: Promise<{ provide
   const meta = allProviders.find((p) => p.slug === provider);
   if (!meta) notFound();
 
-  const [rawFunds, allocsFlat] = await Promise.all([
+  const [rawFunds, allocsFlat, savedCount] = await Promise.all([
     fundsInspectorForProvider(provider),
     detailedAllocationsForProvider(provider),
+    countAllConfirmedPortfolios(),
   ]);
 
   // Merge return-overrides for MAS-coded funds — Morningstar snapshot is empty
@@ -68,6 +70,7 @@ export default async function PickerPage({ params }: { params: Promise<{ provide
       providerTabs={providerTabs}
       funds={funds}
       allocations={allocsFlat}
+      savedCount={savedCount}
     />
   );
 }

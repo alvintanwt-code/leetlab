@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FundInspector } from "./FundInspector";
 import { TrailingChart } from "./TrailingChart";
 import type { FundInspectorData, AllocationDetail } from "@/lib/db/queries";
@@ -140,6 +140,7 @@ export function StudioShell({
   savedPortfolios: SavedPortfolioRef[];
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const searchRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [basket, setBasket] = useState<Holding[]>([]);
@@ -172,6 +173,19 @@ export function StudioShell({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // Auto-open the Manage modal when the URL carries ?manage=1 — set by
+  // the Saved · N button on the picker page so it can hand the advisor
+  // straight into the cross-platform manager without a second click.
+  useEffect(() => {
+    if (searchParams.get("manage") === "1") {
+      setShowManage(true);
+      setDeleteTarget(null);
+      setDeleteInput("");
+      setDeleteError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Pre-seed the basket from two possible hand-offs, in priority order:

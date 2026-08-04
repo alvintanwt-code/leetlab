@@ -115,12 +115,14 @@ export function BuildPicker({
   providerTabs,
   funds,
   allocations,
+  savedCount,
 }: {
   providerSlug: string;
   providerName: string;
   providerTabs: ProviderTab[];
   funds: FundInspectorData[];
   allocations: AllocationDetail[];
+  savedCount: number;
 }) {
   const router = useRouter();
 
@@ -269,9 +271,22 @@ export function BuildPicker({
             <p className="t-micro-cap mb-1">Advisor workspace</p>
             <h1 className="t-h-md text-[var(--color-ink)]">Build portfolio</h1>
           </div>
-          <p className="t-caption text-[var(--color-ink-mute)]">
-            {providerName} · {rich.length} funds in-scope
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="t-caption text-[var(--color-ink-mute)]">
+              {providerName} · {rich.length} funds in-scope
+            </p>
+            {/* Saved · N — opens the same cross-platform manage modal
+                that StudioShell renders. Passes ?manage=1 so the target
+                page auto-opens the modal on mount. */}
+            <button
+              type="button"
+              onClick={() => router.push(`/construction/${providerSlug}?manage=1`)}
+              className="t-caption whitespace-nowrap rounded-md border border-[var(--color-hairline)] px-2.5 py-1 text-[var(--color-ink-mute)] transition-colors hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
+              title="Manage saved portfolios across all platforms"
+            >
+              Saved · <span className="num text-[var(--color-ink)]">{savedCount}</span>
+            </button>
+          </div>
         </header>
         <div className="flex items-center gap-6 border-b border-[var(--color-hairline-2)]">
           <p className="t-micro-cap w-20 shrink-0 py-2">Platform</p>
