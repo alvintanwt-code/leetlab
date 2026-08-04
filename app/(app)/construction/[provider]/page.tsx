@@ -23,16 +23,19 @@ export default async function StudioPage({ params }: { params: Promise<{ provide
     documentsForProvider(provider),
     listConfirmedPortfolios(),
   ]);
-  const savedPortfolios = allConfirmed
-    .filter((p) => p.provider_slug === provider)
-    .map((p) => ({
-      id: p.id,
-      name: p.name,
-      category: p.category,
-      version: p.version,
-      confirmed_at: p.confirmed_at,
-      holding_count: p.holding_count,
-    }));
+  // Cross-platform list — the Saved · N modal in StudioShell groups these
+  // by provider so an advisor can Edit/Delete any confirmed portfolio
+  // regardless of which platform tab they landed on.
+  const savedPortfolios = allConfirmed.map((p) => ({
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    version: p.version,
+    confirmed_at: p.confirmed_at,
+    holding_count: p.holding_count,
+    provider_slug: p.provider_slug,
+    provider_name: p.provider_name,
+  }));
 
   // shape docs to { fundId: [{type, label}] }
   const documents: Record<number, { type: string; label: string }[]> = {};

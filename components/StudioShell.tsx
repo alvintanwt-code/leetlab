@@ -118,6 +118,8 @@ export type SavedPortfolioRef = {
   version: number;
   confirmed_at: string | null;
   holding_count: number;
+  provider_slug: string;
+  provider_name: string;
 };
 
 export function StudioShell({
@@ -172,18 +174,33 @@ export function StudioShell({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Pre-seed the basket from /construction/[provider]/picker if the advisor
-  // arrived via the picker hand-off. Each fund gets an equal share of 10000
-  // bps; remainder lands on the first row so the total still sums to 100%.
+  // Pre-seed the basket from two possible hand-offs, in priority order:
+  //   1. build-basket:v1:{slug} — full holdings payload (weights preserved)
+  //      pushed when the advisor hits "Edit" on a saved portfolio from a
+  //      DIFFERENT provider's Manage modal. Loads the exact basket.
+  //   2. build-picker:v1:{slug} — id-only payload from the picker page.
+  //      Splits weight evenly across ids; remainder lands on the first
+  //      row so the total still sums to 100%.
   useEffect(() => {
     try {
-      const key = `build-picker:v1:${providerSlug}`;
-      const raw = sessionStorage.getItem(key);
+      const basketKey = `build-basket:v1:${providerSlug}`;
+      const basketRaw = sessionStorage.getItem(basketKey);
+      if (basketRaw) {
+        const parsed = JSON.parse(basketRaw) as { holdings?: Array<{ fundId: number; weightBps: number }> };
+        const holdings = (parsed.holdings ?? []).filter((h) => fundsById.has(h.fundId));
+        sessionStorage.removeItem(basketKey);
+        if (holdings.length > 0) {
+          setBasket(holdings);
+          return;
+        }
+      }
+      const pickerKey = `build-picker:v1:${providerSlug}`;
+      const raw = sessionStorage.getItem(pickerKey);
       if (!raw) return;
       const parsed = JSON.parse(raw) as { ids?: number[] };
       const ids = (parsed.ids ?? []).filter((id) => fundsById.has(id));
       if (ids.length === 0) {
-        sessionStorage.removeItem(key);
+        sessionStorage.removeItem(pickerKey);
         return;
       }
       const each = Math.floor(10000 / ids.length);
@@ -191,7 +208,7 @@ export function StudioShell({
       setBasket(
         ids.map((id, i) => ({ fundId: id, weightBps: each + (i === 0 ? remainder : 0) })),
       );
-      sessionStorage.removeItem(key);
+      sessionStorage.removeItem(pickerKey);
     } catch {
       // bad payload — silently drop, leave basket empty
     }
@@ -401,6 +418,26 @@ export function StudioShell({
     setLoadingEditId(p.id);
     setEditError(null);
     try {
+      // If the portfolio belongs to a different provider than the one
+      // this builder is scoped to, route to that provider's build page —
+      // its fund catalogue is different, so we can't load foreign
+      // holdings into the current basket. Hand off via sessionStorage so
+      // the target page hydrates the basket on mount (same channel the
+      // /construction/[provider]/picker → builder pre-seed already uses).
+      if (p.provider_slug !== providerSlug) {
+        const res = await fetch(`/api/portfolios/${p.id}`);
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          throw new Error(d?.error ?? `HTTP ${res.status}`);
+        }
+        const data = (await res.json()) as {
+          holdings: Array<{ fundId: number; weightBps: number }>;
+        };
+        const key = `build-basket:v1:${p.provider_slug}`;
+        sessionStorage.setItem(key, JSON.stringify({ holdings: data.holdings }));
+        router.push(`/construction/${p.provider_slug}`);
+        return;
+      }
       const res = await fetch(`/api/portfolios/${p.id}`);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -839,11 +876,11 @@ export function StudioShell({
             <header className="border-b border-[var(--color-hairline)] px-6 py-4">
               <div className="flex items-baseline justify-between gap-3">
                 <p className="t-body-lg font-medium text-[var(--color-ink)]">Saved portfolios</p>
-                <p className="t-micro-cap">{providerName}</p>
+                <p className="t-micro-cap">All platforms</p>
               </div>
               <p className="t-caption mt-1 text-[var(--color-ink-mute)]">
                 <span className="num">{savedPortfolios.length}</span>{" "}
-                {savedPortfolios.length === 1 ? "portfolio" : "portfolios"} confirmed on this platform.
+                {savedPortfolios.length === 1 ? "portfolio" : "portfolios"} across every platform. Edit reopens in the source platform's builder.
               </p>
             </header>
 
@@ -855,19 +892,39 @@ export function StudioShell({
               )}
               {savedPortfolios.length === 0 ? (
                 <p className="t-body-md py-8 text-center text-[var(--color-ink-mute)]">
-                  No portfolios saved on {providerName} yet.
+                  No portfolios saved on any platform yet.
                 </p>
               ) : (
-                <ul className="flex flex-col">
-                  {savedPortfolios.map((p) => {
-                    const isTarget = deleteTarget?.id === p.id;
+                (() => {
+                  const groups = new Map<string, SavedPortfolioRef[]>();
+                  for (const p of savedPortfolios) {
+                    const list = groups.get(p.provider_slug) ?? [];
+                    list.push(p);
+                    groups.set(p.provider_slug, list);
+                  }
+                  const order = providerTabs.map((t) => t.slug);
+                  const orderedSlugs = [...groups.keys()].sort(
+                    (a, b) => order.indexOf(a) - order.indexOf(b),
+                  );
+                  return orderedSlugs.map((slug) => {
+                    const list = groups.get(slug)!;
+                    const label = providerTabs.find((t) => t.slug === slug)?.short ?? slug.toUpperCase();
                     return (
-                      <li
-                        key={p.id}
-                        className="border-b border-[var(--color-hairline-2)] py-3 last:border-0"
-                      >
-                        <div className="flex items-baseline justify-between gap-3">
-                          <div className="min-w-0 flex-1">
+                      <div key={slug} className="mb-4">
+                        <p className="t-micro-cap sticky top-0 z-10 -mx-6 mb-1 border-b border-[var(--color-hairline-2)] bg-[var(--color-canvas)] px-6 py-1.5 text-[var(--color-ink)]">
+                          {label} · <span className="num text-[var(--color-ink-mute)]">{list.length}</span>
+                        </p>
+                        <ul className="flex flex-col">
+                          {list.map((p) => {
+                            const isTarget = deleteTarget?.id === p.id;
+                            const isCrossProvider = p.provider_slug !== providerSlug;
+                            return (
+                              <li
+                                key={p.id}
+                                className="border-b border-[var(--color-hairline-2)] py-3 last:border-0"
+                              >
+                                <div className="flex items-baseline justify-between gap-3">
+                                  <div className="min-w-0 flex-1">
                             <p className="t-body-md truncate text-[var(--color-ink)]" title={p.name}>
                               {p.name}
                             </p>
@@ -882,8 +939,9 @@ export function StudioShell({
                                 onClick={() => loadSavedIntoBasket(p)}
                                 disabled={loadingEditId != null}
                                 className="t-caption px-2 py-1 text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)] disabled:opacity-50"
+                                title={isCrossProvider ? `Opens ${p.provider_name}'s builder` : "Load into current basket"}
                               >
-                                {loadingEditId === p.id ? "Loading…" : "Edit"}
+                                {loadingEditId === p.id ? "Loading…" : isCrossProvider ? "Edit ↗" : "Edit"}
                               </button>
                               <button
                                 onClick={() => { setDeleteTarget(p); setDeleteInput(""); setDeleteError(null); }}
@@ -935,10 +993,14 @@ export function StudioShell({
                             </div>
                           </div>
                         )}
-                      </li>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
                     );
-                  })}
-                </ul>
+                  });
+                })()
               )}
             </div>
 
