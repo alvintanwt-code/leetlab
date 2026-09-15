@@ -220,6 +220,11 @@
     "status": "Active"
   },
   {
+    "name": "Harris Oakmark US Value Eq P/A H-SGD",
+    "isin": "LU1201861249",
+    "status": "Active"
+  },
+  {
     "name": "Infinity European Stock Index SGD",
     "isin": "SG9999003305",
     "status": "Active"
