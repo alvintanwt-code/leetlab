@@ -2,10 +2,10 @@
   "_comment": "Trailing 12-month yield overrides for funds where Morningstar's MFsnapshot YieldHistory is empty (notably MAS-coded SG funds). Keyed by ISIN. source='fwd' rows are auto-refreshed by scripts/scrape-platform-yields.ts; source='manual' rows are edited by hand. Runtime in lib/portfolio-performance.ts consults this file when the Morningstar snapshot returns null yield.",
   "overrides": {
     "SG9999002083": {
-      "yieldPct": 3.37,
+      "yieldPct": 3.54,
       "source": "fwd",
       "msid": "F0HKG062MZ",
-      "asOf": "1 Apr 2026",
+      "asOf": "1 Jul 2026",
       "note": "FSSA Dividend Advantage Fund SGD Dis — scraped from FWD fund-report Dividends section ('12 mo Yield')."
     },
     "SG9999003826": {
