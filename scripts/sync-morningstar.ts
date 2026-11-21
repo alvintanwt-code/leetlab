@@ -202,8 +202,21 @@ async function main() {
     console.error(`Unknown provider "${only}". Available: ${PROVIDERS.map((p) => p.slug).join(", ")}`);
     process.exit(1);
   }
+  // A provider-level failure (e.g. the screener 401s on its universe) skips
+  // that provider so the others still sync, but the run still exits 1 at the
+  // end so the GitHub Action goes red.
+  const broken: string[] = [];
   for (const p of targets) {
-    await syncProvider(p, sample);
+    try {
+      await syncProvider(p, sample);
+    } catch (e) {
+      broken.push(p.slug);
+      console.error(`✗ ${p.slug}: provider sync aborted — ${(e as Error).message}`);
+    }
+  }
+  if (broken.length > 0) {
+    console.error(`\n${broken.length} provider(s) failed: ${broken.join(", ")}`);
+    process.exit(1);
   }
 }
 

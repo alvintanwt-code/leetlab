@@ -1,5 +1,5 @@
 // Morningstar widget API — used by FWD / TM / HSBC fund-centre pages.
-// Single public key (klr5zyak8x) works across all providers' fund universes.
+// Snapshots use klr5zyak8x; screener calls use FWD's key (see SCREENER_KEY).
 
 const API_KEY = "klr5zyak8x";
 // Morningstar migrated the widget-key API from tools.morningstar.co.uk (which
@@ -8,6 +8,11 @@ const API_KEY = "klr5zyak8x";
 // (lack of) auth. Discovered via FWD's fund-centre still hitting Morningstar
 // live at the new domain.
 const BASE_URL = `https://lt.morningstar.com/api/rest.svc/${API_KEY}`;
+// On 2026-11-13 Morningstar revoked klr5zyak8x's access to /security/screener
+// (HTTP 401 on every universe) while security_details kept working. FWD's own
+// fund-centre widget key still has screener access, so screener calls use it.
+const SCREENER_KEY = "4j6t9375dd";
+const SCREENER_BASE_URL = `https://lt.morningstar.com/api/rest.svc/${SCREENER_KEY}`;
 const FETCH_TIMEOUT_MS = 20_000;
 
 export type UniverseFund = {
@@ -69,7 +74,7 @@ export async function fetchUniverse(universeId: string): Promise<UniverseFund[]>
     top: "500",
     pageSize: "500",
   });
-  const url = `${BASE_URL}/security/screener?${params}`;
+  const url = `${SCREENER_BASE_URL}/security/screener?${params}`;
   const res = await fetchWithRetry(url);
   if (!res.ok) throw new Error(`Morningstar screener HTTP ${res.status} for universe ${universeId}`);
   const data = (await res.json()) as { rows?: UniverseFund[]; total?: number };
@@ -95,7 +100,7 @@ export async function fetchScreenerByIsin(isin: string): Promise<UniverseFund | 
     page: "1",
     pageSize: "3",
   });
-  const url = `${BASE_URL}/security/screener?${params}`;
+  const url = `${SCREENER_BASE_URL}/security/screener?${params}`;
   const res = await fetchWithRetry(url);
   if (!res.ok) return null;
   const data = (await res.json()) as { rows?: UniverseFund[] };
